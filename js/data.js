@@ -11,7 +11,8 @@
  *
  * Exhibit shape:
  *   id, name, kind, place, year, status ("silent" | "parked" | "still talking"),
- *   icon (emoji shown on the hologram pedestal),
+ *   art (hardware drawing key in js/art.js), backdrop (diorama scene key),
+ *   next: how this machine led to the missions that came after (the bigger NASA story)
  *   story: [ "page 1", "page 2", ... ]   (told by the machine, first person)
  *   leftBehind: [ "thing still there", ... ]
  *   discovery: "the big thing we learned"
@@ -29,19 +30,23 @@ window.MUSEUM = {
       name: "Moon Wing",
       subtitle: "Our closest neighbor, 384,000 km away",
       color: "#9fb7ff",
-      unlock: null, // open from the start
+      code: "M",
+      wall: "#2f3747",
+      question: "Can we land on another world, and can people go there?",
       badge: { name: "Moonwalker", icon: "🌕" },
       intro:
         "Footprints, rovers and a mirror that still bounces lasers. Everything in this wing is still sitting on the Moon right now.",
       exhibits: [
         {
           id: "surveyor-3",
+          art: "surveyor",
+          backdrop: "moon-earth",
+          next: "Surveyor 3 and its robot sisters showed the Moon's ground was safe to land on, so astronauts could follow. Two and a half years later, they did!",
           name: "Surveyor 3",
           kind: "Robot lander",
           place: "Ocean of Storms, Moon",
           year: 1967,
           status: "silent",
-          icon: "🛰️",
           story: [
             "Hi! I'm Surveyor 3. In 1967, nobody knew if the Moon's ground was solid or a deep pool of dust that would swallow a spaceship. My job was to find out before any astronaut tried.",
             "I landed in a place called the Ocean of Storms. (It has no water. Early astronomers thought the dark patches were seas!) I used my little robot scoop to dig trenches and poke the soil.",
@@ -83,12 +88,14 @@ window.MUSEUM = {
         },
         {
           id: "apollo-11",
+          art: "eagle",
+          backdrop: "moon-earth",
+          next: "Five more Apollo crews landed after Eagle. The last, Apollo 17, left the Moon in December 1972. Now NASA's Artemis program plans to send astronauts back.",
           name: "Apollo 11 Eagle descent stage",
           kind: "Lander base (descent stage)",
           place: "Sea of Tranquility, Moon",
           year: 1969,
           status: "silent",
-          icon: "🦅",
           story: [
             "I'm the bottom half of the lunar module Eagle. On July 20, 1969, I carried Neil Armstrong and Buzz Aldrin down to the Moon while Michael Collins circled above in Columbia.",
             "When it was time to go home, the top half of Eagle blasted off and used me as a launch pad. That's why I'm still here, with a plaque on my leg that says the explorers came in peace for all mankind.",
@@ -137,12 +144,14 @@ window.MUSEUM = {
         },
         {
           id: "lrv",
+          art: "lrv",
+          backdrop: "moon-earth",
+          next: 'New Moon rovers are being designed for the Artemis astronauts who will return to the Moon.',
           name: "Lunar Roving Vehicle",
           kind: "Moon buggy (rover)",
           place: "Apollo 15, 16 & 17 landing sites",
           year: 1971,
           status: "parked",
-          icon: "🚙",
           story: [
             "Vroom! I'm a Lunar Roving Vehicle, the Moon buggy. I rode to the Moon folded up against the side of the lunar module, and astronauts unfolded me like a pop-up book.",
             "I run on batteries and drive about as fast as a kid on a bike. With me, astronauts could explore miles away from their lander instead of just walking around it.",
@@ -189,19 +198,23 @@ window.MUSEUM = {
       name: "Mars Wing",
       subtitle: "The Red Planet, home of the robot explorers",
       color: "#ff8a5c",
-      unlock: { wing: "moon", count: 2 },
+      code: "R",
+      wall: "#6a3326",
+      question: "Was Mars ever a place where life could exist?",
       badge: { name: "Red Planet Ranger", icon: "🔴" },
       intro:
         "No human has ever been to Mars, but our robots have. Some are silent now, but every one of them changed what we know.",
       exhibits: [
         {
           id: "viking-1",
+          art: "viking",
+          backdrop: "mars",
+          next: "Viking's search for life raised questions that Mars missions are still working on, like the Perseverance rover, which is collecting rock samples today.",
           name: "Viking 1 Lander",
           kind: "Science lander",
           place: "Chryse Planitia, Mars",
           year: 1976,
           status: "silent",
-          icon: "🛸",
           story: [
             "Greetings from 1976! I'm Viking 1, the first NASA spacecraft to land safely on Mars and get to work. I landed seven years to the day after Apollo 11 touched down on the Moon.",
             "I sent home the first pictures taken from the surface of Mars. People were amazed: rusty red rocks, and a sky that wasn't blue.",
@@ -240,12 +253,14 @@ window.MUSEUM = {
         },
         {
           id: "sojourner",
+          art: "sojourner",
+          backdrop: "mars",
+          next: 'Sojourner proved rovers could work on Mars. In 2004, two much bigger rovers followed: Spirit and Opportunity.',
           name: "Sojourner",
           kind: "Rover",
           place: "Ares Vallis, Mars",
           year: 1997,
           status: "silent",
-          icon: "🤖",
           story: [
             "I'm Sojourner, the very first rover to drive on Mars! I'm only about the size of a microwave oven. I landed on July 4, 1997, riding inside the Mars Pathfinder lander, which bounced down wrapped in giant airbags.",
             "I drove super slowly and carefully, sniffing rocks with a special instrument to find out what they were made of. Scientists gave the rocks fun names like Barnacle Bill and Yogi.",
@@ -286,12 +301,14 @@ window.MUSEUM = {
         },
         {
           id: "opportunity",
+          art: "opportunity",
+          backdrop: "mars",
+          next: "Bigger rovers followed in Oppy's tracks: Curiosity landed in 2012 and Perseverance in 2021.",
           name: "Opportunity",
           kind: "Rover",
           place: "Meridiani Planum, Mars",
           year: 2004,
           status: "silent",
-          icon: "🔭",
           story: [
             "Hi, I'm Opportunity, 'Oppy' to my friends. My twin, Spirit, landed on the other side of Mars a few weeks before me in 2004. We were each planned to work for 90 Martian days.",
             "I found tiny round pebbles that scientists called 'blueberries'. They formed in water! That was strong proof that long ago, Mars had water on its surface.",
@@ -330,12 +347,14 @@ window.MUSEUM = {
         },
         {
           id: "ingenuity",
+          art: "ingenuity",
+          backdrop: "mars",
+          next: 'Ingenuity proved flying on Mars works. Engineers are now studying ideas for bigger Mars helicopters that could carry science tools.',
           name: "Ingenuity",
           kind: "Helicopter",
           place: "Jezero Crater, Mars",
           year: 2021,
           status: "parked",
-          icon: "🚁",
           story: [
             "Bzzzz! I'm Ingenuity, a tiny helicopter that weighs about as much as a bag of flour. I rode to Mars tucked under the Perseverance rover.",
             "Flying on Mars is really hard because the air is super thin, about 1% as thick as Earth's. My blades had to spin around 2,400 times a minute to lift me up.",
@@ -375,19 +394,23 @@ window.MUSEUM = {
       name: "Deep Space Wing",
       subtitle: "Probes still traveling far beyond the planets",
       color: "#c58bff",
-      unlock: { wing: "mars", count: 2 },
+      code: "D",
+      wall: "#1b1d36",
+      question: "How far can a machine built by people travel?",
       badge: { name: "Star Voyager", icon: "✨" },
       intro:
         "Some explorers never landed anywhere. They're still flying, farther from home than anything humans have ever built.",
       exhibits: [
         {
           id: "pioneer-10",
+          art: "pioneer",
+          backdrop: "jupiter",
+          next: 'Pioneer 10 showed the way to the outer planets. Its twin Pioneer 11 followed, and then Voyager 1 and Voyager 2.',
           name: "Pioneer 10",
           kind: "Deep space probe",
           place: "Heading toward the star Aldebaran",
           year: 1972,
           status: "silent",
-          icon: "📡",
           story: [
             "I'm Pioneer 10, launched in 1972. I was the first spacecraft to fly through the asteroid belt. Scientists worried I'd be smashed by space rocks, but I made it!",
             "In 1973 I became the first spacecraft to fly past Jupiter, and I sent back close-up pictures of the giant planet.",
@@ -424,12 +447,14 @@ window.MUSEUM = {
         },
         {
           id: "voyager-1",
+          art: "voyager",
+          backdrop: "deep",
+          next: 'Its twin, Voyager 2, reached interstellar space in 2018. The two Voyagers are the only spacecraft still sending messages from interstellar space.',
           name: "Voyager 1",
           kind: "Deep space probe",
           place: "Interstellar space",
           year: 1977,
           status: "still talking",
-          icon: "💿",
           story: [
             "I'm Voyager 1, launched in 1977. I flew past Jupiter and Saturn and sent home amazing pictures of their storms, rings and moons.",
             "In 1990 I turned around and took a photo of Earth from about 6 billion km away. Earth looked like a tiny blue dot in a sunbeam. People call it the 'Pale Blue Dot'.",
@@ -470,12 +495,14 @@ window.MUSEUM = {
         },
         {
           id: "new-horizons",
+          art: "newhorizons",
+          backdrop: "pluto",
+          next: 'New Horizons is still flying through the Kuiper Belt, sending back science about the far edge of our solar system.',
           name: "New Horizons",
           kind: "Flyby probe",
           place: "The Kuiper Belt",
           year: 2006,
           status: "still talking",
-          icon: "🪐",
           story: [
             "I'm New Horizons, about the size of a piano. I launched in 2006 on a long trip to Pluto, so long that the people who built me grew nine years older before I arrived!",
             "On July 14, 2015, I zoomed past Pluto and took the first close-up pictures. Surprise: Pluto has a giant heart-shaped plain of ice!",

@@ -29,22 +29,34 @@ Since the 1960s, NASA has left hardware across the solar system: on the Moon, on
 
 ## Our concept: The Silent Explorers Museum
 
-Kids take a field trip through a space museum. Each **wing** is a place NASA has explored (Moon, Mars, Deep Space, with more wings coming). Inside each wing they walk down a hallway of **exhibits**, one for each piece of hardware left behind. A **robot guide** goes with them.
+It's a field trip you play. A school bus pulls up to the museum, you pick your character, and then **you walk through the museum yourself**. Click the floor (or use the arrow keys) to walk, and your robot guide follows along. The museum is one continuous building: Lobby → Moon Wing → Mars Wing → Deep Space Wing → Field Trip Journal.
 
-Each exhibit card has four parts:
+- **Wings are places NASA has gone.** Each wing opens with a **big question** on the wall (for example, "Was Mars ever a place where life could exist?"), and its exhibits answer it.
+- **Exhibits are real hardware** that is still out there: a framed diorama of where it is now, plus a model in a display case. Walk up and click to read its placard.
+- **Everything is open to explore.** Nothing is locked.
+- **Stars** come from hearing a machine's story (+1), the quiz (+2), and asking the placard a question (+1). Kids spend them in the **Robot Bay** on paint, eye lights, hats and gear.
+- **Field Trip Journal** at the end collects a stamp for every machine you met.
 
-1. **Story:** the machine tells its own story in the first person.
-2. **Still there:** what is physically left on the Moon, on Mars or in space today.
-3. **Discovery:** the science it made possible.
-4. **Challenge:** a quick question that earns stars ⭐.
+### The story we're telling (and whose perspective)
 
-Earning stars unlocks the next exhibit and the next wing (the story tree), and pays for upgrades to the robot in the **Robot Workshop**: paint, eye lights, hats and gear.
+- **The machines speak for themselves.** Each exhibit's story is told in the first person by the hardware: why it was sent, what it did, and how its mission ended.
+- **A kid on a field trip is the main character**, so the audience sees the museum through their own eyes.
+- **The robot guide asks the questions kids would ask** and reads out each wing's big question.
+- **One connected NASA story, not a list of facts.** The lobby timeline (1967 to 2021) shows how each mission led to the next, and every placard has a **"What came next"** section. For example: Surveyor proved the ground was safe → Apollo landed → Artemis plans to return.
 
-Each exhibit also has an **"Ask the exhibit" placard**, a chatbot that answers kids' questions about it.
+### Each placard
+
+1. **In its own words:** the machine's first-person story
+2. **Still there today:** what is physically left on the Moon, on Mars or in space
+3. **What we learned:** the science it made possible
+4. **What came next:** how it led to later missions
+5. **Quick quiz**
+6. **Read to me** (text-to-speech) and **Ask the placard** (the AI chatbot)
 
 ### Status: skeleton draft
 
-- Working: lobby map, wing unlocking, walkable hallway, exhibit cards, quiz and stars, robot workshop, saved progress, "Read to me" text-to-speech, and an offline Q&A placard.
+- Working: the intro scene, walking, the camera and minimap, 10 exhibits across 3 wings, the placards, stars, the Robot Bay, the journal, saved progress, and an offline Q&A placard.
+- The machine drawings are simplified SVG illustrations. Real NASA images could replace them later. Most NASA imagery is public domain, but check each image's credit line.
 - **All exhibit facts are drafts.** Check every one against the official challenge resources and fill in `sources` / `verified` in [`js/data.js`](js/data.js).
 - The AI placard runs in offline mode (canned answers) until the server below is set up.
 
@@ -74,8 +86,9 @@ Then set `askEndpoint: "http://localhost:8787/ask"` in [`js/ai.js`](js/ai.js).
 |---|---|
 | `index.html` | Page structure: HUD, views, dialogs |
 | `css/styles.css` | All styling (theme tokens at the top) |
-| `js/data.js` | **All content**: wings, exhibits, stories, quizzes, shop items. Edit here! |
-| `js/app.js` | Game logic: views, unlocking, quiz, stars, workshop |
+| `js/data.js` | **All content**: wings, big questions, exhibits, stories, "what came next", quizzes, shop items. Edit here! |
+| `js/app.js` | The walkable museum: world building, walking, camera, placards, stars, Robot Bay |
+| `js/art.js` | Hand-drawn SVG: spacecraft, dioramas, the player, the bus |
 | `js/robot.js` | Draws the customizable robot (SVG) |
 | `js/ai.js` | "Ask the exhibit" placard (offline answers + optional AI) |
 | `server/` | Optional Node backend for the AI placard |
