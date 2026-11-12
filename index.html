@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Silent Explorers Museum</title>
+  <meta name="description" content="An interactive space museum for kids about the NASA hardware left on the Moon, Mars and in deep space. Team Reach for the Stars, NASA Space Apps 2026." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <!-- HUD -->
+  <header class="hud">
+    <button class="brand" id="homeBtn" aria-label="Back to museum lobby">
+      <span class="brand-mark" aria-hidden="true">◉</span>
+      <span>
+        <strong id="museumName">Silent Explorers Museum</strong>
+        <small id="museumTagline">Abandoned, but not forgotten</small>
+      </span>
+    </button>
+    <div class="hud-stats">
+      <div class="stat" title="Stars earned"><span aria-hidden="true">⭐</span> <b id="starCount">0</b><span class="sr-only"> stars</span></div>
+      <div class="stat" title="Exhibit cards completed"><span aria-hidden="true">🗂️</span> <b id="cardCount">0/0</b><span class="sr-only"> cards</span></div>
+      <button class="btn btn-ghost" id="workshopBtn">🔧 Robot Workshop</button>
+    </div>
+  </header>
+
+  <main id="app">
+    <!-- 1. Ticket / intro -->
+    <section id="view-intro" class="view" hidden>
+      <div class="ticket">
+        <p class="eyebrow">Admit one · Explorer pass</p>
+        <h1>Welcome to the <span class="grad">Silent Explorers Museum</span></h1>
+        <p class="lead">Since the 1960s, NASA has left robots, rovers and landers all over the solar system. Walk through the wings, meet the machines, and hear their stories in their own words.</p>
+        <div class="intro-robot" id="introRobot"></div>
+        <form id="introForm" class="intro-form">
+          <label>Your explorer name
+            <input id="playerName" maxlength="20" placeholder="e.g. Captain Ava" required />
+          </label>
+          <label>Name your robot guide
+            <input id="robotName" maxlength="16" value="Echo" required />
+          </label>
+          <button class="btn btn-primary" type="submit">Enter the museum →</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. Lobby: story tree of wings -->
+    <section id="view-lobby" class="view" hidden>
+      <div class="lobby-head">
+        <p class="eyebrow">Museum map</p>
+        <h1>Choose a wing to explore</h1>
+        <p class="lead">Each wing is a place NASA has explored. Finish exhibit cards to earn stars and unlock new wings.</p>
+      </div>
+      <div class="tree" id="wingTree"></div>
+      <div class="badges" id="badgeShelf" aria-label="Badges earned"></div>
+    </section>
+
+    <!-- 3. Wing hallway -->
+    <section id="view-wing" class="view" hidden>
+      <div class="wing-head">
+        <button class="btn btn-ghost" id="backToLobby">← Museum map</button>
+        <div>
+          <p class="eyebrow" id="wingEyebrow"></p>
+          <h1 id="wingTitle"></h1>
+          <p class="lead" id="wingIntro"></p>
+        </div>
+      </div>
+      <div class="hall" id="hall">
+        <div class="hall-floor" aria-hidden="true"></div>
+        <div class="hall-track" id="hallTrack"></div>
+        <div class="hall-robot" id="hallRobot" aria-hidden="true"></div>
+      </div>
+      <div class="hall-controls">
+        <button class="btn btn-ghost" id="walkLeft" aria-label="Walk to previous exhibit">◀ Walk</button>
+        <span id="hallPos" class="mono"></span>
+        <button class="btn btn-ghost" id="walkRight" aria-label="Walk to next exhibit">Walk ▶</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Robot companion speech bubble -->
+  <aside class="companion" id="companion" aria-live="polite">
+    <div class="companion-robot" id="companionRobot"></div>
+    <div class="bubble" id="bubble"></div>
+  </aside>
+
+  <!-- Exhibit card -->
+  <dialog id="exhibitDialog" class="panel">
+    <div class="panel-head">
+      <div class="holo-icon" id="exIcon" aria-hidden="true"></div>
+      <div>
+        <p class="eyebrow" id="exMeta"></p>
+        <h2 id="exTitle"></h2>
+        <span class="chip" id="exStatus"></span>
+      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <nav class="steps" id="exSteps" aria-label="Exhibit sections"></nav>
+    <div class="panel-body" id="exBody"></div>
+    <div class="panel-foot">
+      <button class="btn btn-ghost" id="readAloud">🔊 Read to me</button>
+      <button class="btn btn-ghost placard" id="askBtn">💬 Ask the exhibit</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" id="exPrev">Back</button>
+      <button class="btn btn-primary" id="exNext">Next</button>
+    </div>
+  </dialog>
+
+  <!-- AI placard chat -->
+  <dialog id="chatDialog" class="panel chat">
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">Museum placard · <span id="chatMode">offline guide</span></p>
+        <h2>Ask <span id="chatExhibit"></span></h2>
+      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="chat-log" id="chatLog" aria-live="polite"></div>
+    <div class="chat-suggest" id="chatSuggest"></div>
+    <form class="chat-form" id="chatForm">
+      <input id="chatInput" placeholder="Type a question…" autocomplete="off" maxlength="200" />
+      <button class="btn btn-primary" type="submit">Ask</button>
+    </form>
+  </dialog>
+
+  <!-- Robot workshop -->
+  <dialog id="workshopDialog" class="panel workshop">
+    <div class="panel-head">
+      <div>
+        <p class="eyebrow">Robot workshop</p>
+        <h2>Upgrade <span id="wsRobotName">Echo</span></h2>
+        <p class="muted">Spend stars to unlock parts. Unlocked parts are free to swap anytime.</p>
+      </div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="ws-grid">
+      <div class="ws-preview" id="wsPreview"></div>
+      <div class="ws-shop" id="wsShop"></div>
+    </div>
+  </dialog>
+
+  <script src="js/data.js"></script>
+  <script src="js/robot.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

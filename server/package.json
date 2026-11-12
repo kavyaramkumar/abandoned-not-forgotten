@@ -1,0 +1,11 @@
+{
+  "name": "silent-explorers-ask-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node ask-server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}
