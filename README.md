@@ -29,13 +29,20 @@ Since the 1960s, NASA has left hardware across the solar system: on the Moon, on
 
 ## Our concept: The Silent Explorers Museum
 
-It's a field trip you play. A school bus pulls up to the museum, you pick your character, and then **you walk through the museum yourself**. Click the floor (or use the arrow keys) to walk, and your robot guide follows along. The museum is one continuous building: Lobby → Moon Wing → Mars Wing → Deep Space Wing → Field Trip Journal.
+It's a field trip you play. A school bus pulls up to the museum, you pick your character, and then **you walk through a 3D museum yourself**, with your robot guide rolling along behind you.
+
+The museum is a real floor plan. A lobby with a giant Earth globe sits in the middle, and the wings branch off it: the **Moon Wing** to the west, the **Mars Wing** to the north and the **Deep Space Wing** to the east. The **Field Trip Journal** room is past the end of Deep Space.
+
+- **Walk:** click the floor, or use WASD / the arrow keys.
+- **Camera:** drag to turn and tilt, scroll to zoom, or press Q / E. Walls that would block your view drop down, like a dollhouse.
+- **Bird's-eye map** (button or M): the camera rises above the whole museum. Click a room or a machine, and you watch your character walk there through the doorways.
+- **Look closer:** walk up to a display case and click it, or press Enter.
 
 - **Wings are places NASA has gone.** Each wing opens with a **big question** on the wall (for example, "Was Mars ever a place where life could exist?"), and its exhibits answer it.
-- **Exhibits are real hardware** that is still out there: a framed diorama of where it is now, plus a model in a display case. Walk up and click to read its placard.
+- **Exhibits are real hardware** that is still out there: a framed painting of where it is now, hung above a glass display case with the machine inside. Walk up and click to read its placard.
 - **Everything is open to explore.** Nothing is locked.
 - **Stars** come from hearing a machine's story (+1), the quiz (+2), and asking the placard a question (+1). Kids spend them in the **Robot Bay** on paint, eye lights, hats and gear.
-- **Field Trip Journal** at the end collects a stamp for every machine you met.
+- **Field Trip Journal** at the end: a wall board and an open book that collect a stamp for every machine you met. Next to it, a taped-off doorway teases the wings still "under construction".
 
 ### The story we're telling (and whose perspective)
 
@@ -55,14 +62,14 @@ It's a field trip you play. A school bus pulls up to the museum, you pick your c
 
 ### Status: skeleton draft
 
-- Working: the intro scene, walking, the camera and minimap, 10 exhibits across 3 wings, the placards, stars, the Robot Bay, the journal, saved progress, and an offline Q&A placard.
-- The machine drawings are simplified SVG illustrations. Real NASA images could replace them later. Most NASA imagery is public domain, but check each image's credit line.
+- Working: the intro scene, the 3D museum (walking, camera, cutaway walls, bird's-eye map, pathfinding through doorways), 10 exhibits across 3 wings, the placards, stars, the Robot Bay (the 3D robot shows every upgrade), the timeline, the journal, saved progress, and an offline Q&A placard.
+- The machines in the cases are the simplified SVG drawings shown as flat cutouts. Real NASA images, or free NASA 3D models (nasa3d.arc.nasa.gov), could replace them later. Most NASA material is public domain, but check each credit line.
 - **All exhibit facts are drafts.** Check every one against the official challenge resources and fill in `sources` / `verified` in [`js/data.js`](js/data.js).
 - The AI placard runs in offline mode (canned answers) until the server below is set up.
 
 ## Run it
 
-No build step is needed. Either open `index.html` directly, or serve the folder:
+No build step is needed, and nothing has to be downloaded at runtime except the Google Fonts. Either open `index.html` directly, or serve the folder:
 
 ```bash
 python3 -m http.server 8123
@@ -87,18 +94,21 @@ Then set `askEndpoint: "http://localhost:8787/ask"` in [`js/ai.js`](js/ai.js).
 | `index.html` | Page structure: HUD, views, dialogs |
 | `css/styles.css` | All styling (theme tokens at the top) |
 | `js/data.js` | **All content**: wings, big questions, exhibits, stories, "what came next", quizzes, shop items. Edit here! |
-| `js/app.js` | The walkable museum: world building, walking, camera, placards, stars, Robot Bay |
-| `js/art.js` | Hand-drawn SVG: spacecraft, dioramas, the player, the bus |
-| `js/robot.js` | Draws the customizable robot (SVG) |
+| `js/app.js` | The 3D museum: floor plan, walls, exhibits, walking and pathfinding, camera, bird's-eye map, placards, stars, Robot Bay |
+| `js/models.js` | 3D building blocks: the kid, the robot (with every hat and gear), wall signs, floor textures |
+| `js/art.js` | Hand-drawn SVG: spacecraft, dioramas, the intro kid, the bus |
+| `js/robot.js` | Draws the robot as SVG for the Robot Bay preview |
+| `js/vendor/three.min.js` | three.js r149 (MIT), included so the museum works offline |
 | `js/ai.js` | "Ask the exhibit" placard (offline answers + optional AI) |
 | `server/` | Optional Node backend for the AI placard |
 
 ## Ideas to add next
 
 - A **"Where is it now?" map**: a clickable Moon and Mars map that shows each exhibit's real landing site.
-- **Mission timeline hall:** walk through 1967 to today.
 - **Postcards:** kids "send" a postcard from each exhibit and collect them all.
 - **Audio narration:** a different voice for each machine.
+- **Real 3D spacecraft:** swap the flat cutouts for NASA's free 3D models.
+- **First-person mode:** see the museum through the kid's eyes.
 - **Teacher mode:** a printable worksheet for each wing.
 - **More wings:** Venus and Mercury, the giant planets (Galileo, Cassini, Juno).
 

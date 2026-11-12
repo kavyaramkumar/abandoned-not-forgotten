@@ -104,7 +104,6 @@ legend { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
 .minimap { flex: 1; position: relative; display: flex; gap: 3px; height: 30px; min-width: 0; }
 .minimap button { min-width: 0; border: 0; border-bottom: 4px solid var(--wc); background: #ffffff10; color: #cfc6b2; cursor: pointer; font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 4px; }
 .minimap button.here { background: #ffffff22; color: #fff; }
-.mm-dot { position: absolute; bottom: -3px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #fff; border: 2px solid var(--night); pointer-events: none; transition: left .1s linear; }
 .hud-right { display: flex; gap: 10px; align-items: center; flex: none; }
 .counter { display: inline-flex; gap: 5px; align-items: center; font: 700 14px var(--mono); }
 .counter svg { width: 18px; height: 18px; }
@@ -114,8 +113,9 @@ legend { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
 /* =========================================================
    STAGE + ROOMS (world units: 600 tall)
    ========================================================= */
-.stage { position: relative; flex: 1; overflow: hidden; cursor: pointer; background: linear-gradient(#24211e 50%, #6f4a30 50%); }
-.world { position: absolute; top: 0; left: 0; height: 600px; transform-origin: 0 0; }
+.stage { position: relative; flex: 1; overflow: hidden; background: #0f111a; touch-action: none; }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
+.overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .room { position: absolute; top: 0; height: 600px; --wall: var(--plaster); }
 .ceiling { position: absolute; top: 0; left: 0; right: 0; height: 60px; background: #24211e;
   background-image: radial-gradient(circle at 50% 100%, #fff3cf 0 3px, transparent 4px); background-size: 140px 60px; }
@@ -216,13 +216,6 @@ legend { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
 @keyframes blinkEyes { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
 @keyframes flame { to { transform: scaleY(1.4); } }
 
-.say { position: absolute; top: 452px; z-index: 5; width: 300px; transform: translate(-40px, -100%) translateY(6px); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none;
-  background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 10px 13px; font-size: 16px; line-height: 1.4; box-shadow: 4px 4px 0 #0007; }
-.say::after { content: ""; position: absolute; left: 30px; bottom: -10px; width: 16px; height: 16px; background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); }
-.say.show { opacity: 1; transform: translate(-40px, -100%); }
-.say .who { display: block; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--brick); }
-.prompt { position: absolute; top: 236px; z-index: 6; transform: translateX(-50%); background: var(--ink); color: var(--paper); border: 2px solid var(--paper); border-radius: 30px; padding: 7px 16px; font-weight: 700; font-size: 15px; cursor: pointer; white-space: nowrap; animation: bob 1.2s ease-in-out infinite alternate; }
-@keyframes bob { to { transform: translate(-50%, -5px); } }
 
 .hint { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); margin: 0; color: #f2ead9; background: #000a; padding: 6px 14px; border-radius: 20px; font-size: 14px; transition: opacity .6s; pointer-events: none; z-index: 4; white-space: nowrap; }
 .hint.faded { opacity: 0; }
@@ -295,10 +288,6 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .part.short { opacity: .55; }
 .sw { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--ink); flex: none; }
 
-.rotate-tip { display: none; }
-@media (orientation: portrait) and (max-width: 760px) {
-  .rotate-tip { display: block; position: fixed; top: 120px; left: 0; right: 0; text-align: center; color: #cfc6b2; font-size: 14px; margin: 0; pointer-events: none; z-index: 2; }
-}
 
 /* =========================================================
    Small screens + reduced motion
@@ -320,4 +309,64 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
+
+/* =========================================================
+   3D STAGE OVERLAYS
+   ========================================================= */
+.say { position: absolute; z-index: 5; width: min(300px, 70vw); transform: translateY(calc(-100% + 8px)); opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 10px 13px; font-size: 16px; line-height: 1.4; box-shadow: 4px 4px 0 #0007; }
+.say::after { content: ""; position: absolute; left: var(--tail, 30px); bottom: -10px; width: 16px; height: 16px; background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); }
+.say.show { opacity: 1; transform: translateY(-100%); }
+.say .who { display: block; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--brick); }
+.prompt { position: absolute; left: 50%; bottom: 62px; z-index: 8; transform: translateX(-50%); pointer-events: auto; background: var(--brick); color: #fff; border: 2px solid var(--ink); border-radius: 30px; padding: 10px 22px; font-weight: 700; font-size: 17px; cursor: pointer; white-space: nowrap; animation: bob 1.2s ease-in-out infinite alternate; box-shadow: 4px 4px 0 var(--ink); max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+.prompt kbd { font: 700 11px var(--mono); background: #0003; border: 1px solid #fff6; border-radius: 4px; padding: 1px 5px; margin-left: 8px; vertical-align: 2px; }
+@keyframes bob { from { margin-top: 0; } to { margin-top: -6px; } }
+.map-mode .prompt, .map-mode .say { display: none; }
+.museum:has(.prompt:not([hidden])) .hint { opacity: 0; }
+
+.cam-controls { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px; z-index: 7; }
+.btn.icon { width: 40px; height: 36px; padding: 0; display: grid; place-items: center; }
+.btn.icon svg { width: 20px; height: 20px; }
+.map-banner { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 7; margin: 0; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 30px; padding: 7px 16px; font-weight: 700; font-size: 14px; box-shadow: 4px 4px 0 #0007; white-space: nowrap; }
+
+/* Bird's-eye labels */
+.map-labels { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
+.map-labels > * { position: absolute; left: 0; top: 0; pointer-events: none; }
+.map-mode .map-labels > * { pointer-events: auto; }
+.map-room { display: grid; gap: 1px; text-align: center; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-bottom: 5px solid var(--wc); border-radius: 8px; padding: 6px 12px; cursor: pointer; box-shadow: 4px 4px 0 #0008; font-family: inherit; }
+.map-room b { font: 800 16px/1.1 var(--serif); white-space: nowrap; }
+.map-room small { font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-2); }
+.map-pin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--ink); background: var(--wc); cursor: pointer; padding: 0; box-shadow: 0 2px 8px #0009; }
+.map-pin.got { background: var(--wc) radial-gradient(circle, #fff 0 3px, transparent 4px); }
+.map-pin.map-pin-place { border-radius: 5px; background: #e8b53a; }
+.map-pin span { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; white-space: nowrap; opacity: 0; transition: opacity .15s; pointer-events: none; }
+.map-pin:hover span, .map-pin:focus-visible span { opacity: 1; }
+
+.map-you { font: 700 11px var(--mono); text-transform: uppercase; background: var(--brick); color: #fff; padding: 2px 7px; border-radius: 10px; border: 2px solid #fff; box-shadow: 0 0 0 4px #c4472d55; animation: youPulse 1.2s ease-in-out infinite alternate; pointer-events: none !important; }
+@keyframes youPulse { to { box-shadow: 0 0 0 9px #c4472d22; } }
+
+/* Timeline + journal dialogs */
+.small-sheet { width: min(720px, calc(100vw - 24px)); }
+.timeline-list { list-style: none; margin: 0; padding: 4px 24px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.timeline-list button { display: flex; gap: 10px; align-items: baseline; width: 100%; text-align: left; background: #fff; border: 2px solid #e1d8c5; border-left: 6px solid var(--wc); border-radius: 6px; padding: 8px 10px; cursor: pointer; color: var(--ink); font-family: inherit; }
+.timeline-list button:hover { border-color: var(--ink); border-left-color: var(--wc); }
+.timeline-list .yr { font: 700 13px var(--mono); color: var(--ink-2); min-width: 38px; }
+.timeline-list .nm { font-weight: 700; font-size: 16px; }
+.timeline-list .wg { margin-left: auto; font: 600 10px var(--mono); text-transform: uppercase; color: var(--ink-2); }
+#journalDialog .journal-grid { padding: 4px 24px 8px; }
+#journalDialog .journal-badges { padding: 0 24px 22px; }
+
+@media (max-width: 760px) {
+  .timeline-list { grid-template-columns: 1fr; }
+  #journalDialog .journal-grid { grid-template-columns: repeat(3, 1fr); }
+  .map-banner { font-size: 12px; white-space: normal; width: calc(100% - 40px); text-align: center; }
+  .map-room b { font-size: 12px; }
+  .map-room small { display: none; }
+  .map-room { padding: 3px 7px; border-bottom-width: 4px; }
+  .map-pin { width: 18px; height: 18px; border-width: 2px; }
+  .cam-controls #mapBtn { font-size: 13px; }
+  .hint { bottom: 64px; }
+  .prompt { bottom: 64px; font-size: 15px; }
+  .prompt kbd { display: none; }
 }

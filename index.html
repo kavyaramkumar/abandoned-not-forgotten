@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=9" />
 </head>
 <body>
   <!-- Shared gradients used by every hardware drawing -->
@@ -91,17 +91,21 @@
     </header>
 
     <div class="stage" id="stage">
-      <div class="world" id="world">
-        <div id="rooms"></div>
-        <div class="robot-actor" id="robotActor"></div>
-        <div class="player" id="player"></div>
+      <canvas id="scene" aria-label="The museum in 3D. Click the floor to walk."></canvas>
+      <div class="overlay" id="overlay">
+        <div class="map-labels" id="mapLabels"></div>
         <div class="say" id="say" aria-live="polite"></div>
         <button class="prompt" id="prompt" hidden>Look closer</button>
       </div>
+      <div class="map-banner" id="mapBanner" hidden>Bird's-eye view · click a room or a machine to walk there</div>
+      <div class="cam-controls">
+        <button class="btn small icon" id="rotL" title="Turn the camera (Q)" aria-label="Turn camera left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn small icon" id="rotR" title="Turn the camera (E)" aria-label="Turn camera right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn small primary" id="mapBtn" aria-pressed="false" title="Bird's-eye map (M)">Bird's-eye map</button>
+      </div>
     </div>
 
-    <p class="rotate-tip">Tip: turn your phone sideways for a bigger view</p>
-    <p class="hint" id="hint">Click the floor to walk · <kbd>←</kbd> <kbd>→</kbd> keys work too · <kbd>Enter</kbd> to look closer</p>
+    <p class="hint" id="hint">Click the floor to walk · drag to turn the camera · <kbd>M</kbd> map · <kbd>Enter</kbd> look closer</p>
   </div>
 
   <!-- ============ Exhibit placard ============ -->
@@ -154,10 +158,35 @@
     </div>
   </dialog>
 
-  <script src="js/data.js"></script>
-  <script src="js/art.js"></script>
-  <script src="js/robot.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/app.js"></script>
+  <!-- ============ Lobby timeline ============ -->
+  <dialog id="timelineDialog" class="sheet small-sheet" aria-labelledby="tlTitle">
+    <header class="ex-head">
+      <p class="catalog">Lobby · how the story fits together</p>
+      <h2 id="tlTitle">Mission timeline</h2>
+      <p class="ex-meta">Each machine made the next one possible. Pick one and your character walks there.</p>
+      <button class="close" data-close aria-label="Close">×</button>
+    </header>
+    <ol class="timeline-list" id="timelineList"></ol>
+  </dialog>
+
+  <!-- ============ Field trip journal ============ -->
+  <dialog id="journalDialog" class="sheet small-sheet" aria-labelledby="jTitle">
+    <header class="ex-head">
+      <p class="catalog">Your field trip journal</p>
+      <h2 id="jTitle">Machines you met</h2>
+      <p class="ex-meta">Hear a machine's whole story to stamp it. Pick one to walk back to it.</p>
+      <button class="close" data-close aria-label="Close">×</button>
+    </header>
+    <div class="journal-grid" id="journalGrid"></div>
+    <div class="journal-badges" id="journalBadges"></div>
+  </dialog>
+
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/data.js?v=9"></script>
+  <script src="js/art.js?v=9"></script>
+  <script src="js/robot.js?v=9"></script>
+  <script src="js/models.js?v=9"></script>
+  <script src="js/ai.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>
