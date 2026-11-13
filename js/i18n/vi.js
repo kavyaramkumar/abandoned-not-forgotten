@@ -279,6 +279,9 @@ I18N.add("vi", {
   "chat.ask": "Hỏi",
   "chat.hi": "Xin chào! Mình là tấm biển của {name}. Bạn muốn biết điều gì?",
   "chat.now": "Bây giờ nó đang làm gì?",
+  "chat.sugBuilt": "Ai đã chế tạo nó?",
+  "chat.sugWhen": "Nó được phóng khi nào?",
+  "chat.sugLong": "Nó đã hoạt động bao lâu?",
   "chat.thinking": "Đang nghĩ...",
 
   /* ---------- robot bay ---------- */

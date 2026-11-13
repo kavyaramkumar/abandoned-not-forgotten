@@ -279,6 +279,9 @@ I18N.add("id", {
   "chat.ask": "Tanya",
   "chat.hi": "Halo! Aku papan keterangan untuk {name}. Kamu mau tahu apa?",
   "chat.now": "Sekarang dia sedang apa?",
+  "chat.sugBuilt": "Siapa yang membuatnya?",
+  "chat.sugWhen": "Kapan diluncurkan?",
+  "chat.sugLong": "Berapa lama ia bekerja?",
   "chat.thinking": "Sedang berpikir...",
 
   /* ---------- robot bay ---------- */

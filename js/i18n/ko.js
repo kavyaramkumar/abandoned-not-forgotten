@@ -279,6 +279,9 @@ I18N.add("ko", {
   "chat.ask": "물어보기",
   "chat.hi": "안녕! 나는 {name}의 안내판이야. 뭐가 궁금해?",
   "chat.now": "지금은 뭘 하고 있나요?",
+  "chat.sugBuilt": "누가 만들었어?",
+  "chat.sugWhen": "언제 발사됐어?",
+  "chat.sugLong": "얼마나 오래 작동했어?",
   "chat.thinking": "생각 중...",
 
   /* ---------- robot bay ---------- */

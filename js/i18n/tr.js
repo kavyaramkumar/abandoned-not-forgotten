@@ -279,6 +279,9 @@ I18N.add("tr", {
   "chat.ask": "Sor",
   "chat.hi": "Merhaba! Ben {name} tabelasıyım. Ne öğrenmek istersin?",
   "chat.now": "Şimdi ne yapıyor?",
+  "chat.sugBuilt": "Onu kim yaptı?",
+  "chat.sugWhen": "Ne zaman fırlatıldı?",
+  "chat.sugLong": "Ne kadar süre çalıştı?",
   "chat.thinking": "Düşünüyorum…",
 
   /* ---------- robot bay ---------- */

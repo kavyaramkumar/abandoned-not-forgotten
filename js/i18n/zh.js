@@ -279,6 +279,9 @@ I18N.add("zh", {
   "chat.ask": "提问",
   "chat.hi": "你好！我是{name}的展牌。你想知道什么？",
   "chat.now": "它现在在做什么？",
+  "chat.sugBuilt": "是谁制造的？",
+  "chat.sugWhen": "它什么时候发射的？",
+  "chat.sugLong": "它工作了多久？",
   "chat.thinking": "想一想……",
 
   /* ---------- robot bay ---------- */

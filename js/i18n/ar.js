@@ -279,6 +279,9 @@ I18N.add("ar", {
   "chat.ask": "اسأل",
   "chat.hi": "مرحبًا! أنا لوحة {name}. ماذا تريد أن تعرف؟",
   "chat.now": "ماذا تفعل الآن؟",
+  "chat.sugBuilt": "من صنعه؟",
+  "chat.sugWhen": "متى أُطلق؟",
+  "chat.sugLong": "كم من الوقت عمل؟",
   "chat.thinking": "أفكّر…",
 
   /* ---------- robot bay ---------- */

@@ -279,6 +279,9 @@ I18N.add("fr", {
   "chat.ask": "Demander",
   "chat.hi": "Salut ! Je suis le panneau de {name}. Qu'est-ce que tu veux savoir ?",
   "chat.now": "Que fait-elle en ce moment ?",
+  "chat.sugBuilt": "Qui l'a construit ?",
+  "chat.sugWhen": "Quand a-t-il décollé ?",
+  "chat.sugLong": "Combien de temps a-t-il fonctionné ?",
   "chat.thinking": "Je réfléchis…",
 
   /* ---------- robot bay ---------- */

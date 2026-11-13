@@ -279,6 +279,9 @@ I18N.add("sw", {
   "chat.ask": "Uliza",
   "chat.hi": "Habari! Mimi ni ubao wa {name}. Unataka kujua nini?",
   "chat.now": "Inafanya nini sasa hivi?",
+  "chat.sugBuilt": "Nani aliitengeneza?",
+  "chat.sugWhen": "Ilirushwa lini?",
+  "chat.sugLong": "Ilifanya kazi kwa muda gani?",
   "chat.thinking": "Ninafikiri…",
 
   /* ---------- robot bay ---------- */

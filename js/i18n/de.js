@@ -279,6 +279,9 @@ I18N.add("de", {
   "chat.ask": "Fragen",
   "chat.hi": "Hallo! Ich bin die Tafel von {name}. Was möchtest du wissen?",
   "chat.now": "Was macht sie gerade?",
+  "chat.sugBuilt": "Wer hat es gebaut?",
+  "chat.sugWhen": "Wann ist es gestartet?",
+  "chat.sugLong": "Wie lange hat es funktioniert?",
   "chat.thinking": "Ich denke nach…",
 
   /* ---------- robot bay ---------- */

@@ -16,8 +16,32 @@ window.CONFIG = window.CONFIG || {
 };
 
 window.ExhibitGuide = (function () {
+  // the questions students ask most, matched to the quick facts in js/facts.js
+  const INTENTS = [
+    ["builtBy", /\b(who|which company|built|build|made|make|maker|designed|design|engineers?|created?|invent)/],
+    ["lasted", /\b(how long|last(ed|s)?|work(ed)? for|still work|lifetime|how many (years|days)|stop(ped)? working|die|died|end(ed)?)\b/],
+    ["launched", /\b(when|launch(ed)?|land(ed)?|year|date|arriv(e|ed))\b/],
+    ["mass", /\b(heavy|weigh(s|t)?|mass|kilo(gram)?s?|pounds?)\b/],
+    ["size", /\b(how big|big|size|tall|how long is|wide|large|small|tiny)\b/],
+    ["power", /\b(powers?|powered|energy|batter(y|ies)|solar|nuclear|electric(ity)?|fuel|charge)\b/],
+    ["speed", /\b(fast|speed|quick|drive|drove|how far|distance|travel)\b/],
+  ];
+  function factAnswer(exhibit, q) {
+    const f = (window.FACTS || {})[exhibit.id];
+    if (!f) return null;
+    for (const [key, re] of INTENTS) {
+      if (!re.test(q)) continue;
+      if (f[key]) return f[key] + (key === "builtBy" && f.special ? " " + f.special : "");
+      if (key === "size" && f.mass) return f.mass;
+      if (key === "mass" && f.size) return f.size;
+    }
+    return null;
+  }
+
   function offlineAnswer(exhibit, question) {
     const q = question.toLowerCase();
+    const fact = factAnswer(exhibit, q);
+    if (fact) return fact;
     let best = null;
     let bestScore = 0;
     for (const item of exhibit.faq || []) {
@@ -44,7 +68,9 @@ window.ExhibitGuide = (function () {
       return "Still out there: " + exhibit.leftBehind.join("; ") + ".";
     if (/(learn|discover|find|why)/.test(q)) return exhibit.discovery;
 
-    return `Great question! My offline notes don't cover that one yet. Here's my favorite fact: ${exhibit.discovery} (Ask a grown-up or a museum guide to help you look it up on nasa.gov!)`;
+    const f = (window.FACTS || {})[exhibit.id];
+    const can = f ? "who built it, when it launched, how long it worked, how big it was, or what powered it" : "what it found or what it left behind";
+    return `I don't have that one in my notes yet. You can ask me ${can}. Here's my favorite fact: ${exhibit.discovery}`;
   }
 
   async function ask(exhibit, question, history) {

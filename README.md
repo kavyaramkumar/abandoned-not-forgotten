@@ -213,3 +213,7 @@ The gear button (welcome screen and top bar) opens a settings panel. Everything 
 - The **NASA insignia** appears only where it belongs on real hardware: the spacesuit and the rocket (in the welcome scene and the launch movie). NASA's insignia normally needs NASA's permission to use; to swap it for our team patch everywhere, set `SHOW_NASA = false` in `js/art.js`.
 - The **team patch** (Reach for the Stars) is the browser-tab icon.
 - The welcome screen credits NASA for the photos and mission facts.
+
+## Quick facts for the offline chat
+
+`js/facts.js` gives every machine short answers to the questions students ask most: who built it, when it launched and landed, how long it worked, how big and heavy it is, what powered it, and how fast it went. The offline guide (`js/ai.js`) recognizes those questions, and the chat offers "Who built it?", "When did it launch?", and "How long did it work?" as buttons. These facts are drafts written from NASA mission history and should be checked against NASA's official data.

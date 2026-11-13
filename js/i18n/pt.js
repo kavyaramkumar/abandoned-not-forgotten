@@ -279,6 +279,9 @@ I18N.add("pt", {
   "chat.ask": "Perguntar",
   "chat.hi": "Oi! Eu sou a placa de {name}. O que você quer saber?",
   "chat.now": "O que ela está fazendo agora?",
+  "chat.sugBuilt": "Quem o construiu?",
+  "chat.sugWhen": "Quando foi lançado?",
+  "chat.sugLong": "Por quanto tempo funcionou?",
   "chat.thinking": "Pensando…",
 
   /* ---------- robot bay ---------- */

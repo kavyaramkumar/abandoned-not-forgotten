@@ -2299,7 +2299,7 @@
     if (chatEx) {
       $("#chatTitle").textContent = t("chat.title", { name: chatEx.name });
       addMsg("bot", t("chat.hi", { name: chatEx.name }));
-      prompts = [t("chat.now"), ...(chatEx.faq || []).slice(0, 3).map((f) => `Tell me about the ${f.keys[0]}`)];
+      prompts = [t("chat.sugBuilt"), t("chat.sugWhen"), t("chat.sugLong"), t("chat.now")];
     } else {
       $("#chatTitle").textContent = t("chat.fab", { robot: S.robotName });
       addMsg("bot", t("chat.hiMuseum", { robot: S.robotName }));
@@ -2351,7 +2351,9 @@
     addMsg("me", q);
     const wait = addMsg("bot wait", t("chat.thinking"));
     let res;
-    if (chatEx) res = await ExhibitGuide.ask(chatEx, q, chatHistory);
+    // suggestion buttons are in the player's language; the offline notes are English
+    const canon = { [t("chat.sugBuilt")]: "Who built it?", [t("chat.sugWhen")]: "When did it launch?", [t("chat.sugLong")]: "How long did it last?", [t("chat.now")]: "What is it doing now?" }[q];
+    if (chatEx) res = await ExhibitGuide.ask(chatEx, canon || q, chatHistory);
     else if (window.CONFIG.askEndpoint) res = await ExhibitGuide.ask(MUSEUM_GUIDE(), q, chatHistory);
     else {
       const m = museumAnswer(q);

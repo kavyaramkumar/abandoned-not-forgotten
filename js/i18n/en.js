@@ -284,6 +284,9 @@ I18N.add("en", {
   "chat.ask": "Ask",
   "chat.hi": "Hi! I'm the placard for {name}. What do you want to know?",
   "chat.now": "What is it doing now?",
+  "chat.sugBuilt": "Who built it?",
+  "chat.sugWhen": "When did it launch?",
+  "chat.sugLong": "How long did it work?",
   "chat.thinking": "Thinking…",
 
   /* ---------- robot bay ---------- */

@@ -279,6 +279,9 @@ I18N.add("ja", {
   "chat.ask": "聞く",
   "chat.hi": "こんにちは！わたしは{name}のプレートだよ。何が知りたい？",
   "chat.now": "今は何をしているの？",
+  "chat.sugBuilt": "だれが作ったの？",
+  "chat.sugWhen": "いつ打ち上げられたの？",
+  "chat.sugLong": "どれくらい動いていたの？",
   "chat.thinking": "考え中……",
 
   /* ---------- robot bay ---------- */
