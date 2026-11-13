@@ -76,6 +76,26 @@ window.Models = (function () {
     const hairCap = new T.Mesh(new T.SphereGeometry(0.265, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
     hairCap.rotation.x = -0.45;
     head.add(hairCap);
+    if (look.char === "girl") {
+      // long hair down the back, a ponytail and a bow
+      const back = new T.Mesh(new T.CapsuleGeometry(0.2, 0.22, 4, 12), hair);
+      back.scale.set(1.15, 1, 0.55);
+      back.position.set(0, -0.12, -0.12);
+      head.add(back);
+      const tail = new T.Mesh(new T.CapsuleGeometry(0.08, 0.3, 4, 10), hair);
+      tail.position.set(0, 0.02, -0.33);
+      tail.rotation.x = 0.5;
+      head.add(tail);
+      const bow = new T.Group();
+      bow.position.set(0, 0.17, -0.25);
+      [-1, 1].forEach((k) => {
+        const lobe = new T.Mesh(new T.ConeGeometry(0.07, 0.12, 8), std("#ff6bd0"));
+        lobe.rotation.z = (k * Math.PI) / 2;
+        lobe.position.x = k * 0.06;
+        bow.add(lobe);
+      });
+      head.add(bow);
+    }
     [-0.09, 0.09].forEach((x) => {
       const eye = new T.Mesh(new T.SphereGeometry(0.03, 8, 6), std("#1f1a17"));
       eye.position.set(x, 0.0, 0.23);

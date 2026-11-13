@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Silent Explorers Museum</title>
-  <meta name="description" content="Walk through a space museum and meet the NASA machines left on the Moon, on Mars and in deep space. Team Reach for the Stars, NASA Space Apps 2026." />
+  <meta name="description" content="A space museum whose doors rearrange every visit. Meet the NASA machines left on the Moon, on Mars and in deep space. Team Reach for the Stars, NASA Space Apps 2026." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=9" />
+  <link rel="stylesheet" href="css/styles.css?v=15" />
 </head>
 <body>
   <!-- Shared gradients used by every hardware drawing -->
@@ -45,7 +45,7 @@
     <div class="intro-card" id="introCard">
       <p class="kicker">Field trip day</p>
       <h1>Abandoned, but not forgotten</h1>
-      <p>NASA has left robots, rovers and landers all over the solar system. Today your class is visiting the museum where their stories are told. Walk through the wings and meet the machines.</p>
+      <p>NASA has left robots, rovers and landers all over the solar system. Today your class visits the museum where their stories live. But this museum has a secret: <b>its doors never lead to the same place twice.</b></p>
 
       <form id="introForm" class="intro-form">
         <div class="field-row">
@@ -56,6 +56,13 @@
             <input id="robotName" maxlength="14" value="Echo" autocomplete="off" />
           </label>
         </div>
+        <fieldset class="pick">
+          <legend>Choose your explorer</legend>
+          <div class="char-pick" id="charPick">
+            <button type="button" data-char="boy" aria-pressed="true"><span class="cp-art"></span><span>Boy</span></button>
+            <button type="button" data-char="girl" aria-pressed="false"><span class="cp-art"></span><span>Girl</span></button>
+          </div>
+        </fieldset>
         <div class="looks">
           <fieldset>
             <legend>Skin</legend>
@@ -65,10 +72,18 @@
             <legend>Shirt</legend>
             <div class="swatches" data-look="shirt"></div>
           </fieldset>
-          <div class="look-preview" id="lookPreview"></div>
         </div>
+        <fieldset class="pick">
+          <legend>How twisty should the museum be?</legend>
+          <div class="level-pick" id="levelPick">
+            <button type="button" data-level="easy" aria-pressed="false"><b>Easy</b><span>Fewer doors. Your robot's scanner always points the way.</span></button>
+            <button type="button" data-level="medium" aria-pressed="true"><b>Medium</b><span>More doors, a one-way airlock, a secret room. 3 scans.</span></button>
+            <button type="button" data-level="hard" aria-pressed="false"><b>Hard</b><span>Tangled paths, dead ends, secret rooms. No scanner.</span></button>
+          </div>
+        </fieldset>
         <div class="intro-actions">
-          <button class="btn primary" type="submit" id="startBtn">Start the field trip</button>
+          <button class="btn primary" type="submit" id="startBtn">Start a new adventure</button>
+          <button class="btn" type="button" id="continueBtn" hidden>Continue my adventure</button>
         </div>
       </form>
     </div>
@@ -80,32 +95,34 @@
     <header class="hud">
       <div class="ticket">
         <span class="ticket-title">Silent Explorers Museum</span>
-        <span class="ticket-sub">Field trip pass · <b id="hudName">Explorer</b></span>
+        <span class="ticket-sub"><b id="hudName">Explorer</b> · <span id="hudLevel">Medium</span> · layout <span id="hudSeed">0000</span></span>
       </div>
-      <nav class="minimap" id="minimap" aria-label="Museum map: click a wing to walk there"></nav>
+      <div class="pieces" id="pieces" title="Signal pieces"></div>
+      <span class="counter doors-count" id="doorsCount" title="Doors opened"></span>
       <div class="hud-right">
+        <button class="btn small" id="scanBtn" hidden>Scan</button>
         <span class="counter" title="Stars"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5l2.6 5.6 6 .7-4.5 4.1 1.2 6L10 15l-5.3 2.9 1.2-6L1.4 7.8l6-.7z" fill="#e8b53a"/></svg><b id="starCount">0</b><span class="sr-only"> stars</span></span>
-        <span class="counter" title="Exhibit stamps"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="#c4472d" stroke-width="2" stroke-dasharray="3 2"/><circle cx="10" cy="10" r="4" fill="#c4472d"/></svg><b id="stampCount">0/10</b><span class="sr-only"> stamps</span></span>
+        <button class="btn small" id="journalBtn">Journal</button>
         <button class="btn small" id="workshopBtn">Robot Bay</button>
       </div>
     </header>
 
     <div class="stage" id="stage">
-      <canvas id="scene" aria-label="The museum in 3D. Click the floor to walk."></canvas>
+      <canvas id="scene" aria-label="A room in the museum, in 3D. Click the floor to walk, click a door to open it."></canvas>
       <div class="overlay" id="overlay">
-        <div class="map-labels" id="mapLabels"></div>
         <div class="say" id="say" aria-live="polite"></div>
         <button class="prompt" id="prompt" hidden>Look closer</button>
       </div>
-      <div class="map-banner" id="mapBanner" hidden>Bird's-eye view · click a room or a machine to walk there</div>
+      <div class="room-banner" id="roomBanner" aria-live="polite"><span class="rb-kind" id="rbKind"></span><b id="rbName"></b></div>
+      <div class="note-panel" id="notePanel" hidden></div>
       <div class="cam-controls">
         <button class="btn small icon" id="rotL" title="Turn the camera (Q)" aria-label="Turn camera left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <button class="btn small icon" id="rotR" title="Turn the camera (E)" aria-label="Turn camera right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="btn small primary" id="mapBtn" aria-pressed="false" title="Bird's-eye map (M)">Bird's-eye map</button>
       </div>
+      <div class="fade" id="fade" aria-hidden="true"><span id="fadeSym"></span></div>
     </div>
 
-    <p class="hint" id="hint">Click the floor to walk · drag to turn the camera · <kbd>M</kbd> map · <kbd>Enter</kbd> look closer</p>
+    <p class="hint" id="hint">Click the floor to walk · click a door to open it · drag to turn the camera · <kbd>Enter</kbd> to open or look closer</p>
   </div>
 
   <!-- ============ Exhibit placard ============ -->
@@ -158,35 +175,56 @@
     </div>
   </dialog>
 
-  <!-- ============ Lobby timeline ============ -->
-  <dialog id="timelineDialog" class="sheet small-sheet" aria-labelledby="tlTitle">
+  <!-- ============ Story card ============ -->
+  <dialog id="storyDialog" class="sheet small-sheet story-sheet" aria-labelledby="storyTitle">
     <header class="ex-head">
-      <p class="catalog">Lobby · how the story fits together</p>
-      <h2 id="tlTitle">Mission timeline</h2>
-      <p class="ex-meta">Each machine made the next one possible. Pick one and your character walks there.</p>
+      <p class="catalog" id="storyKicker">The mystery begins</p>
+      <h2 id="storyTitle">Lights out!</h2>
+    </header>
+    <div class="story-body" id="storyBody"></div>
+    <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close>Let's go!</button></footer>
+  </dialog>
+
+  <!-- ============ Riddle lock ============ -->
+  <dialog id="riddleDialog" class="sheet small-sheet" aria-labelledby="riddleTitle">
+    <header class="ex-head">
+      <p class="catalog">This door has a riddle lock</p>
+      <h2 id="riddleTitle">Which machine am I?</h2>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
-    <ol class="timeline-list" id="timelineList"></ol>
+    <blockquote class="voice riddle-q" id="riddleQ"></blockquote>
+    <div class="riddle-opts" id="riddleOpts"></div>
+    <p class="fb riddle-fb" id="riddleFb" aria-live="polite"></p>
   </dialog>
 
   <!-- ============ Field trip journal ============ -->
   <dialog id="journalDialog" class="sheet small-sheet" aria-labelledby="jTitle">
     <header class="ex-head">
-      <p class="catalog">Your field trip journal</p>
-      <h2 id="jTitle">Machines you met</h2>
-      <p class="ex-meta">Hear a machine's whole story to stamp it. Pick one to walk back to it.</p>
+      <p class="catalog">Your field trip journal · every adventure</p>
+      <h2 id="jTitle">Machines you've met</h2>
+      <p class="ex-meta" id="jMeta">Every adventure puts different machines behind the doors. Some treasures only show up in secret rooms.</p>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
     <div class="journal-grid" id="journalGrid"></div>
-    <div class="journal-badges" id="journalBadges"></div>
+  </dialog>
+
+  <!-- ============ Mission Control finale ============ -->
+  <dialog id="finaleDialog" class="sheet finale-sheet" aria-labelledby="finTitle">
+    <header class="ex-head">
+      <p class="catalog">Mission Control</p>
+      <h2 id="finTitle">Flight plan check</h2>
+    </header>
+    <div class="finale-body" id="finaleBody"></div>
+    <footer class="ex-foot" id="finaleFoot"></footer>
   </dialog>
 
   <script src="js/vendor/three.min.js"></script>
-  <script src="js/data.js?v=9"></script>
-  <script src="js/art.js?v=9"></script>
-  <script src="js/robot.js?v=9"></script>
-  <script src="js/models.js?v=9"></script>
-  <script src="js/ai.js?v=9"></script>
-  <script src="js/app.js?v=9"></script>
+  <script src="js/data.js?v=15"></script>
+  <script src="js/art.js?v=15"></script>
+  <script src="js/robot.js?v=15"></script>
+  <script src="js/models.js?v=15"></script>
+  <script src="js/maze.js?v=15"></script>
+  <script src="js/ai.js?v=15"></script>
+  <script src="js/app.js?v=15"></script>
 </body>
 </html>

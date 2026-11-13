@@ -11,6 +11,7 @@
  *
  * Exhibit shape:
  *   id, name, kind, place, year, status ("silent" | "parked" | "still talking"),
+ *   riddle: a one-line "Which machine am I?" clue used by riddle-locked doors,
  *   art (hardware drawing key in js/art.js), backdrop (diorama scene key),
  *   next: how this machine led to the missions that came after (the bigger NASA story)
  *   story: [ "page 1", "page 2", ... ]   (told by the machine, first person)
@@ -38,7 +39,27 @@ window.MUSEUM = {
         "Footprints, rovers and a mirror that still bounces lasers. Everything in this wing is still sitting on the Moon right now.",
       exhibits: [
         {
+          id: "ranger-7",
+          riddle: "In 1964 I took thousands of close-up pictures of the Moon, right up until I crashed into it on purpose.",
+          art: "ranger",
+          backdrop: "moon-earth",
+          next: "Ranger 8 and Ranger 9 followed in 1965. Then the Surveyor landers touched down gently, and Apollo astronauts came after them.",
+          name: "Ranger 7",
+          kind: "Impact probe",
+          place: "Sea of Clouds, Moon",
+          year: 1964,
+          status: "silent",
+          story: ["Before anyone could land on the Moon, people needed to know what the ground looks like up close. That was my job. I launched on July 28, 1964.", "I had no legs and no brakes. I was built to fly straight at the Moon and take pictures the whole way down. In my last 17 minutes, my six TV cameras sent back more than 4,000 pictures.", "My final pictures showed craters only about a meter across, far smaller than any telescope on Earth could see. Then I crashed, just as planned. The area was renamed Mare Cognitum: the Sea That Has Become Known."],
+          leftBehind: ["What's left of Ranger 7, scattered around its crash site", "A new name on the map: Mare Cognitum, the Sea That Has Become Known"],
+          discovery: "Ranger 7's pictures showed that the Moon is covered in craters of every size, even tiny ones. Knowing what the ground looked like up close helped NASA plan how and where to land.",
+          quiz: {"q": "How did Ranger 7 end its mission?", "options": ["It landed softly on legs", "It crashed into the Moon on purpose while taking pictures", "It flew back home to Earth"], "answer": 1, "explain": "Right! It was built to crash, sending pictures all the way down."},
+          faq: [{"keys": ["pictures", "photos", "camera", "cameras"], "a": "Ranger 7 had six TV cameras. It sent more than 4,000 pictures in its last 17 minutes before impact."}, {"keys": ["name", "cognitum", "sea", "clouds"], "a": "Ranger 7 crashed in a part of the Sea of Clouds that was later named Mare Cognitum, which means 'the Sea That Has Become Known'."}],
+          sources: [],
+          verified: false,
+        },
+        {
           id: "surveyor-3",
+          riddle: "I landed on the Moon in 1967. Two years later, Apollo 12 astronauts walked over and took pieces of me home.",
           art: "surveyor",
           backdrop: "moon-earth",
           next: "Surveyor 3 and its robot sisters showed the Moon's ground was safe to land on, so astronauts could follow. Two and a half years later, they did!",
@@ -88,6 +109,7 @@ window.MUSEUM = {
         },
         {
           id: "apollo-11",
+          riddle: "Two astronauts rode me down to the Moon in 1969, and I stayed behind as their launch pad.",
           art: "eagle",
           backdrop: "moon-earth",
           next: "Five more Apollo crews landed after Eagle. The last, Apollo 17, left the Moon in December 1972. Now NASA's Artemis program plans to send astronauts back.",
@@ -144,6 +166,7 @@ window.MUSEUM = {
         },
         {
           id: "lrv",
+          riddle: "Astronauts drove me across the Moon on Apollo 15, 16 and 17.",
           art: "lrv",
           backdrop: "moon-earth",
           next: 'New Moon rovers are being designed for the Artemis astronauts who will return to the Moon.',
@@ -207,6 +230,7 @@ window.MUSEUM = {
       exhibits: [
         {
           id: "viking-1",
+          riddle: "In 1976 I became the first NASA lander to touch down safely on Mars and send back pictures.",
           art: "viking",
           backdrop: "mars",
           next: "Viking's search for life raised questions that Mars missions are still working on, like the Perseverance rover, which is collecting rock samples today.",
@@ -253,6 +277,7 @@ window.MUSEUM = {
         },
         {
           id: "sojourner",
+          riddle: "I was the first wheeled rover on Mars, and I was about the size of a microwave oven.",
           art: "sojourner",
           backdrop: "mars",
           next: 'Sojourner proved rovers could work on Mars. In 2004, two much bigger rovers followed: Spirit and Opportunity.',
@@ -301,6 +326,7 @@ window.MUSEUM = {
         },
         {
           id: "opportunity",
+          riddle: "I was supposed to work for 90 Martian days, but I kept roving for almost 15 years.",
           art: "opportunity",
           backdrop: "mars",
           next: "Bigger rovers followed in Oppy's tracks: Curiosity landed in 2012 and Perseverance in 2021.",
@@ -347,6 +373,7 @@ window.MUSEUM = {
         },
         {
           id: "ingenuity",
+          riddle: "I made the first powered, controlled flight on another planet.",
           art: "ingenuity",
           backdrop: "mars",
           next: 'Ingenuity proved flying on Mars works. Engineers are now studying ideas for bigger Mars helicopters that could carry science tools.',
@@ -386,6 +413,63 @@ window.MUSEUM = {
           sources: [],
           verified: false,
         },
+        {
+          id: "spirit",
+          riddle: "My twin was Opportunity. I got stuck in soft sand, but my broken wheel dug up a big clue about water.",
+          art: "opportunity",
+          backdrop: "mars",
+          next: "Spirit and Opportunity proved that rovers could last for years. NASA's next rovers, Curiosity and Perseverance, are much bigger and carry whole science labs.",
+          name: "Spirit",
+          kind: "Rover",
+          place: "Gusev Crater, Mars",
+          year: 2004,
+          status: "silent",
+          story: ["I'm Spirit, Opportunity's twin. I bounced down onto Mars inside giant airbags on January 4, 2004. Three weeks later, my twin landed on the other side of the planet.", "My mission was planned to last 90 Martian days. I kept going for more than six years, even after one of my front wheels stopped turning in 2006. I just drove backwards and dragged it along.", "That dragging wheel scraped up bright white soil that turned out to be almost pure silica. On Earth, soil like that forms around hot springs and steam vents. In 2009 I got stuck in soft sand, and my last message came in March 2010."],
+          leftBehind: ["Spirit, stuck for good at a spot called Troy", "Its landing platform, named Columbia Memorial Station", "Its parachute and back shell"],
+          discovery: "The silica Spirit dug up, along with rocks it studied later, showed that Gusev Crater once had hot water. Places with hot water and rock are the kind of places where tiny life could have lived.",
+          quiz: {"q": "What did Spirit's broken, dragging wheel do?", "options": ["It stopped Spirit from ever moving again", "It scraped up soil that showed Mars once had hot water", "It fell off and rolled away"], "answer": 1, "explain": "Yes! Its bad wheel became a digging tool and uncovered the silica."},
+          faq: [{"keys": ["twin", "opportunity"], "a": "Spirit and Opportunity were twin rovers with the same design. They landed three weeks apart on opposite sides of Mars in January 2004."}, {"keys": ["stuck", "sand", "troy"], "a": "In 2009 Spirit's wheels sank into soft sand at a place called Troy. The team tried for months to free it, then used it as a parked science station until it went silent in 2010."}],
+          sources: [],
+          verified: false,
+        },
+        {
+          id: "phoenix",
+          riddle: "I landed near the north pole of Mars and dug up ice hiding just under the dirt.",
+          art: "phoenix",
+          backdrop: "mars-north",
+          next: "Phoenix showed where ice hides on Mars. Future human explorers might one day use ice like that for drinking water and to make rocket fuel.",
+          name: "Phoenix Mars Lander",
+          kind: "Polar lander",
+          place: "Near the north pole of Mars",
+          year: 2008,
+          status: "silent",
+          story: ["I landed near the north pole of Mars on May 25, 2008. The ground there is cracked into polygon shapes, like a giant honeycomb, because of the ice underneath.", "I dug little trenches with my robotic arm and found bright white chunks. A few days later, some of the chunks had vanished into the thin air. That proved they were water ice!", "I also watched snow falling from Martian clouds, though it disappeared before it reached the ground. Then winter came. In the cold and dark my solar panels couldn't make enough power, and my last signal came in November 2008."],
+          leftBehind: ["The Phoenix lander, with a solar panel broken by the weight of winter ice", "The trenches it dug, with names like Dodo-Goldilocks"],
+          discovery: "Phoenix was the first spacecraft to touch water ice on Mars. It also found a salt called perchlorate in the soil, which future astronauts will need to be careful about.",
+          quiz: {"q": "How did Phoenix know the white chunks were water ice?", "options": ["They melted into a puddle", "They slowly vanished into the air over a few days", "They tasted salty"], "answer": 1, "explain": "Exactly! In Mars' thin air, the ice turned straight into vapor and disappeared."},
+          faq: [{"keys": ["ice", "water", "white"], "a": "Phoenix scraped away dirt and found white chunks just under the surface. Some vanished within a few days, which is what water ice does in Mars' thin, dry air."}, {"keys": ["snow", "cloud", "weather"], "a": "Phoenix's laser instrument spotted snow falling from clouds above it. The snow turned to vapor before it reached the ground."}],
+          sources: [],
+          verified: false,
+        },
+        {
+          id: "insight",
+          riddle: "I sat still on Mars and listened for marsquakes with a super-sensitive seismometer.",
+          art: "insight",
+          backdrop: "mars",
+          next: "Scientists are still studying InSight's quake recordings to learn how rocky planets like Earth and Mars formed.",
+          name: "InSight Lander",
+          kind: "Science lander",
+          place: "Elysium Planitia, Mars",
+          year: 2018,
+          status: "silent",
+          story: ["Most Mars explorers study rocks. I wanted to listen to the inside of the planet. I landed on November 26, 2018, on a flat, smooth plain picked to keep me safe.", "My robotic arm set a super-sensitive seismometer on the ground. It felt more than 1,300 marsquakes, and even the shaking from space rocks crashing into Mars.", "My heat probe, nicknamed 'the mole', was supposed to dig 5 meters down, but the soil was too clumpy and it got stuck near the surface. Over four years, dust piled up on my solar panels until I ran out of power. My last message reached Earth in December 2022."],
+          leftBehind: ["The InSight lander and its two round solar panels", "Its seismometer, still under its dome-shaped shield", "The heat probe, poking just under the dirt"],
+          discovery: "By timing how marsquake waves traveled through the planet, scientists measured Mars' insides: its crust, its mantle, and a big core of liquid metal.",
+          quiz: {"q": "What was InSight listening for?", "options": ["Martian music", "Marsquakes", "Radio messages from aliens"], "answer": 1, "explain": "Right! Its seismometer felt more than 1,300 marsquakes."},
+          faq: [{"keys": ["mole", "heat", "dig", "probe"], "a": "The heat probe was supposed to hammer itself 5 meters into the ground to measure heat flowing out of Mars. The soil was too clumpy, so it could only get just below the surface."}, {"keys": ["quake", "marsquake", "seismometer", "shake"], "a": "InSight's seismometer was so sensitive it could feel tiny vibrations. It recorded more than 1,300 marsquakes."}],
+          sources: [],
+          verified: false,
+        },
       ],
     },
 
@@ -403,6 +487,7 @@ window.MUSEUM = {
       exhibits: [
         {
           id: "pioneer-10",
+          riddle: "I was the first spacecraft to fly past Jupiter, and I carry a plaque with a drawing of people.",
           art: "pioneer",
           backdrop: "jupiter",
           next: 'Pioneer 10 showed the way to the outer planets. Its twin Pioneer 11 followed, and then Voyager 1 and Voyager 2.',
@@ -447,6 +532,7 @@ window.MUSEUM = {
         },
         {
           id: "voyager-1",
+          riddle: "I'm the farthest machine people have ever built, and I carry a Golden Record of sounds from Earth.",
           art: "voyager",
           backdrop: "deep",
           next: 'Its twin, Voyager 2, reached interstellar space in 2018. The two Voyagers are the only spacecraft still sending messages from interstellar space.',
@@ -495,6 +581,7 @@ window.MUSEUM = {
         },
         {
           id: "new-horizons",
+          riddle: "I took the first close-up pictures of Pluto, including its giant heart-shaped plain.",
           art: "newhorizons",
           backdrop: "pluto",
           next: 'New Horizons is still flying through the Kuiper Belt, sending back science about the far edge of our solar system.',
@@ -537,7 +624,7 @@ window.MUSEUM = {
       ],
     },
 
-    // Placeholder wings: shown as sealed doors so judges see where the story grows.
+    // Placeholder wings for future machines (not used in the maze yet).
     {
       id: "venus",
       name: "Venus & Mercury Wing",
@@ -555,6 +642,130 @@ window.MUSEUM = {
       exhibits: [],
     },
   ],
+
+  /*
+   * HIDDEN TREASURES: small things astronauts left behind. They only appear in
+   * secret rooms, so each playthrough may reveal different ones.
+   */
+  treasures: [
+    {
+      "id": "golf-balls",
+      "treasure": true,
+      "art": "golf",
+      "backdrop": "moon-earth",
+      "name": "Apollo 14 golf balls",
+      "kind": "Hidden treasure",
+      "place": "Fra Mauro, Moon",
+      "year": 1971,
+      "status": "parked",
+      "story": [
+        "On February 6, 1971, astronaut Alan Shepard had a surprise. He had snuck the head of a golf club onto Apollo 14 and clipped it onto a tool handle meant for scooping up moon dust.",
+        "In his stiff spacesuit he could only swing with one hand. He joked that the second ball flew 'miles and miles'. Experts who studied the video in 2021 think it went about 40 yards. Both balls are still up there!"
+      ],
+      "leftBehind": [
+        "Two golf balls near the Apollo 14 landing site"
+      ]
+    },
+    {
+      "id": "family-photo",
+      "treasure": true,
+      "art": "photo",
+      "backdrop": "moon-earth",
+      "name": "Charlie Duke's family photo",
+      "kind": "Hidden treasure",
+      "place": "Descartes Highlands, Moon",
+      "year": 1972,
+      "status": "parked",
+      "story": [
+        "In April 1972, Apollo 16 astronaut Charlie Duke carried a photo of his wife and two sons all the way to the Moon.",
+        "He left it lying on the ground. On the back, his family wrote that they were from Planet Earth and had landed on the Moon in April 1972. Years of strong sunlight have probably faded it white by now."
+      ],
+      "leftBehind": [
+        "A family photo, lying in the dust at the Apollo 16 site"
+      ]
+    },
+    {
+      "id": "goodwill-disc",
+      "treasure": true,
+      "art": "disc",
+      "backdrop": "moon-earth",
+      "name": "Apollo 11 goodwill disc",
+      "kind": "Hidden treasure",
+      "place": "Sea of Tranquility, Moon",
+      "year": 1969,
+      "status": "parked",
+      "story": [
+        "Apollo 11 left a small silicon disc, about the size of a large coin, at Tranquility Base. Its shiny surface holds messages from the leaders of 73 countries.",
+        "To make them fit, the messages were shrunk to 200 times smaller than normal writing. You'd need a microscope to read them!"
+      ],
+      "leftBehind": [
+        "A silicon disc with goodwill messages from 73 countries"
+      ]
+    }
+  ],
+
+  /* HALLS: connecting rooms. Each has a true space fact the robot reads aloud. */
+  halls: [
+    {
+      "name": "Hall of Launches",
+      "deco": "rocket",
+      "wall": "#34405a",
+      "fact": "The Saturn V rocket that carried Apollo astronauts stood about 110 meters tall. That's taller than the Statue of Liberty!"
+    },
+    {
+      "name": "Gallery of Orbits",
+      "deco": "planets",
+      "wall": "#2b2d4a",
+      "fact": "Sunlight takes about 8 minutes to reach Earth. A radio message to Voyager 1 takes almost a whole day."
+    },
+    {
+      "name": "Hall of Footprints",
+      "deco": "moon",
+      "wall": "#3b3f48",
+      "fact": "Twelve astronauts walked on the Moon, all between 1969 and 1972. With no wind up there, their bootprints could last for millions of years."
+    },
+    {
+      "name": "Red Dust Corridor",
+      "deco": "mars",
+      "wall": "#5a3428",
+      "fact": "A day on Mars, called a sol, lasts about 24 hours and 40 minutes. Mars is about half as wide as Earth."
+    },
+    {
+      "name": "Signal Room",
+      "deco": "dish",
+      "wall": "#24384a",
+      "fact": "NASA talks to faraway spacecraft through giant radio dishes in California, Spain and Australia. Together they're called the Deep Space Network."
+    },
+    {
+      "name": "Starlight Lounge",
+      "deco": "planets",
+      "wall": "#2f2a48",
+      "fact": "The Moon is about 384,000 km away. Driving there at highway speed would take around half a year."
+    },
+    {
+      "name": "Hall of Rovers",
+      "deco": "mars",
+      "wall": "#4a3a30",
+      "fact": "Every NASA Mars rover so far was named by a student who won an essay contest."
+    },
+    {
+      "name": "Clean Room",
+      "deco": "rocket",
+      "wall": "#3a4a52",
+      "fact": "Spacecraft are built in super-clean rooms. Engineers wear 'bunny suits' so they don't carry Earth germs to other worlds."
+    }
+  ],
+
+  /* THE ADVENTURE STORY */
+  adventure: {
+    pieceName: "signal piece",
+    intro: [
+      "Field trip day! Your class has just stepped into the Silent Explorers Museum when... BZZZT. The lights flicker, the floor rumbles, and every door in the building swaps places.",
+      "\"It happened again,\" beeps ROBOT. \"The museum rearranged itself! And the Homecoming Signal broke into PIECES pieces.\"",
+      "Every year the museum beams the Homecoming Signal into space, to remember the machines NASA left behind on the Moon, on Mars and beyond. Now each piece is hiding with one of those machines.",
+      "Find the machines, hear their stories, and carry every piece to Mission Control. But careful: you never know what's behind a door until you open it.",
+    ],
+  },
 
   /*
    * ROBOT WORKSHOP ITEMS

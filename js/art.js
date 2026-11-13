@@ -45,6 +45,13 @@ window.Art = (function () {
       <ellipse cx="60" cy="176" rx="14" ry="6" fill="#7d3a22"/>
       <ellipse cx="230" cy="168" rx="9" ry="4" fill="#7d3a22"/>
       <ellipse cx="150" cy="188" rx="18" ry="6" fill="#8a4127"/>`,
+    "mars-north": () => `
+      <rect width="300" height="200" fill="#d9b48e"/>
+      <circle cx="240" cy="40" r="8" fill="#f6ecd8" opacity=".85"/>
+      <path d="M0 118 Q90 106 170 116 T300 110 V200 H0z" fill="#c79a74"/>
+      <path d="M0 140 L300 140 V200 H0z" fill="#b98c66"/>
+      <path d="M10 150 l40 -6 l30 14 l-36 8z M90 148 l50 -4 l20 16 l-48 6z M170 152 l44 -6 l34 12 l-40 10z M30 176 l46 -4 l26 16 l-50 6z M130 178 l50 -6 l30 16 l-50 6z" fill="none" stroke="#9a6e4c" stroke-width="2"/>
+      <ellipse cx="200" cy="170" rx="10" ry="3" fill="#f4f8fb"/>`,
     jupiter: () => `
       <rect width="300" height="200" fill="#06070c"/>
       ${stars(70, 300, 200, 11)}
@@ -192,6 +199,68 @@ window.Art = (function () {
       <ellipse cx="105" cy="68" rx="52" ry="18" fill="#f2efe6" stroke="#3b3a36" stroke-width="2"/>
       <ellipse cx="105" cy="68" rx="32" ry="10" fill="none" stroke="#c9c4b4" stroke-width="1.5"/>
       <line x1="105" y1="68" x2="105" y2="44" stroke="#6b6658" stroke-width="1.2"/>` },
+
+    ranger: { vb: "0 0 200 190", svg: `
+      <polygon points="100,20 128,60 72,60" fill="#d6d2c4" stroke="#3b3a36" stroke-width="2"/>
+      <rect x="78" y="60" width="44" height="54" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <rect x="86" y="70" width="10" height="34" rx="2" fill="#3b3a36"/><rect x="104" y="70" width="10" height="34" rx="2" fill="#3b3a36"/>
+      <polygon points="66,114 134,114 146,134 54,134" fill="url(#gold)" stroke="#6b4e12" stroke-width="2"/>
+      <rect x="6" y="122" width="58" height="22" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5" transform="rotate(-8 35 133)"/>
+      <rect x="136" y="122" width="58" height="22" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5" transform="rotate(8 165 133)"/>
+      <line x1="100" y1="134" x2="100" y2="170" stroke="#3b3a36" stroke-width="3"/>
+      <ellipse cx="100" cy="176" rx="34" ry="9" fill="#f2efe6" stroke="#3b3a36" stroke-width="2"/>` },
+
+    insight: { vb: "0 0 240 160", svg: `
+      <polygon points="10,70 38,52 66,70 38,88" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+      <circle cx="38" cy="70" r="30" fill="url(#panel)" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M38 40v60M8 70h60M17 49l42 42M59 49l-42 42" stroke="#7fa0d8" stroke-width="1" opacity=".7"/>
+      <circle cx="202" cy="70" r="30" fill="url(#panel)" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M202 40v60M172 70h60M181 49l42 42M223 49l-42 42" stroke="#7fa0d8" stroke-width="1" opacity=".7"/>
+      <rect x="70" y="62" width="100" height="26" rx="4" fill="#f2efe6" stroke="#3b3a36" stroke-width="2"/>
+      <rect x="80" y="54" width="80" height="10" fill="url(#gold)" stroke="#6b4e12" stroke-width="1"/>
+      <line x1="90" y1="88" x2="78" y2="128" stroke="#3b3a36" stroke-width="2.5"/><line x1="150" y1="88" x2="162" y2="128" stroke="#3b3a36" stroke-width="2.5"/><line x1="120" y1="88" x2="120" y2="130" stroke="#3b3a36" stroke-width="2.5"/>
+      ${pad(78, 130)}${pad(162, 130)}${pad(120, 132)}
+      <path d="M150 62 L184 38 L206 58" fill="none" stroke="#3b3a36" stroke-width="3" stroke-linecap="round"/>
+      <path d="M184 150 a22 18 0 0 1 44 0z" fill="#f2efe6" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M190 150 a16 12 0 0 1 32 0" fill="none" stroke="#c9c4b4" stroke-width="1.5"/>` },
+
+    phoenix: { vb: "0 0 240 160", svg: `
+      <path d="M8 74 L38 44 L68 74 L38 100z" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+      <circle cx="38" cy="72" r="28" fill="url(#panel)" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M38 44v56M10 72h56M18 52l40 40M58 52l-40 40" stroke="#7fa0d8" stroke-width="1" opacity=".7"/>
+      <circle cx="202" cy="72" r="28" fill="url(#panel)" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M202 44v56M174 72h56M182 52l40 40M222 52l-40 40" stroke="#7fa0d8" stroke-width="1" opacity=".7"/>
+      <rect x="72" y="66" width="96" height="24" rx="4" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <rect x="110" y="40" width="8" height="26" fill="#4a4b50"/><rect x="104" y="30" width="20" height="12" rx="2" fill="#e7e2d4" stroke="#3b3a36" stroke-width="1.5"/>
+      <line x1="92" y1="90" x2="80" y2="128" stroke="#3b3a36" stroke-width="2.5"/><line x1="148" y1="90" x2="160" y2="128" stroke="#3b3a36" stroke-width="2.5"/><line x1="120" y1="90" x2="120" y2="130" stroke="#3b3a36" stroke-width="2.5"/>
+      ${pad(80, 130)}${pad(160, 130)}${pad(120, 132)}
+      <path d="M160 70 L196 104 L190 138" fill="none" stroke="#3b3a36" stroke-width="3" stroke-linecap="round"/>
+      <path d="M182 136 l10 8 l8 -6" fill="#d6d2c4" stroke="#3b3a36" stroke-width="1.5"/>
+      <rect x="196" y="140" width="30" height="8" rx="2" fill="#eef4f8" stroke="#9fb4c4" stroke-width="1"/>` },
+
+    golf: { vb: "0 0 200 140", svg: `
+      <line x1="40" y1="20" x2="120" y2="112" stroke="#8a8d93" stroke-width="5" stroke-linecap="round"/>
+      <path d="M114 104 l26 8 l-4 12 l-28 -8z" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <circle cx="160" cy="118" r="11" fill="#fbfbf7" stroke="#3b3a36" stroke-width="2"/>
+      <circle cx="184" cy="124" r="8" fill="#fbfbf7" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M155 114h2M161 112h2M158 120h2M164 118h2M181 122h2M186 125h2" stroke="#b9b6aa" stroke-width="1.5"/>` },
+
+    photo: { vb: "0 0 170 150", svg: `
+      <g transform="rotate(-8 85 80)">
+        <rect x="25" y="20" width="120" height="110" fill="#fbf8f0" stroke="#3b3a36" stroke-width="2"/>
+        <rect x="35" y="30" width="100" height="74" fill="#c9d6dc"/>
+        <circle cx="62" cy="58" r="9" fill="#6b4a38"/><rect x="53" y="67" width="18" height="30" rx="6" fill="#3f7fd9"/>
+        <circle cx="90" cy="60" r="8" fill="#8a5b3e"/><rect x="82" y="68" width="16" height="28" rx="6" fill="#e0533b"/>
+        <circle cx="112" cy="70" r="6" fill="#6b4a38"/><rect x="106" y="76" width="12" height="20" rx="5" fill="#2f9a62"/>
+        <circle cx="122" cy="74" r="5" fill="#8a5b3e"/><rect x="117" y="79" width="10" height="17" rx="4" fill="#e8b53a"/>
+        <path d="M40 116h60M40 122h40" stroke="#b9b6aa" stroke-width="2"/>
+      </g>` },
+
+    disc: { vb: "0 0 160 140", svg: `
+      <ellipse cx="80" cy="76" rx="58" ry="52" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <ellipse cx="80" cy="76" rx="46" ry="40" fill="none" stroke="#8a8d93" stroke-width="1.5"/>
+      <path d="M54 62h52M50 70h60M50 78h60M52 86h56M58 94h44" stroke="#6b6d73" stroke-width="2" stroke-dasharray="3 2"/>
+      <path d="M44 44 q20 -16 46 -12" stroke="#fff" stroke-width="4" fill="none" opacity=".7" stroke-linecap="round"/>` },
   };
 
   function hardware(key) {
@@ -205,6 +274,7 @@ window.Art = (function () {
     const skin = look.skin || "#c98d63";
     const shirt = look.shirt || "#2f6fb5";
     const hair = look.hair || "#2b1d14";
+    const girl = look.char === "girl";
     return `
 <svg class="kid" viewBox="0 0 60 128" aria-hidden="true">
   <ellipse cx="30" cy="125" rx="16" ry="3" fill="#000" opacity=".25"/>
@@ -218,7 +288,8 @@ window.Art = (function () {
   <g class="arm arm-f"><rect x="22" y="52" width="8" height="28" rx="4" fill="${skin}"/></g>
   <rect x="26" y="38" width="10" height="10" fill="${skin}"/>
   <circle cx="32" cy="26" r="15" fill="${skin}"/>
-  <path d="M17 24 Q18 8 33 9 Q48 10 47 24 Q40 16 30 18 Q22 19 17 24z" fill="${hair}"/>
+  ${girl ? `<path d="M15 26 Q12 46 20 52 L22 30z" fill="${hair}"/><circle cx="14" cy="30" r="8" fill="${hair}"/><circle cx="17" cy="22" r="3.5" fill="#ff6bd0"/>` : ""}
+  <path d="${girl ? "M16 26 Q16 7 33 8 Q49 9 48 26 Q42 15 30 17 Q21 18 16 26z" : "M17 24 Q18 8 33 9 Q48 10 47 24 Q40 16 30 18 Q22 19 17 24z"}" fill="${hair}"/>
   <circle cx="38" cy="27" r="2" fill="#1f1a17"/>
   <path d="M36 33 q3 2 6 0" stroke="#1f1a17" stroke-width="1.5" fill="none" stroke-linecap="round"/>
 </svg>`;
