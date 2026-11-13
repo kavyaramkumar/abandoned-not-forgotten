@@ -27,7 +27,7 @@ Since the 1960s, NASA has left hardware across the solar system: on the Moon, on
 - Focus on specific missions, or tell a broader NASA story?
 - Whose perspective(s) does the story highlight?
 
-## Our concept: The Silent Explorers Museum
+## Our concept: The Reach for the Stars Museum
 
 It's a field trip you play, and the museum has a secret: **its doors never lead to the same place twice.**
 
@@ -71,7 +71,7 @@ The story always keeps the same shape: the arrival and the mystery, exploring an
 | Riddle locks | names + hint | names | pictures only |
 | Gold route goal | none | about 2.4× the shortest | about 2× the shortest |
 
-Across 600 generated museums, the shortest possible route averages 6 doors on Easy, 8 on Medium and 13 on Hard. Every generated museum is checked to make sure you can always reach every room and finish.
+Across 600 generated museums, the shortest possible route averages 6 doors on Easy, 8 on Medium, and 13 on Hard. Every generated museum is checked to make sure you can always reach every room and finish.
 
 ### How the maze represents P vs NP (for judges and teachers)
 
@@ -94,7 +94,7 @@ In the game, the robot says it in one line at the end: *finding took exploring, 
 ### Each placard
 
 1. **In its own words:** the machine's first-person story
-2. **Still there today:** what is physically left on the Moon, on Mars or in space
+2. **Still there today:** what is physically left on the Moon, on Mars, or in space
 3. **What we learned:** the science it made possible
 4. **What came next:** how it led to later missions
 5. **Quick quiz**
@@ -162,3 +162,54 @@ _To be added._
 ## Resources
 
 See the challenge's Resources tab on the Space Apps site.
+
+## Choices on the welcome screen
+
+- **Where the museum is:** Earth (the class arrives by school bus), the Moon (glass dome, black sky with Earth in it, low gravity so the explorer bounces) or Mars (dusty butterscotch sky, red ground, a little bounce). For the Moon and Mars, the class lands in a field-trip rocket, and the explorer wears a spacesuit and glass helmet inside, trimmed in their shirt color.
+- **Your explorer:** 8 hairstyles, shown as pictures with no names, 8 hair colors, 8 skin tones, 8 shirt colors, 6 pants colors, and glasses or a cap. No "boy" or "girl" labels.
+- **Learning mode:** no puzzle. A fixed tour through every room with NEXT and BACK doors (Atrium, Moon machines, Mars machines, deep space machines, the secret treasures, then Mission Control). Built by `Maze.tour()` in `js/maze.js`.
+- **Game mode:** the door maze, with Easy, Medium, and Hard.
+- **Language:** 20 languages, English by default. Game text lives in `js/i18n/<code>.js`; `en.js` is the master list and anything missing falls back to English. The machines' own stories (in `js/data.js`) are still English only, and the placard says so when another language is picked. The translations were machine-written and should be checked by native speakers before launch.
+
+Languages: English, Chinese (Simplified), Hindi, Spanish, Arabic, French, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Swahili, Marathi, Telugu, Turkish, Tamil, Vietnamese, Korean.
+
+## Inside the museum
+
+- **Look:** glossy high-tech floor panels with glowing seams and paneled walls with light strips, colored by wing (Moon blue, Mars orange, deep space purple). Stars twinkle near the ceiling of every room.
+- **Lobby:** a rotating model of the solar system (all 8 planets, Saturn's rings, the Moon circling Earth). Click it to learn about the three wings.
+- **Real NASA photos:** every machine's frame shows a public-domain NASA photo of that mission (`assets/photos/`, listed with credits in `assets/photos/CREDITS.md` and `js/photos.js`). The info card shows the photo with its caption and credit.
+- **How to play:** a page (top bar, and automatically the first time in each mode) with the mission, what the museum is about, the Moon, Mars, and Deep Space wings with their machines, and the rules.
+- **Chat:** an "Ask Echo" button in the bottom-right corner, a chat kiosk next to every machine and one in the lobby, and a "Chat with this machine" button on every info card. Offline it answers from `js/data.js`. With the AI server running, answers come from Claude searching **only NASA websites** (nasa.gov and its subdomains), and each answer lists the NASA pages it used.
+- **Moon and Mars trips** start with a short movie (`js/cutscene.js`): the class boards a rocket on Earth, launches, flies through space, and lands, then walks to the museum in spacesuits.
+
+## AI chat server (answers from NASA websites only)
+
+`server/ask_server.py` is a small Python server. It sends a student's question to Claude (`claude-opus-5-5`) with a web search tool that can only search nasa.gov and its subdomains, and returns the answer plus links to the NASA pages it used. The API key stays on the server and never reaches the website.
+
+```bash
+cd server
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env    # paste your Anthropic API key into .env (it's git-ignored)
+.venv/bin/python ask_server.py
+```
+
+When the museum is opened from `localhost`, `js/ai.js` uses `http://localhost:8787/ask` automatically. On the live GitHub Pages site the chat stays in offline mode until the server is hosted somewhere public and `CONFIG.askEndpoint` points at it (set `ALLOWED_ORIGIN` in `.env` to the site's address). The older Node version, `server/ask-server.mjs`, still works if you have Node.
+
+## Settings and accessibility
+
+The gear button (welcome screen and top bar) opens a settings panel. Everything is saved on the device and works in all 20 languages.
+
+- **Text size:** Normal, Large, Extra large (menus, dialogs, and the robot's speech bubble scale up; messages stay on screen longer).
+- **High contrast:** black and white panels, thicker outlines, bright yellow focus rings.
+- **Reduce motion:** no bouncing, no twinkling or pulsing, no CSS animation, and a shorter, calmer rocket movie. Turns on by itself if the device asks for reduced motion.
+- **Easy-read font:** Lexend, with extra space between letters, words, and lines.
+- **Read the robot's words aloud:** uses the device's own voices, in the chosen language when one is installed.
+- **Keyboard play:** arrow keys or WASD to walk, N / P to walk to the next or previous door or machine, Enter to open or look closer, Q / E to turn the camera, Esc to close a window. Every button shows a clear focus ring.
+- Door symbols are different shapes as well as colors, so color-blind players can tell them apart.
+
+## Logos and branding
+
+- The **NASA insignia** appears only where it belongs on real hardware: the spacesuit and the rocket (in the welcome scene and the launch movie). NASA's insignia normally needs NASA's permission to use; to swap it for our team patch everywhere, set `SHOW_NASA = false` in `js/art.js`.
+- The **team patch** (Reach for the Stars) is the browser-tab icon.
+- The welcome screen credits NASA for the photos and mission facts.

@@ -1,5 +1,5 @@
 /*
- * SILENT EXPLORERS MUSEUM: a door-maze adventure
+ * REACH FOR THE STARS MUSEUM: a door-maze adventure
  * ------------------------------------------------------------
  * The museum is a hidden network of rooms (see js/maze.js). You only ever see
  * the room you're in and its doors; you never see a map. Each door shows a
@@ -21,8 +21,15 @@
   const SAVE_KEY = "silent-explorers-v3";
   const SYM = Maze.SYMBOLS;
 
-  const SKINS = ["#f1c7a5", "#d9a074", "#a8693f", "#6b4228"];
-  const SHIRTS = ["#2f6fb5", "#c4472d", "#2f8a5b", "#7a4bb0"];
+  const t = I18N.t;
+  const SKINS = ["#f7d7c4", "#f1c7a5", "#e0ac83", "#c98d63", "#a8693f", "#8a5434", "#6b4228", "#4a2c1c"];
+  const HAIR_COLORS = ["#1c1714", "#3b2516", "#6b4226", "#8e3b1f", "#c98a3c", "#e2c27a", "#3a5fcd", "#d85a9a"];
+  const SHIRTS = ["#2f6fb5", "#c4472d", "#2f8a5b", "#7a4bb0", "#e8a21c", "#e0607e", "#1fa3a3", "#f2efe6"];
+  const PANTS = ["#2b3346", "#4a6fa5", "#5a4632", "#7d8a5a", "#3d3d42", "#8a3a52"];
+  const EXTRAS = ["none", "glasses", "cap"];
+  const PLACES = ["earth", "moon", "mars"];
+  // low gravity makes every step a bounce
+  const HOP = { earth: 1, moon: 2.6, mars: 1.6 };
 
   /* ---------------- content ---------------- */
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -37,8 +44,13 @@
   const fresh = () => ({
     player: "",
     robotName: "Echo",
-    kid: { skin: SKINS[1], shirt: SHIRTS[0], char: "boy" },
+    kid: { skin: SKINS[3], shirt: SHIRTS[0], pants: PANTS[0], hair: "short", hairColor: HAIR_COLORS[0], extra: "none" },
     level: "medium",
+    mode: "game",   // "learn" | "game"
+    place: "earth", // where the museum is: earth | moon | mars
+    lang: "en",
+    // accessibility: text size n | l | xl, and on/off switches
+    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false },
     stars: 0,
     owned: ["c-silver", "e-cyan", "h-none", "g-none"],
     look: { color: "#c9d3e6", eyes: "#5ef2ff", hat: "none", gear: "none" },
@@ -50,7 +62,15 @@
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
-      if (raw) return Object.assign(fresh(), JSON.parse(raw));
+      if (raw) {
+        const s = Object.assign(fresh(), JSON.parse(raw));
+        // older saves picked "boy" or "girl"; turn that into a hairstyle
+        if (s.kid.char && !s.kid.hair) s.kid.hair = s.kid.char === "girl" ? "ponytail" : "short";
+        delete s.kid.char;
+        s.kid = Object.assign(fresh().kid, s.kid);
+        s.a11y = Object.assign(fresh().a11y, s.a11y);
+        return s;
+      }
     } catch (e) {}
     return fresh();
   }
@@ -61,83 +81,194 @@
   const LV = () => Maze.LEVELS[S.run.level];
   const room = (id) => G().rooms[id];
   const allCollected = () => G().pieces.every((p) => R().collected.includes(p));
+  const isLearn = () => !!(S.run && S.run.level === "learn");
+  const PLACE = () => (S.run && S.run.place) || S.place;
   function roomName(id) {
     const r = room(id);
-    if (r.type === "atrium") return "Atrium";
-    if (r.type === "mc") return "Mission Control";
+    if (r.type === "atrium") return t("room.atrium");
+    if (r.type === "mc") return t("room.mc");
     if (r.type === "exhibit") return exById(r.exhibit).name;
-    if (r.type === "hall") return M.halls[r.hall].name;
-    return "Secret room";
+    if (r.type === "hall") return t(`hall.${r.hall}.name`);
+    if (r.type === "hidden" && r.find === "treasure" && isLearn()) return exById(r.treasure).name;
+    return t("room.secret");
   }
+  const levelLabel = (lv) => t(`level.${lv}`);
 
   /* =========================================================
    * INTRO
    * ========================================================= */
   function buildIntro() {
     $("#busWrap").innerHTML = Art.bus();
+    // the team patch is only the browser-tab icon
+    $("#favicon").href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(Art.patch().replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '));
+    const lists = { skin: SKINS, shirt: SHIRTS, pants: PANTS, hairColor: HAIR_COLORS };
     document.querySelectorAll(".swatches").forEach((box) => {
       const key = box.dataset.look;
-      const list = key === "skin" ? SKINS : SHIRTS;
-      box.innerHTML = list.map((c) => `<button type="button" class="swatch" style="--c:${c}" data-val="${c}" aria-label="${key} color" aria-pressed="${S.kid[key] === c}"></button>`).join("");
+      box.innerHTML = lists[key].map((c) => `<button type="button" class="swatch" style="--c:${c}" data-val="${c}"></button>`).join("");
       box.addEventListener("click", (e) => {
         const b = e.target.closest(".swatch");
         if (!b) return;
         S.kid[key] = b.dataset.val;
-        box.querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-        drawCharPick();
+        drawMaker();
       });
     });
-    $("#charPick").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-char]");
+    $("#hairPick").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-hair]");
       if (!b) return;
-      S.kid.char = b.dataset.char;
-      drawCharPick();
+      S.kid.hair = b.dataset.hair;
+      drawMaker();
+    });
+    $("#extraPick").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-extra]");
+      if (!b) return;
+      S.kid.extra = b.dataset.extra;
+      drawMaker();
+    });
+    $("#placePick").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-place]");
+      if (!b) return;
+      S.place = b.dataset.place;
+      drawPicks();
+    });
+    $("#modePick").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-mode]");
+      if (!b) return;
+      S.mode = b.dataset.mode;
+      drawPicks();
     });
     $("#levelPick").addEventListener("click", (e) => {
       const b = e.target.closest("[data-level]");
       if (!b) return;
       S.level = b.dataset.level;
-      $("#levelPick").querySelectorAll("[data-level]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      drawPicks();
     });
-    $("#levelPick").querySelectorAll("[data-level]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.level === S.level)));
-    drawCharPick();
+    document.querySelectorAll(".lang-select").forEach((sel) => {
+      sel.innerHTML = I18N.LANGS.map((l) => `<option value="${l.code}">${l.name}</option>`).join("");
+      sel.addEventListener("change", () => setLang(sel.value));
+    });
+    if (S.level === "learn") S.level = "medium";
     $("#playerName").value = S.player;
     $("#robotName").value = S.robotName;
+    drawMaker();
+    drawPicks();
+    drawIntroText();
+  }
+  function drawIntroText() {
+    // hairstyles are pictures only, no names
+    $("#hairPick").innerHTML = Art.HAIR_STYLES.map((h, i) => `<button type="button" data-hair="${h}" aria-label="${esc(t("look.hair"))} ${i + 1}"><span class="cp-art">${Art.kid({ ...S.kid, hair: h, extra: "none" })}</span></button>`).join("");
+    $("#extraPick").innerHTML = EXTRAS.map((x) => `<button type="button" data-extra="${x}">${esc(t("extra." + x))}</button>`).join("");
+    document.querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-label", `${t("look." + b.parentElement.dataset.look)} ${b.dataset.val}`));
     if (S.run && !S.run.done) {
       $("#continueBtn").hidden = false;
-      $("#continueBtn").textContent = `Continue my ${Maze.LEVELS[S.run.level].label} adventure`;
+      $("#continueBtn").textContent = t("intro.continue", { level: `${levelLabel(S.run.level)} · ${t("place." + (S.run.place || "earth"))}` });
     }
+    $("#startBtn").textContent = t(S.mode === "learn" ? "intro.startLearn" : "intro.start");
+    drawMaker();
   }
-  function drawCharPick() {
-    $("#charPick").querySelectorAll("[data-char]").forEach((b) => {
-      b.setAttribute("aria-pressed", String(b.dataset.char === S.kid.char));
-      $(".cp-art", b).innerHTML = Art.kid({ ...S.kid, char: b.dataset.char });
+  /* The explorer preview is a little 3D scene: it turns slowly, drag to spin it. */
+  let pv = null;
+  function drawPreview3D() {
+    const box = $("#kidPreview");
+    if (!pv) {
+      let r;
+      try { r = new T.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { box.innerHTML = Art.kid(S.kid); return; }
+      r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      r.outputEncoding = T.sRGBEncoding;
+      r.toneMapping = T.ACESFilmicToneMapping;
+      box.innerHTML = "";
+      box.appendChild(r.domElement);
+      const sc = new T.Scene();
+      sc.add(new T.HemisphereLight("#fff4e0", "#6a5a4c", 1.3));
+      const key = new T.DirectionalLight("#ffffff", 1.2); key.position.set(2, 3, 4);
+      const rim = new T.DirectionalLight("#9fd0ff", 0.8); rim.position.set(-3, 2, -3);
+      sc.add(key, rim);
+      const cam = new T.PerspectiveCamera(28, 1, 0.1, 20);
+      pv = { r, sc, cam, model: null, yaw: 0.4, drag: null, w: 0, h: 0 };
+      const el = r.domElement;
+      el.addEventListener("pointerdown", (e) => { pv.drag = e.clientX; el.setPointerCapture(e.pointerId); });
+      el.addEventListener("pointermove", (e) => { if (pv.drag != null) { pv.yaw += (e.clientX - pv.drag) * 0.02; pv.drag = e.clientX; } });
+      el.addEventListener("pointerup", () => (pv.drag = null));
+      const loop = (ms) => {
+        if (!$("#intro").hidden && pv.model) {
+          const w = box.clientWidth, h = box.clientHeight;
+          if (w && h && (w !== pv.w || h !== pv.h)) {
+            pv.w = w; pv.h = h;
+            r.setSize(w, h, false);
+            cam.aspect = w / h;
+            // fit the whole explorer, head to toe
+            const fov = (cam.fov * Math.PI) / 180;
+            const dist = Math.max(1.05 / Math.tan(fov / 2), 0.55 / (Math.tan(fov / 2) * cam.aspect));
+            cam.position.set(0, 0.95, dist);
+            cam.lookAt(0, 0.85, 0);
+            cam.updateProjectionMatrix();
+          }
+          if (pv.drag == null) pv.yaw += 0.008;
+          pv.model.rotation.y = pv.yaw;
+          Models.animateKid(pv.model, ms / 1000, 0, 1);
+          r.render(sc, cam);
+        }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    }
+    if (pv.model) {
+      pv.sc.remove(pv.model);
+      pv.model.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose) o.material.dispose(); });
+    }
+    pv.model = Models.kid({ ...S.kid, suit: false });
+    pv.sc.add(pv.model);
+  }
+  function drawMaker() {
+    drawPreview3D();
+    $("#rocketWrap").innerHTML = Art.rocket(S.kid);
+    $("#hairPick").querySelectorAll("[data-hair]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.hair === S.kid.hair));
+      $(".cp-art", b).innerHTML = Art.kid({ ...S.kid, hair: b.dataset.hair, extra: "none" });
     });
+    $("#extraPick").querySelectorAll("[data-extra]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.extra === S.kid.extra)));
+    document.querySelectorAll(".swatches").forEach((box) => box.querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-pressed", String(S.kid[box.dataset.look] === x.dataset.val))));
+  }
+  function drawPicks() {
+    $("#placePick").querySelectorAll("[data-place]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.place === S.place)));
+    $("#intro").dataset.place = S.place;
+    $("#modePick").querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === S.mode)));
+    $("#levelField").hidden = S.mode !== "game";
+    $("#levelPick").querySelectorAll("[data-level]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.level === S.level)));
+    $("#startBtn").textContent = t(S.mode === "learn" ? "intro.startLearn" : "intro.start");
   }
   function readIntro() {
-    S.player = $("#playerName").value.trim() || "Explorer";
+    S.player = $("#playerName").value.trim() || t("intro.namePh");
     S.robotName = $("#robotName").value.trim() || "Echo";
   }
   $("#introForm").addEventListener("submit", (e) => {
     e.preventDefault();
     readIntro();
-    newRun(S.level);
-    enterMuseum(true);
+    newRun(S.mode === "learn" ? "learn" : S.level);
+    // off Earth, the trip starts with a short movie: board the rocket, fly, land
+    if (PLACE() !== "earth" && window.Cutscene) {
+      Cutscene.play({ place: PLACE(), kid: S.kid, robot: S.look, robotName: S.robotName, t })
+        .catch((err) => console.warn("cutscene skipped:", err))
+        .then(() => enterMuseum(true));
+    } else enterMuseum(true);
   });
   $("#continueBtn").addEventListener("click", () => { readIntro(); save(); enterMuseum(false); });
   $("#skipIntro").addEventListener("click", () => $("#intro").classList.add("skipped"));
 
+  // which hall opens each wing on the learning tour
+  const WING_HALL = { moon: 2, mars: 3, deep: 4 };
   function newRun(level) {
     const seed = 1000 + Math.floor(Math.random() * 9000);
-    const graph = Maze.generate(level, seed, {
-      exhibits: allEx.map((e) => e.id),
-      treasures: treasures.map((t) => t.id),
-      halls: M.halls.length,
-    });
+    const graph = level === "learn"
+      ? Maze.tour({ wings: wings.map((w) => ({ hall: WING_HALL[w.id] != null ? WING_HALL[w.id] : 0, exhibits: w.exhibits.map((e) => e.id) })), treasures: treasures.map((x) => x.id) })
+      : Maze.generate(level, seed, {
+        exhibits: allEx.map((e) => e.id),
+        treasures: treasures.map((x) => x.id),
+        halls: M.halls.length,
+      });
     const L = Maze.LEVELS[level];
-    S.level = level;
+    if (level !== "learn") S.level = level;
     S.run = {
-      seed, level, graph, cur: 0, collected: [], route: [], known: {}, revealed: {}, solved: {},
+      seed, level, graph, place: S.place, cur: 0, collected: [], route: [], known: {}, revealed: {}, solved: {},
       visited: [0], visits: {}, scans: L.scanner === "always" ? -1 : L.scanner, note: null, sawMC: false, done: false,
     };
     save();
@@ -154,7 +285,7 @@
     W1: { side: "W", along: -2.6 }, W2: { side: "W", along: 2.6 }, E1: { side: "E", along: -2.6 }, E2: { side: "E", along: 2.6 },
   };
 
-  let renderer, scene, camera, sun, kid, robot, roomGroup, userZoomed = false;
+  let renderer, scene, camera, sun, kid, robot, roomGroup, ground, skyPlace = null, userZoomed = false;
   let sides = [], wallMeshes = [], pickables = [], obstacles = [], spots = [], doorObjs = [], spin = [];
   const boards = [];
   const ray = new T.Raycaster();
@@ -169,7 +300,7 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     scene = new T.Scene();
-    scene.background = nightSky();
+    scene.background = skyFor(PLACE());
     camera = new T.PerspectiveCamera(45, 1, 0.1, 300);
     scene.add(new T.HemisphereLight("#fff4e0", "#4a3a2c", 1.25));
     scene.add(new T.AmbientLight("#ffffff", 0.25));
@@ -180,7 +311,7 @@
     sun.shadow.bias = -0.0008;
     sun.position.set(7, 18, 9);
     scene.add(sun, sun.target);
-    const ground = new T.Mesh(new T.PlaneGeometry(200, 200), new T.MeshBasicMaterial({ color: "#14120f" }));
+    ground = new T.Mesh(new T.PlaneGeometry(200, 200), new T.MeshBasicMaterial({ color: "#14120f" }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.02;
     scene.add(ground);
@@ -200,42 +331,194 @@
       want.dist = Math.max(12.5, Math.min(21, 8.6 / Math.tan(hf / 2)));
     }
   }
-  function nightSky() {
+  // what you see past the cut-away walls: an evening sky on Earth, black space on
+  // the Moon (with Earth hanging in it), a dusty butterscotch sky on Mars
+  const SKY = {
+    // fog: the far ground fades into this color, so the world meets the sky with no black edge
+    earth: { top: "#3f7fd0", bottom: "#cfe4f2", stars: 0, ground: "#5f9a4a", fog: "#cfe4f2" },
+    moon: { top: "#000003", bottom: "#05060c", stars: 900, ground: "#8d8b86", earth: true, fog: "#07080d" },
+    mars: { top: "#8a5a40", bottom: "#d9a77a", stars: 0, ground: "#b5603a", fog: "#d4a079" },
+  };
+  function skyFor(place) {
+    const p = SKY[place] || SKY.earth;
     const c = document.createElement("canvas");
     c.width = c.height = 1024;
     const x = c.getContext("2d");
     const g = x.createLinearGradient(0, 0, 0, 1024);
-    g.addColorStop(0, "#0a0f24"); g.addColorStop(1, "#2a3360");
+    g.addColorStop(0, p.top); g.addColorStop(1, p.bottom);
     x.fillStyle = g; x.fillRect(0, 0, 1024, 1024);
     let seed = 7;
     const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-    for (let i = 0; i < 420; i++) {
+    for (let i = 0; i < p.stars; i++) {
       x.fillStyle = `rgba(255,255,255,${0.25 + rnd() * 0.7})`;
       x.beginPath(); x.arc(rnd() * 1024, rnd() * 1024, rnd() < 0.08 ? 1.8 : 0.9, 0, Math.PI * 2); x.fill();
     }
-    const t = new T.CanvasTexture(c);
-    t.encoding = T.sRGBEncoding;
-    return t;
+    if (p.earth) {
+      // Earth seen from the Moon
+      const ex = 760, ey = 210, er = 70;
+      const eg = x.createRadialGradient(ex - 20, ey - 20, 10, ex, ey, er);
+      eg.addColorStop(0, "#8fc4ff"); eg.addColorStop(1, "#1f4f9e");
+      x.fillStyle = eg; x.beginPath(); x.arc(ex, ey, er, 0, Math.PI * 2); x.fill();
+      x.fillStyle = "#4f9a52";
+      [[-20, -10, 26, 16], [18, 18, 20, 12], [-6, 30, 14, 9]].forEach(([dx, dy, rx, ry]) => { x.beginPath(); x.ellipse(ex + dx, ey + dy, rx, ry, 0.4, 0, Math.PI * 2); x.fill(); });
+      x.fillStyle = "rgba(255,255,255,.6)";
+      [[-30, -40, 30, 6], [10, -8, 34, 5], [-10, 50, 28, 5]].forEach(([dx, dy, rx, ry]) => { x.beginPath(); x.ellipse(ex + dx, ey + dy, rx, ry, 0.1, 0, Math.PI * 2); x.fill(); });
+      x.fillStyle = "rgba(0,0,10,.55)"; x.beginPath(); x.arc(ex + 30, ey, er, -Math.PI / 2, Math.PI / 2); x.ellipse(ex + 30, ey, 30, er, 0, Math.PI / 2, -Math.PI / 2, true); x.fill();
+    }
+    if (place === "mars") {
+      // a small, pale sun
+      const sg = x.createRadialGradient(300, 260, 0, 300, 260, 90);
+      sg.addColorStop(0, "rgba(255,250,235,1)"); sg.addColorStop(0.25, "rgba(255,240,210,.7)"); sg.addColorStop(1, "rgba(255,220,180,0)");
+      x.fillStyle = sg; x.fillRect(200, 160, 200, 200);
+    }
+    const tex = new T.CanvasTexture(c);
+    tex.encoding = T.sRGBEncoding;
+    return tex;
+  }
+  /* ---------- the world outside: grass and trees, Moon craters, or Mars rocks ---------- */
+  function groundTex(place) {
+    return canvasTex(512, 512, (x, W, H) => {
+      const base = SKY[place].ground;
+      x.fillStyle = base; x.fillRect(0, 0, W, H);
+      let seed = 11;
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+      if (place === "earth") {
+        // grass: lots of little blades of slightly different greens
+        for (let i = 0; i < 5000; i++) {
+          x.fillStyle = ["#6aa653", "#548c40", "#77b35e", "#4e8239"][i % 4];
+          x.fillRect(rnd() * W, rnd() * H, 2, 5);
+        }
+      } else {
+        // dusty ground with speckles, plus craters (Moon) or pebbles (Mars)
+        for (let i = 0; i < 3500; i++) {
+          x.fillStyle = `rgba(${place === "moon" ? "0,0,0" : "60,20,5"},${0.05 + rnd() * 0.12})`;
+          x.fillRect(rnd() * W, rnd() * H, 2, 2);
+        }
+        const n = place === "moon" ? 14 : 30;
+        for (let i = 0; i < n; i++) {
+          const cx = rnd() * W, cy = rnd() * H, r = place === "moon" ? 8 + rnd() * 40 : 2 + rnd() * 7;
+          if (place === "moon") {
+            const g = x.createRadialGradient(cx - r * 0.2, cy - r * 0.2, r * 0.2, cx, cy, r);
+            g.addColorStop(0, "rgba(0,0,0,.28)"); g.addColorStop(0.8, "rgba(0,0,0,.08)"); g.addColorStop(1, "rgba(255,255,255,.18)");
+            x.fillStyle = g;
+          } else x.fillStyle = "rgba(70,25,10,.45)";
+          x.beginPath(); x.arc(cx, cy, r, 0, Math.PI * 2); x.fill();
+        }
+      }
+    });
+  }
+  let world = null;
+  function buildWorld(place) {
+    if (world) {
+      scene.remove(world);
+      world.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    }
+    world = new T.Group();
+    scene.add(world);
+    const tex = groundTex(place);
+    tex.wrapS = tex.wrapT = T.RepeatWrapping;
+    tex.repeat.set(24, 24);
+    const g = new T.Mesh(new T.PlaneGeometry(240, 240), new T.MeshStandardMaterial({ map: tex, roughness: 1 }));
+    g.rotation.x = -Math.PI / 2;
+    g.position.y = -0.03;
+    g.receiveShadow = true;
+    world.add(g);
+    // a paved plaza (Earth) or a landing pad (Moon, Mars) right around the museum
+    const pad = new T.Mesh(new T.PlaneGeometry(24, 20), new T.MeshStandardMaterial({ color: place === "earth" ? "#cfc7b8" : place === "moon" ? "#6f6e6a" : "#8a4a2c", roughness: 0.9 }));
+    pad.rotation.x = -Math.PI / 2;
+    pad.position.y = -0.02;
+    world.add(pad);
+    let seed = 5;
+    const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+    const around = (min, max) => { const a = rnd() * Math.PI * 2, d = min + rnd() * (max - min); return [Math.cos(a) * d, Math.sin(a) * d * 0.8]; };
+    if (place === "earth") {
+      const trunk = new T.MeshStandardMaterial({ color: "#6b4a32", roughness: 0.9 });
+      const leaf = [new T.MeshStandardMaterial({ color: "#3f7a4a", roughness: 0.9, flatShading: true }), new T.MeshStandardMaterial({ color: "#4f8f4f", roughness: 0.9, flatShading: true })];
+      for (let i = 0; i < 46; i++) {
+        const [x, z] = around(15, 60);
+        const tree = new T.Group();
+        const h = 1.5 + rnd() * 1.5;
+        const tr = new T.Mesh(new T.CylinderGeometry(0.15, 0.22, h, 8), trunk);
+        tr.position.y = h / 2;
+        const top = new T.Mesh(rnd() < 0.5 ? new T.ConeGeometry(1.3, 3, 9) : new T.IcosahedronGeometry(1.4, 1), leaf[i % 2]);
+        top.position.y = h + 1.2;
+        tree.add(tr, top);
+        tree.position.set(x, 0, z);
+        tree.scale.setScalar(0.8 + rnd() * 0.7);
+        world.add(tree);
+      }
+    } else {
+      const rock = new T.MeshStandardMaterial({ color: place === "moon" ? "#77756f" : "#7e3a20", roughness: 1, flatShading: true });
+      for (let i = 0; i < (place === "moon" ? 40 : 70); i++) {
+        const [x, z] = around(13, 70);
+        const r = new T.Mesh(new T.DodecahedronGeometry(0.3 + rnd() * (place === "mars" ? 1.4 : 0.9), 0), rock);
+        r.position.set(x, 0.1, z);
+        r.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3);
+        r.scale.y = 0.6;
+        world.add(r);
+      }
+      if (place === "moon") {
+        // raised crater rims
+        const rim = new T.MeshStandardMaterial({ color: "#9a9893", roughness: 1 });
+        for (let i = 0; i < 12; i++) {
+          const [x, z] = around(16, 60);
+          const c = new T.Mesh(new T.TorusGeometry(2 + rnd() * 4, 0.35, 6, 28), rim);
+          c.rotation.x = -Math.PI / 2;
+          c.scale.z = 0.4;
+          c.position.set(x, 0, z);
+          world.add(c);
+        }
+      } else {
+        // soft dunes
+        const dune = new T.MeshStandardMaterial({ color: "#c06a40", roughness: 1 });
+        for (let i = 0; i < 10; i++) {
+          const [x, z] = around(25, 70);
+          const d = new T.Mesh(new T.SphereGeometry(6 + rnd() * 6, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), dune);
+          d.scale.y = 0.18;
+          d.position.set(x, -0.05, z);
+          world.add(d);
+        }
+      }
+      // the glass dome's base ring around the museum
+      const ring = new T.Mesh(new T.TorusGeometry(11.5, 0.18, 8, 96), new T.MeshStandardMaterial({ color: "#c9d6e6", metalness: 0.6, roughness: 0.3 }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.scale.y = 0.85;
+      world.add(ring);
+    }
+  }
+  function applyPlace() {
+    const pl = PLACE();
+    if (!scene || skyPlace === pl) return;
+    skyPlace = pl;
+    if (scene.background && scene.background.dispose) scene.background.dispose();
+    scene.background = skyFor(pl);
+    scene.fog = new T.Fog(SKY[pl].fog, 32, 95);
+    ground.visible = false;
+    buildWorld(pl);
+    // daylight on Earth, harsh white sun on the Moon, warm hazy light on Mars
+    sun.color.set(pl === "moon" ? "#ffffff" : pl === "mars" ? "#ffd9b0" : "#fff1d6");
   }
 
   /* ---------------- materials ---------------- */
+  /* High-tech surfaces: glossy floor panels with glowing seams, paneled walls with light strips */
   const texCache = {};
-  function floorMat(kind) {
-    if (!texCache[kind]) {
-      texCache[kind] =
-        kind === "tile" ? Models.tileTex("#e9e1cf", "#d3c6aa") :
-        kind === "tile-dark" ? Models.tileTex("#2c3552", "#232a44") :
-        kind === "wood-dark" ? Models.woodTex("#6b4a32") : Models.woodTex("#8a5d3c");
-    }
-    const t = texCache[kind].clone();
-    t.needsUpdate = true;
-    const sc = kind.startsWith("tile") ? 2 : 4;
-    t.repeat.set((X1 - X0) / sc, (Z1 - Z0) / sc);
-    return new T.MeshStandardMaterial({ map: t, roughness: kind.startsWith("tile") ? 0.35 : 0.7 });
+  const FLOORS = {
+    "tech-light": "#c3cdd9", "tech-dark": "#1c2338", "tech-mid": "#2c3446", "tech-violet": "#241f33",
+  };
+  function floorMat(kind, glow) {
+    const key = kind + glow;
+    if (!texCache[key]) texCache[key] = Models.techFloorTex(FLOORS[kind] || FLOORS["tech-dark"], glow);
+    const tx = texCache[key];
+    const map = tx.map.clone(), em = tx.emissive.clone();
+    [map, em].forEach((x) => { x.needsUpdate = true; x.repeat.set((X1 - X0) / 4, (Z1 - Z0) / 4); });
+    return new T.MeshStandardMaterial({ map, emissiveMap: em, emissive: "#ffffff", emissiveIntensity: 0.9, roughness: 0.22, metalness: 0.2 });
   }
-  function wallMats(color) {
-    const face = new T.MeshStandardMaterial({ color, roughness: 0.9 });
-    const top = new T.MeshStandardMaterial({ color: "#2b2520", roughness: 0.9 });
+  function wallMats(color, glow) {
+    glow = glow || "#5ef2ff";
+    const key = "w" + color + glow;
+    if (!texCache[key]) texCache[key] = Models.techWallTex(color, glow);
+    const face = new T.MeshStandardMaterial({ map: texCache[key].map, emissiveMap: texCache[key].emissive, emissive: "#ffffff", emissiveIntensity: 0.85, roughness: 0.45, metalness: 0.15 });
+    const top = new T.MeshStandardMaterial({ color: "#20242e", roughness: 0.6, metalness: 0.3 });
     return [face, face, top, face, face, face];
   }
   const add = (o) => { roomGroup.add(o); return o; };
@@ -253,12 +536,12 @@
    * BUILD ONE ROOM
    * ========================================================= */
   function theme(r) {
-    if (r.type === "atrium") return { wall: "#e7ddc9", floor: "tile", kind: "Start" };
-    if (r.type === "mc") return { wall: "#1c2846", floor: "tile-dark", kind: "The final room" };
-    if (r.type === "hidden") return { wall: "#24212e", floor: "wood-dark", kind: "Secret room" };
-    if (r.type === "hall") return { wall: M.halls[r.hall].wall, floor: "wood", kind: "Hall" };
+    if (r.type === "atrium") return { wall: "#cfd8e2", floor: "tech-light", glow: "#5ef2ff", kind: t("kind.start") };
+    if (r.type === "mc") return { wall: "#1c2846", floor: "tech-dark", glow: "#5ef2ff", kind: t("kind.final") };
+    if (r.type === "hidden") return { wall: "#24212e", floor: "tech-violet", glow: "#e8b53a", kind: t("kind.secret") };
+    if (r.type === "hall") return { wall: M.halls[r.hall].wall, floor: "tech-mid", glow: "#5ef2ff", kind: t("kind.hall") };
     const ex = exById(r.exhibit);
-    return { wall: ex.wing.wall, floor: "wood-dark", kind: `${ex.wing.name.replace(" Wing", "")} machine` };
+    return { wall: ex.wing.wall, floor: "tech-dark", glow: ex.wing.color, kind: t("kind.machine", { wing: t("wing." + ex.wing.id) }) };
   }
 
   function clearRoom() {
@@ -267,7 +550,11 @@
       roomGroup.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
         const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
-        mats.forEach((m) => { if (m.map && !Object.values(texCache).includes(m.map)) m.map.dispose(); m.dispose(); });
+        const keep = new Set(Object.values(texCache).flatMap((v) => [v.map, v.emissive]));
+        mats.forEach((m) => {
+          [m.map, m.emissiveMap].forEach((tx) => { if (tx && !keep.has(tx)) tx.dispose(); });
+          m.dispose();
+        });
       });
     }
     roomGroup = new T.Group();
@@ -280,9 +567,10 @@
 
   function buildRoom(id) {
     clearRoom();
+    spotCursor = -1;
     const r = room(id);
     const th = theme(r);
-    const floor = add(new T.Mesh(new T.PlaneGeometry(X1 - X0, Z1 - Z0), floorMat(th.floor)));
+    const floor = add(new T.Mesh(new T.PlaneGeometry(X1 - X0, Z1 - Z0), floorMat(th.floor, th.glow)));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     floor.userData.floor = true;
@@ -290,9 +578,16 @@
 
     // which doors are visible right now (secret ones only once found)
     const visibleDoors = r.doors.filter((d) => !d.hidden || R().revealed[`${id}:${d.i}`]);
-    buildWalls(th.wall, visibleDoors);
+    buildWalls(th.wall, visibleDoors, th.glow);
+    // twinkling stars float up near the ceiling in every room
+    const stars = add(Models.roomStars(r.type === "atrium" ? 220 : 120, { x0: X0 + 0.5, x1: X1 - 0.5, y0: 2.9, y1: 4.1, z0: Z0 + 0.5, z1: Z1 - 0.5 }));
+    spin.push({ o: stars, twinkle: true });
     visibleDoors.forEach((d) => buildDoor(id, d));
     r.doors.filter((d) => d.hidden && !R().revealed[`${id}:${d.i}`]).forEach((d) => buildSecretPanel(id, d));
+    // windows on the side walls wherever there's no door (and no secret door), and a skylight frame overhead
+    const used = new Set(r.doors.map((d) => d.slot));
+    ["W1", "W2", "E1", "E2"].concat(r.type === "hall" || r.type === "mc" ? ["N1", "N2"] : []).filter((sl) => !used.has(sl)).forEach((sl) => buildWindow(SLOT_POS[sl]));
+    buildSkylight();
 
     if (r.type === "atrium") buildAtrium();
     else if (r.type === "exhibit") buildExhibit(r);
@@ -303,9 +598,10 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => boards.forEach((b) => b.redraw()));
   }
 
-  function buildWalls(color, doors) {
-    const mats = wallMats(color);
-    const base = new T.MeshStandardMaterial({ color: "#2b2520", roughness: 0.8 });
+  function buildWalls(color, doors, glow) {
+    const mats = wallMats(color, glow);
+    // a glowing trim line where the wall meets the floor
+    const base = new T.MeshBasicMaterial({ color: glow || "#5ef2ff", toneMapped: false });
     const defs = [
       { side: "N", n: [0, 1], line: Z0, from: X0, to: X1 },
       { side: "S", n: [0, -1], line: Z1, from: X0, to: X1 },
@@ -333,9 +629,9 @@
         box.userData.side = s;
         group.add(box);
         wallMeshes.push(box);
-        const bb = new T.Mesh(new T.BoxGeometry(alongX ? len : 0.06, 0.2, alongX ? 0.06 : len), base);
-        const bi = inner + sgn * 0.03;
-        bb.position.set(alongX ? c : bi, 0.1, alongX ? bi : c);
+        const bb = new T.Mesh(new T.BoxGeometry(alongX ? len : 0.04, 0.05, alongX ? 0.04 : len), base);
+        const bi = inner + sgn * 0.02;
+        bb.position.set(alongX ? c : bi, 0.03, alongX ? bi : c);
         group.add(bb);
       });
       sides.push(s);
@@ -391,20 +687,27 @@
     x.strokeStyle = sym.color; x.lineWidth = 14; x.strokeRect(14, 14, W - 28, H - 28);
     drawSymbol(x, d.sym, W / 2, H * 0.4, W * 0.5, sym.color);
     x.textAlign = "center"; x.textBaseline = "middle";
-    const label = { sealed: "SEALED", locked: "RIDDLE LOCK", oneway: "ONE WAY", "open-mc": "OPEN!" }[state];
+    const label = d.next ? t("door.next") : d.back ? t("door.back") : { sealed: t("door.sealed"), locked: t("door.locked"), oneway: t("door.oneway"), "open-mc": t("door.open") }[state];
     if (label) {
       x.fillStyle = state === "sealed" || state === "locked" ? "#f2c230" : "#f6f0e3";
-      x.font = `700 ${W * 0.11}px "IBM Plex Mono", monospace`;
+      fitText(x, label, W - 30, W * 0.11, 700, '"IBM Plex Mono", monospace');
       x.fillText(label, W / 2, H * 0.74);
       if (state === "sealed") {
-        x.font = `700 ${W * 0.085}px "IBM Plex Mono", monospace`;
-        x.fillText(`${R().collected.length} OF ${G().pieces.length} PIECES`, W / 2, H * 0.84);
+        const txt = t("door.pieces", { n: R().collected.length, k: G().pieces.length });
+        fitText(x, txt, W - 30, W * 0.085, 700, '"IBM Plex Mono", monospace');
+        x.fillText(txt, W / 2, H * 0.84);
       }
-      if (state === "oneway") {
+      if (state === "oneway" || d.next || d.back) {
         x.font = `700 ${W * 0.16}px "IBM Plex Mono", monospace`;
-        x.fillText("→", W / 2, H * 0.86);
+        x.fillText(d.back ? "←" : "→", W / 2, H * 0.86);
       }
     }
+  }
+  // shrink a font until the text fits (some languages run long)
+  function fitText(x, text, maxW, size, weight, family) {
+    let fs = size;
+    x.font = `${weight} ${fs}px ${family}`;
+    while (x.measureText(text).width > maxW && fs > 8) { fs -= 1; x.font = `${weight} ${fs}px ${family}`; }
   }
   function buildDoor(roomId, d) {
     const slot = SLOT_POS[d.slot];
@@ -429,14 +732,36 @@
     panel.position.set(px, 1.55, pz);
     panel.rotation.y = rot;
     s.group.add(panel);
+    // behind the door: a glowing portal of light in the door's color (not the dark outside)
+    const portal = new T.Mesh(new T.PlaneGeometry(DOOR_W - 0.1, 3.1), new T.MeshBasicMaterial({ map: portalTex(sym.color), transparent: true, toneMapped: false, depthWrite: false }));
+    const [qx, qz] = wallPoint(s, slot.along, -WALL_T - 0.02);
+    portal.position.set(qx, 1.55, qz);
+    portal.rotation.y = rot;
+    s.group.add(portal);
+    spin.push({ o: portal, shimmer: true });
+    // a short hallway behind the door, so every door leads somewhere (seen from outside as a roofed corridor)
+    const th = theme(room(roomId));
+    const HALL_D = 3.4, HALL_H = 3.7;
+    const hall = new T.Mesh(new T.BoxGeometry(DOOR_W + 0.9, HALL_H, HALL_D), wallMats(th.wall, th.glow));
+    const [hx, hz] = wallPoint(s, slot.along, -WALL_T - 0.05 - HALL_D / 2);
+    hall.position.set(hx, HALL_H / 2, hz);
+    hall.rotation.y = rot;
+    hall.castShadow = hall.receiveShadow = true;
+    s.group.add(hall);
+    // a glowing skylight strip along the hallway roof, in the door's color
+    const strip = new T.Mesh(new T.PlaneGeometry(0.5, HALL_D - 0.5), new T.MeshBasicMaterial({ color: sym.color, toneMapped: false }));
+    strip.rotation.x = -Math.PI / 2;
+    strip.rotation.z = -rot;
+    strip.position.set(hx, HALL_H + 0.01, hz);
+    s.group.add(strip);
     // lintel + sign above the door: "?" until you've been through it
-    const lintel = new T.Mesh(new T.BoxGeometry(DOOR_W + 0.3, WALL_H - 3.1, WALL_T), wallMats(theme(room(roomId)).wall));
+    const lintel = new T.Mesh(new T.BoxGeometry(DOOR_W + 0.3, WALL_H - 3.1, WALL_T), wallMats(theme(room(roomId)).wall, theme(room(roomId)).glow));
     const [lx, lz] = wallPoint(s, slot.along, -WALL_T / 2);
     lintel.position.set(lx, 3.1 + (WALL_H - 3.1) / 2, lz);
     lintel.rotation.y = rot;
     s.decor.add(lintel);
     const known = R().known[`${roomId}:${d.i}`];
-    const signText = d.sealed ? "MISSION CONTROL" : !known ? "?" : LV().signs === "names" ? roomName(d.to) : "✓ BEEN THERE";
+    const signText = d.sealed ? t("door.mc") : LV().learn ? roomName(d.to) : !known ? "?" : LV().signs === "names" ? roomName(d.to) : t("door.been");
     const sign = Models.board({ w: DOOR_W + 0.1, h: 0.66, ppm: 260, bg: "#1f2330", draw: (x, W, H) => {
       x.fillStyle = sym.color; x.fillRect(0, H - 10, W, 10);
       x.fillStyle = signText === "?" ? sym.color : "#f6f0e3";
@@ -464,6 +789,111 @@
     doorObjs.push({ door: d, panel, mat, spot, side: s, slot, rot });
   }
 
+  /* a window onto the world outside: Earth's park, the Moon's craters and Earth in the sky, or Mars's dunes */
+  function windowTex(place) {
+    const key = "window-" + place;
+    if (texCache[key]) return texCache[key].map;
+    const tex = canvasTex(320, 256, (x, W, H) => {
+      const sky = { earth: ["#4f8fd6", "#cfe6f5"], moon: ["#000004", "#0a0c16"], mars: ["#9a6a4c", "#e2b48c"] }[place];
+      const gnd = { earth: "#5f9a4a", moon: "#8d8b86", mars: "#b5603a" }[place];
+      const g = x.createLinearGradient(0, 0, 0, H * 0.7);
+      g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]);
+      x.fillStyle = g; x.fillRect(0, 0, W, H);
+      let seed = 3;
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+      if (place === "moon") {
+        for (let i = 0; i < 70; i++) { x.fillStyle = `rgba(255,255,255,${0.4 + rnd() * 0.6})`; x.fillRect(rnd() * W, rnd() * H * 0.6, 1.5, 1.5); }
+        // Earth hanging in the black sky
+        const eg = x.createRadialGradient(232, 62, 4, 240, 70, 30);
+        eg.addColorStop(0, "#9fd0ff"); eg.addColorStop(1, "#1f4f9e");
+        x.fillStyle = eg; x.beginPath(); x.arc(240, 70, 28, 0, Math.PI * 2); x.fill();
+        x.fillStyle = "#4f9a52"; x.beginPath(); x.ellipse(234, 66, 10, 6, 0.4, 0, Math.PI * 2); x.fill();
+        x.fillStyle = "rgba(0,0,10,.5)"; x.beginPath(); x.arc(252, 70, 28, -Math.PI / 2, Math.PI / 2); x.fill();
+      } else if (place === "mars") {
+        x.fillStyle = "rgba(255,248,230,.9)"; x.beginPath(); x.arc(80, 60, 12, 0, Math.PI * 2); x.fill();
+      } else {
+        x.fillStyle = "#ffe9a8"; x.beginPath(); x.arc(250, 50, 18, 0, Math.PI * 2); x.fill();
+        x.fillStyle = "#ffffffcc"; [[70, 50, 40], [140, 80, 30]].forEach(([cx, cy, r]) => { x.beginPath(); x.ellipse(cx, cy, r, r * 0.35, 0, 0, Math.PI * 2); x.fill(); });
+      }
+      // distant hills or crater rims, then the ground
+      x.fillStyle = place === "earth" ? "#4c7f3c" : place === "moon" ? "#6f6d68" : "#9a4a2a";
+      x.beginPath(); x.moveTo(0, H * 0.66);
+      for (let i = 0; i <= 8; i++) x.lineTo((i / 8) * W, H * (0.58 + rnd() * 0.1));
+      x.lineTo(W, H); x.lineTo(0, H); x.fill();
+      x.fillStyle = gnd; x.fillRect(0, H * 0.72, W, H);
+      if (place === "earth") {
+        for (let i = 0; i < 7; i++) {
+          const tx = 20 + rnd() * (W - 40), ty = H * 0.72 + rnd() * 20;
+          x.fillStyle = "#6b4a32"; x.fillRect(tx - 2, ty - 10, 4, 12);
+          x.fillStyle = "#3f7a4a"; x.beginPath(); x.arc(tx, ty - 16, 11, 0, Math.PI * 2); x.fill();
+        }
+      } else {
+        for (let i = 0; i < 9; i++) {
+          x.fillStyle = place === "moon" ? "rgba(0,0,0,.25)" : "rgba(80,25,10,.5)";
+          x.beginPath(); x.ellipse(rnd() * W, H * 0.78 + rnd() * H * 0.2, 6 + rnd() * 14, 3 + rnd() * 4, 0, 0, Math.PI * 2); x.fill();
+        }
+      }
+    });
+    texCache[key] = { map: tex, emissive: tex };
+    return tex;
+  }
+  function buildWindow(slot) {
+    const s = sideOf(slot.side);
+    const w = new T.Group();
+    const frame = new T.Mesh(new T.BoxGeometry(2.1, 1.75, 0.08), new T.MeshStandardMaterial({ color: "#2a3040", metalness: 0.6, roughness: 0.3 }));
+    const view = new T.Mesh(new T.PlaneGeometry(1.9, 1.55), new T.MeshBasicMaterial({ map: windowTex(PLACE()), toneMapped: false }));
+    view.position.z = 0.045;
+    const bar = new T.Mesh(new T.BoxGeometry(0.06, 1.55, 0.03), frame.material);
+    bar.position.z = 0.06;
+    const sill = new T.Mesh(new T.BoxGeometry(2.3, 0.08, 0.22), frame.material);
+    sill.position.set(0, -0.9, 0.08);
+    w.add(frame, view, bar, sill);
+    onWall(s, w, slot.along, 2.25, 0.05);
+  }
+  /* a glass skylight frame across the top of the room */
+  function buildSkylight() {
+    // light and see-through, so it frames the room without blocking the view
+    const mat = new T.MeshBasicMaterial({ color: "#dfe9f7", transparent: true, opacity: 0.35, depthWrite: false });
+    const g = add(new T.Group());
+    const y = WALL_H + 0.02;
+    const beam = (len, x, z, alongX) => {
+      const b = new T.Mesh(new T.BoxGeometry(alongX ? len : 0.05, 0.05, alongX ? 0.05 : len), mat);
+      b.position.set(x, y, z);
+      g.add(b);
+    };
+    [-4, 4].forEach((x) => beam(Z1 - Z0 - 0.6, x, 0, false));
+    beam(X1 - X0 - 0.6, 0, 0, true);
+    // very faint glass so the skylight reads as a roof without hiding the room
+    const glass = new T.Mesh(new T.PlaneGeometry(X1 - X0 - 0.6, Z1 - Z0 - 0.6), new T.MeshBasicMaterial({ color: "#cfe8ff", transparent: true, opacity: 0.05, depthWrite: false }));
+    glass.rotation.x = -Math.PI / 2;
+    glass.position.y = y;
+    g.add(glass);
+  }
+
+  const portalCache = {};
+  function portalTex(color) {
+    if (portalCache[color]) return portalCache[color].map;
+    const tex = canvasTex(256, 340, (x, W, H) => {
+      const g = x.createRadialGradient(W / 2, H * 0.55, 8, W / 2, H * 0.55, H * 0.7);
+      g.addColorStop(0, "#ffffff"); g.addColorStop(0.18, "#fdf6e0"); g.addColorStop(0.55, color); g.addColorStop(1, "#0b1020");
+      x.fillStyle = g; x.fillRect(0, 0, W, H);
+      // light rays and sparkles: a tunnel of light leading to the next room
+      x.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        x.strokeStyle = "rgba(255,255,255,.10)"; x.lineWidth = 10;
+        x.beginPath(); x.moveTo(W / 2, H * 0.55); x.lineTo(W / 2 + Math.cos(a) * W, H * 0.55 + Math.sin(a) * H); x.stroke();
+      }
+      for (let i = 0; i < 40; i++) {
+        x.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.6})`;
+        x.beginPath(); x.arc(Math.random() * W, Math.random() * H, Math.random() * 2 + 0.5, 0, Math.PI * 2); x.fill();
+      }
+    });
+    portalCache[color] = { map: tex, emissive: tex }; // cached so leaving a room doesn't throw it away
+    texCache["portal" + color] = portalCache[color];
+    return tex;
+  }
+
   function buildSecretPanel(roomId, d) {
     const slot = SLOT_POS[d.slot];
     const s = sideOf(slot.side);
@@ -486,20 +916,16 @@
   function buildAtrium() {
     const N = sideOf("N");
     const k = G().pieces.length;
-    addBoard(N, {
-      w: 5.6, h: 2.6, accent: "#b8892f", kicker: "Welcome to the Silent Explorers Museum", title: "The Homecoming Signal is broken!", titleSize: 6.6,
-      body: [`Find all ${k} signal pieces. Each one is with a machine NASA left behind. Then bring them to Mission Control.`],
-      bodySize: 3.6, footer: `TODAY'S LAYOUT: #${R().seed}`,
+    addBoard(N, isLearn() ? {
+      w: 5.6, h: 2.6, accent: "#b8892f", kicker: t("atrium.kicker"), title: t("atrium.learnTitle"), titleSize: 6.6,
+      body: [t("atrium.learnBody")], bodySize: 3.6, footer: `${t("atrium.learnFooter")} · ${t("place." + PLACE()).toUpperCase()}`,
+    } : {
+      w: 5.6, h: 2.6, accent: "#b8892f", kicker: t("atrium.kicker"), title: t("atrium.title"), titleSize: 6.6,
+      body: [t("atrium.body", { k })],
+      bodySize: 3.6, footer: `${t("atrium.footer", { seed: R().seed })} · ${t("place." + PLACE()).toUpperCase()}`,
     }, 0, 2.3);
-    // Earth globe
-    const ped = add(new T.Mesh(new T.CylinderGeometry(0.8, 1.0, 0.85, 32), new T.MeshStandardMaterial({ color: "#2b2520", roughness: 0.6 })));
-    ped.position.set(0, 0.42, -1);
-    const globe = add(new T.Mesh(new T.SphereGeometry(0.9, 40, 28), new T.MeshStandardMaterial({ map: Models.globeTex(), roughness: 0.55 })));
-    globe.position.set(0, 1.8, -1);
-    globe.rotation.z = 0.41;
-    Models.shadowAll(ped); Models.shadowAll(globe);
-    spin.push({ o: globe, s: 0.15 });
-    obstacles.push({ x: 0, z: -1, r: 1.3 });
+    buildOrrery(0, -1.2);
+    buildKiosk(-4.2, -2.4, null);
     // Robot Bay pad
     const bx = -4.2, bz = 3.2;
     const pad = add(new T.Mesh(new T.CylinderGeometry(1.2, 1.3, 0.12, 40), new T.MeshStandardMaterial({ color: "#1f2330", roughness: 0.4, metalness: 0.4 })));
@@ -509,7 +935,8 @@
     ring.position.set(bx, 0.14, bz);
     spin.push({ o: ring, pulse: true });
     addSpot({ kind: "bay", pos: [bx, bz], face: 0, meshes: [pad] });
-    // Signal console: one light per piece
+    // Signal console: one light per piece (not on the learning tour)
+    if (isLearn()) { [[-7, -5], [7, -5]].forEach(([x, z]) => plant(x, z)); return; }
     const cx = 4.2, cz = 3.2;
     const base = add(new T.Mesh(new T.CylinderGeometry(0.7, 0.8, 1.0, 24), new T.MeshStandardMaterial({ color: "#2b2520" })));
     base.position.set(cx, 0.5, cz);
@@ -528,6 +955,136 @@
     [[-7, -5], [7, -5]].forEach(([x, z]) => plant(x, z));
   }
 
+  /*
+   * The lobby centerpiece: the whole solar system, turning slowly above a
+   * glowing pedestal. Click it to learn about the museum's wings.
+   */
+  const PLANETS = [
+    // [name, color, size, orbit, speed]
+    ["mercury", "#a7a29a", 0.07, 0.75, 1.6],
+    ["venus", "#e3b56a", 0.11, 1.0, 1.2],
+    ["earth", null, 0.12, 1.28, 1.0],
+    ["mars", "#c4572d", 0.09, 1.55, 0.8],
+    ["jupiter", "bands:#d7b48a:#b07d52", 0.26, 1.95, 0.45],
+    ["saturn", "bands:#e6cf9a:#c8a868", 0.2, 2.4, 0.33],
+    ["uranus", "#9fd8e0", 0.14, 2.75, 0.24],
+    ["neptune", "#4f6fd9", 0.14, 3.05, 0.18],
+  ];
+  function bandTex(a, b) {
+    return canvasTex(64, 128, (x, W, H) => {
+      for (let i = 0; i < 16; i++) { x.fillStyle = i % 2 ? a : b; x.fillRect(0, (i * H) / 16, W, H / 16 + 1); }
+      x.fillStyle = "rgba(255,255,255,.15)"; x.fillRect(0, H * 0.55, W, 4);
+    });
+  }
+  function buildOrrery(cx, cz) {
+    const g = add(new T.Group());
+    g.position.set(cx, 0, cz);
+    const Y = 2.45;
+    // pedestal with a glowing ring, and a slim pole up to the Sun
+    const ped = new T.Mesh(new T.CylinderGeometry(0.75, 0.95, 0.5, 40), new T.MeshStandardMaterial({ color: "#20263a", roughness: 0.3, metalness: 0.5 }));
+    ped.position.y = 0.25;
+    const glowRing = new T.Mesh(new T.TorusGeometry(0.8, 0.03, 8, 48), new T.MeshBasicMaterial({ color: "#5ef2ff", toneMapped: false }));
+    glowRing.rotation.x = Math.PI / 2;
+    glowRing.position.y = 0.48;
+    const pole = new T.Mesh(new T.CylinderGeometry(0.04, 0.06, Y - 0.5, 12), new T.MeshStandardMaterial({ color: "#b8c2d6", metalness: 0.7, roughness: 0.3 }));
+    pole.position.y = 0.5 + (Y - 0.5) / 2;
+    g.add(ped, glowRing, pole);
+    // the Sun, with a soft glow
+    const sunM = new T.Mesh(new T.SphereGeometry(0.4, 32, 24), new T.MeshBasicMaterial({ color: "#ffd05a", toneMapped: false }));
+    sunM.position.y = Y;
+    const halo = new T.Sprite(new T.SpriteMaterial({ map: canvasTex(128, 128, (x) => {
+      const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+      gr.addColorStop(0, "rgba(255,210,90,.9)"); gr.addColorStop(0.35, "rgba(255,170,60,.35)"); gr.addColorStop(1, "rgba(255,150,50,0)");
+      x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+    }), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+    halo.scale.set(2.2, 2.2, 1);
+    halo.position.y = Y;
+    const light = new T.PointLight("#ffd27a", 1.2, 7, 1.5);
+    light.position.y = Y;
+    g.add(sunM, halo, light);
+    spin.push({ o: sunM, s: 0.2 });
+    // planets on their orbits
+    const pick = [ped, pole, sunM];
+    PLANETS.forEach(([name, col, size, orbit, speed], i) => {
+      const ringLine = new T.Mesh(new T.RingGeometry(orbit - 0.006, orbit + 0.006, 96), new T.MeshBasicMaterial({ color: "#9fc4ff", transparent: true, opacity: 0.28, side: T.DoubleSide, depthWrite: false }));
+      ringLine.rotation.x = -Math.PI / 2;
+      ringLine.position.y = Y;
+      g.add(ringLine);
+      const arm = new T.Group();
+      arm.position.y = Y;
+      arm.rotation.y = i * 2.1;
+      const mat = name === "earth"
+        ? new T.MeshStandardMaterial({ map: Models.globeTex(), roughness: 0.6 })
+        : col.startsWith("bands")
+          ? new T.MeshStandardMaterial({ map: bandTex(col.split(":")[1], col.split(":")[2]), roughness: 0.7 })
+          : new T.MeshStandardMaterial({ color: col, roughness: 0.75 });
+      const p = new T.Mesh(new T.SphereGeometry(size, 28, 20), mat);
+      p.position.x = orbit;
+      arm.add(p);
+      if (name === "saturn") {
+        const ring = new T.Mesh(new T.RingGeometry(size * 1.35, size * 2.2, 48), new T.MeshBasicMaterial({ color: "#e8d4a0", transparent: true, opacity: 0.75, side: T.DoubleSide }));
+        ring.position.x = orbit;
+        ring.rotation.x = -Math.PI / 2 + 0.45;
+        arm.add(ring);
+      }
+      if (name === "earth") {
+        // the Moon circles the Earth
+        const mArm = new T.Group();
+        mArm.position.x = orbit;
+        const moon = new T.Mesh(new T.SphereGeometry(0.035, 16, 12), new T.MeshStandardMaterial({ color: "#d8d4cc" }));
+        moon.position.x = 0.22;
+        mArm.add(moon);
+        arm.add(mArm);
+        spin.push({ o: mArm, s: 2.4 });
+      }
+      spin.push({ o: p, s: 1.2 });
+      spin.push({ o: arm, s: speed * 0.35 });
+      g.add(arm);
+      pick.push(p);
+    });
+    Models.shadowAll(ped);
+    obstacles.push({ x: cx, z: cz, r: 1.15 });
+    addSpot({ kind: "orrery", pos: [cx, cz + 1.9], face: Math.PI, meshes: pick });
+  }
+
+  /* A glowing chat kiosk: "Ask me anything! Click here to chat" */
+  function buildKiosk(x, z, ex) {
+    const g = add(new T.Group());
+    g.position.set(x, 0, z);
+    g.rotation.y = Math.atan2(-x * 0.3, 1);
+    const post = new T.Mesh(new T.CylinderGeometry(0.08, 0.12, 1.0, 16), new T.MeshStandardMaterial({ color: "#20263a", metalness: 0.5, roughness: 0.3 }));
+    post.position.y = 0.5;
+    const foot = new T.Mesh(new T.CylinderGeometry(0.35, 0.4, 0.06, 28), post.material);
+    foot.position.y = 0.03;
+    const screen = Models.board({ w: 1.0, h: 0.66, ppm: 300, bg: "#0e1428", draw: (c, W, H) => {
+      c.fillStyle = "#0e1428"; c.fillRect(0, 0, W, H);
+      c.strokeStyle = "#5ef2ff"; c.lineWidth = 8; c.strokeRect(6, 6, W - 12, H - 12);
+      // chat bubble icon
+      c.fillStyle = "#5ef2ff";
+      c.beginPath(); c.roundRect ? c.roundRect(W / 2 - 46, 26, 92, 64, 14) : c.rect(W / 2 - 46, 26, 92, 64); c.fill();
+      c.beginPath(); c.moveTo(W / 2 - 22, 88); c.lineTo(W / 2 - 34, 112); c.lineTo(W / 2 - 2, 88); c.fill();
+      c.fillStyle = "#0e1428"; [-22, 0, 22].forEach((dx) => { c.beginPath(); c.arc(W / 2 + dx, 58, 7, 0, Math.PI * 2); c.fill(); });
+      c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = "#f6f0e3";
+      fitText(c, t("chat.kiosk"), W - 30, H * 0.13, 800, "Fraunces, Georgia, serif");
+      c.fillText(t("chat.kiosk"), W / 2, H * 0.66);
+      c.fillStyle = "#5ef2ff";
+      fitText(c, t("chat.kioskSub"), W - 30, H * 0.09, 700, '"IBM Plex Mono", monospace');
+      c.fillText(t("chat.kioskSub"), W / 2, H * 0.84);
+    } });
+    boards.push(screen);
+    screen.mesh.position.set(0, 1.35, 0.02);
+    screen.mesh.rotation.x = -0.35;
+    g.add(post, foot, screen.mesh);
+    const glow = new T.Mesh(new T.RingGeometry(0.42, 0.5, 40), new T.MeshBasicMaterial({ color: "#5ef2ff", transparent: true, depthWrite: false }));
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.y = 0.07;
+    g.add(glow);
+    spin.push({ o: glow, pulse: true });
+    Models.shadowAll(post);
+    obstacles.push({ x, z, r: 0.5 });
+    addSpot({ kind: "kiosk", ex, pos: [x, z + 1.1], face: Math.PI, meshes: [post, screen.mesh] });
+  }
+
   function plant(x, z) {
     const pot = add(new T.Mesh(new T.CylinderGeometry(0.32, 0.26, 0.55, 16), new T.MeshStandardMaterial({ color: "#c4472d", roughness: 0.8 })));
     pot.position.set(x, 0.28, z);
@@ -543,13 +1100,7 @@
   function buildExhibit(r) {
     const ex = exById(r.exhibit);
     const N = sideOf("N");
-    const bd = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
-    const frame = new T.Group();
-    const fr = new T.Mesh(new T.BoxGeometry(3.54, 2.44, 0.08), new T.MeshStandardMaterial({ color: "#b8892f", metalness: 0.5, roughness: 0.35 }));
-    const pic = new T.Mesh(new T.PlaneGeometry(3.3, 2.2), new T.MeshBasicMaterial({ map: bd, toneMapped: false }));
-    pic.position.z = 0.045;
-    frame.add(fr, pic);
-    onWall(N, frame, 0, 2.75, 0.05);
+    photoFrame(N, ex);
     const g = buildCase(ex, 0, Z0 + WALL_T + 1.45, 1.2);
     // the machine's name on a stand
     const label = Models.board({ w: 1.3, h: 0.6, ppm: 380, draw: (x, W, H) => drawLabel(x, W, H, ex) });
@@ -567,9 +1118,49 @@
       pieceHalo.position.copy(pieceMesh.position);
       spin.push({ o: pieceHalo, face: true, follow: pieceMesh });
     }
+    buildKiosk(2.7, -3.3, ex);
     const spot = addSpot({ kind: "exhibit", ex, pos: [0, Z0 + WALL_T + 3.6], face: Math.PI, meshes: g.userData.pick.concat([label.mesh]) });
     spot.labelBoard = label;
     obstacles.push({ x: 0, z: Z0 + WALL_T + 1.45, r: 1.15 });
+  }
+
+  /*
+   * The picture on the north wall: a real NASA photo of the mission when we
+   * have one (js/photos.js), otherwise the drawn diorama. Sized to the photo.
+   */
+  const photoLoader = new T.TextureLoader();
+  function photoFrame(wall, ex) {
+    const ph = window.PHOTOS && PHOTOS[ex.id];
+    const maxW = 3.6, maxH = 2.3;
+    let w = 3.3, h = 2.2, map;
+    if (ph) {
+      const a = ph.w / ph.h;
+      w = Math.min(maxW, maxH * a); h = w / a;
+      map = photoLoader.load(ph.src);
+      map.encoding = T.sRGBEncoding;
+      map.anisotropy = 4;
+    } else map = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
+    const frame = new T.Group();
+    const fr = new T.Mesh(new T.BoxGeometry(w + 0.24, h + 0.24, 0.08), new T.MeshStandardMaterial({ color: "#1b2030", metalness: 0.6, roughness: 0.3 }));
+    const edge = new T.Mesh(new T.BoxGeometry(w + 0.3, h + 0.3, 0.04), new T.MeshBasicMaterial({ color: ex.wing.color, toneMapped: false }));
+    edge.position.z = -0.03;
+    const pic = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map, toneMapped: false }));
+    pic.position.z = 0.045;
+    frame.add(edge, fr, pic);
+    if (ph) {
+      // a small credit plate under the photo
+      const plate = Models.board({ w: Math.min(w, 2.6), h: 0.2, ppm: 300, bg: "#1b2030", draw: (c, W, H) => {
+        c.fillStyle = "#1b2030"; c.fillRect(0, 0, W, H);
+        c.fillStyle = "#cfd8e2"; c.textAlign = "center"; c.textBaseline = "middle";
+        fitText(c, `${t("photo.credit")}: ${ph.credit}`, W - 16, H * 0.5, 600, '"IBM Plex Mono", monospace');
+        c.fillText(`${t("photo.credit")}: ${ph.credit}`, W / 2, H / 2);
+      } });
+      boards.push(plate);
+      plate.mesh.position.set(0, -h / 2 - 0.26, 0.05);
+      frame.add(plate.mesh);
+    }
+    onWall(wall, frame, 0, 2.6 + (maxH - h) / 4, 0.05);
+    return frame;
   }
 
   function buildCase(ex, x, z, h) {
@@ -612,7 +1203,8 @@
       x.translate(W - 70, H * 0.5); x.rotate(-0.25);
       x.strokeStyle = "#c4472d"; x.lineWidth = 5; x.strokeRect(-56, -22, 112, 44);
       x.fillStyle = "#c4472d"; x.font = `700 26px "IBM Plex Mono", monospace`; x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillText("VISITED", 0, 2);
+      fitText(x, t("door.visited"), 100, 26, 700, '"IBM Plex Mono", monospace');
+      x.fillText(t("door.visited"), 0, 2);
       x.restore();
     }
   }
@@ -713,6 +1305,7 @@
     g.add(lightPool(5));
     if (r.find === "treasure") {
       const t = exById(r.treasure);
+      photoFrame(sideOf("N"), t);
       const c = buildCase(t, 0, -1.6, 0.9);
       addSpot({ kind: "exhibit", ex: t, pos: [0, 0.6], face: Math.PI, meshes: c.userData.pick });
       obstacles.push({ x: 0, z: -1.6, r: 1.15 });
@@ -737,9 +1330,12 @@
     addBoard(N, { w: 6.2, h: 2.6, bg: "#0e1428", draw: (x, W, H, u) => {
       x.fillStyle = "#0e1428"; x.fillRect(0, 0, W, H);
       x.fillStyle = "#5ef2ff"; x.font = `700 ${3.4 * u}px "IBM Plex Mono", monospace`; x.textBaseline = "top";
-      x.fillText("MISSION CONTROL · HOMECOMING SIGNAL", 6 * u, 6 * u);
-      x.fillStyle = "#f6f0e3"; x.font = `800 ${8 * u}px Fraunces, Georgia, serif`;
-      x.fillText(have === k ? "All pieces aboard. Ready!" : `${have} of ${k} pieces`, 6 * u, 14 * u);
+      fitText(x, t("mc.board"), W - 12 * u, 3.4 * u, 700, '"IBM Plex Mono", monospace');
+      x.fillText(t("mc.board"), 6 * u, 6 * u);
+      x.fillStyle = "#f6f0e3";
+      const big = isLearn() ? t("mc.learn") : have === k ? t("mc.ready") : t("mc.count", { n: have, k });
+      fitText(x, big, W - 12 * u, 8 * u, 800, "Fraunces, Georgia, serif");
+      x.fillText(big, 6 * u, 14 * u);
       for (let i = 0; i < k; i++) {
         const cx = 10 * u + i * 13 * u, cy = H - 12 * u;
         x.fillStyle = i < have ? "#ffd34d" : "#2a3350";
@@ -907,9 +1503,11 @@
     updateCamera(dt);
     updateWalls(dt);
     spin.forEach((s) => {
-      if (s.pulse) s.o.material.opacity = 0.6 + Math.sin(clock * 3) * 0.4;
+      if (s.twinkle) { if (!S.a11y.motion) s.o.userData.twinkle(clock); }
+      else if (s.pulse) s.o.material.opacity = 0.6 + Math.sin(clock * 3) * 0.4;
       else if (s.flicker) s.o.material.opacity = 0.55 + Math.sin(clock * 5) * 0.25 + Math.sin(clock * 13) * 0.15;
       else if (s.pulseScale) s.o.scale.setScalar(1 + Math.sin(clock * 4) * 0.08);
+      else if (s.shimmer) s.o.material.opacity = S.a11y.motion ? 0.95 : 0.85 + Math.sin(clock * 3 + s.o.position.x) * 0.15;
       else if (s.face) { s.o.position.copy(s.follow.position); s.o.lookAt(camera.position); }
       else { s.o.rotation.y += s.s * dt; if (s.bob) s.o.position.y = s.bob + Math.sin(clock * 2) * 0.12; }
     });
@@ -970,7 +1568,7 @@
   function placeActors(dt) {
     kid.position.set(P.x, 0, P.z);
     kid.rotation.y = P.heading;
-    Models.animateKid(kid, clock, P.speed);
+    Models.animateKid(kid, clock, P.speed, S.a11y.motion ? 1 : HOP[PLACE()] || 1);
     const lastC = crumbs[crumbs.length - 1];
     if (!lastC || Math.hypot(lastC[0] - P.x, lastC[1] - P.z) > 0.25) { crumbs.push([P.x, P.z]); if (crumbs.length > 60) crumbs.shift(); }
     let goal = null, acc = 0;
@@ -1009,7 +1607,7 @@
     if (d.sealed && !allCollected()) {
       R().sawMC = true; save();
       const left = G().pieces.length - R().collected.length;
-      return say(`This is <b>Mission Control</b>! It's sealed until we bring all ${G().pieces.length} signal pieces. We still need <b>${left}</b>. Let's remember where this door is!`, 7000);
+      return say(t("echo.sealed", { k: G().pieces.length, left }), 7000);
     }
     if (d.lock && !R().solved[d.lock.id]) return openRiddle(d);
     const obj = doorObjs.find((o) => o.door === d);
@@ -1017,6 +1615,8 @@
     transit = { t: 0, obj, from: [P.x, P.z], to: [ix, iz], switched: false };
     $("#fadeSym").textContent = SYM[d.sym].ch;
     $("#fadeSym").style.color = SYM[d.sym].color;
+    // stepping through: a burst of the door's light, not a black screen
+    $("#fade").style.background = `radial-gradient(circle at 50% 50%, #ffffff 0%, ${SYM[d.sym].color} 45%, #0b1020 100%)`;
     $("#prompt").hidden = true;
   }
   function stepTransit(dt) {
@@ -1076,12 +1676,12 @@
     setTimeout(() => arrived(d.to, first, !back), 350);
   }
   function hatch() {
-    const t = canvasTex(128, 128, (x) => {
+    const tex = canvasTex(128, 128, (x) => {
       x.fillStyle = "#2b3350"; x.beginPath(); x.arc(64, 64, 60, 0, Math.PI * 2); x.fill();
       x.strokeStyle = "#f2c230"; x.lineWidth = 8; x.stroke();
-      x.fillStyle = "#f2c230"; x.font = "700 20px 'IBM Plex Mono', monospace"; x.textAlign = "center"; x.fillText("AIRLOCK", 64, 70);
+      x.fillStyle = "#f2c230"; fitText(x, t("door.airlock"), 100, 20, 700, "'IBM Plex Mono', monospace"); x.textAlign = "center"; x.fillText(t("door.airlock"), 64, 70);
     });
-    const m = add(new T.Mesh(new T.CircleGeometry(0.8, 32), new T.MeshBasicMaterial({ map: t })));
+    const m = add(new T.Mesh(new T.CircleGeometry(0.8, 32), new T.MeshBasicMaterial({ map: tex })));
     m.rotation.x = -Math.PI / 2;
     m.position.set(0, 0.014, 4.4);
   }
@@ -1094,19 +1694,19 @@
     let line = "";
     if (noteChecked) {
       noteChecked = false;
-      return say(`The note checks out! We followed it one door at a time, and it really led to a machine with a signal piece. Checking a route is quick: you just follow it. Now let's hear this machine's story!`, 9000);
+      return say(t("echo.noteOk"), 9000);
     }
-    if (oneWay) line = `Whoa! That was a <b>one-way airlock</b>. It sealed shut behind us, so we'll have to find another way around. `;
+    if (oneWay) line = t("echo.oneWay") + " ";
     if (first) {
-      if (r.type === "exhibit" && r.piece) line += `Look! This machine is holding a <b>signal piece</b>. Let's hear its story to get it.`;
-      else if (r.type === "exhibit") line += `No signal piece here, but this machine has a story. Want to hear it?`;
-      else if (r.type === "hall") line += `${esc(M.halls[r.hall].fact)}`;
-      else if (r.type === "hidden") line += r.find === "note" ? `A secret room! There's an old note on that stand.` : `A secret room! Something small and special is in that case.`;
-      else if (r.type === "atrium") line += `Back in the Atrium, where we started.`;
-    } else if (r.type === "exhibit" && r.piece && !R().collected.includes(id)) line += `This machine still has its signal piece. Let's hear its story!`;
-    if (!line && LV().scanner === "always") {
+      if (r.type === "exhibit" && r.piece) line += t("echo.piece");
+      else if (r.type === "exhibit") line += t(isLearn() ? "echo.learnExhibit" : "echo.noPiece");
+      else if (r.type === "hall") line += esc(t(`hall.${r.hall}.fact`));
+      else if (r.type === "hidden") line += r.find === "note" ? t("echo.secretNote") : t("echo.secretTreasure");
+      else if (r.type === "atrium") line += t("echo.atrium");
+    } else if (r.type === "exhibit" && r.piece && !R().collected.includes(id)) line += t("echo.stillPiece");
+    if (!line && LV().scanner === "always" && !isLearn()) {
       const h = Maze.hint(G(), id, { collected: R().collected });
-      if (h && !h.here) line = `My scanner likes the <b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b> door.`;
+      if (h && !h.here) line = t("echo.scannerLikes", { sym: `<b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b>` });
     }
     if (line) say(line, 7000);
   }
@@ -1120,7 +1720,7 @@
     else n.prog = n.steps[0].room === from && n.steps[0].door === door ? 1 : 0;
     if (n.prog === n.steps.length) {
       n.done = true;
-      award(2, "note checked");
+      award(2, "note");
       noteChecked = true;
     }
     drawNote();
@@ -1130,10 +1730,10 @@
     const p = $("#notePanel");
     if (!n) { p.hidden = true; return; }
     p.hidden = false;
-    p.innerHTML = `<p class="np-kick">Explorer's note${n.done ? " · checked ✓" : ""}</p>
-      <p class="np-from">From the secret room:</p>
+    p.innerHTML = `<p class="np-kick">${esc(t("note.kick"))}${n.done ? " · " + esc(t("note.checked")) : ""}</p>
+      <p class="np-from">${esc(t("note.from"))}</p>
       <ol class="np-steps">${n.steps.map((s, i) => `<li class="${i < n.prog ? "ok" : ""}" style="--c:${SYM[s.sym].color}"><span>${SYM[s.sym].ch}</span></li>`).join("")}</ol>
-      <p class="np-end">${n.done ? "It led to a signal room!" : "…leads to a signal piece?"}</p>`;
+      <p class="np-end">${esc(n.done ? t("note.done") : t("note.q"))}</p>`;
   }
 
   /* =========================================================
@@ -1174,13 +1774,12 @@
     if (s.kind === "door") {
       const d = s.door, sym = SYM[d.sym];
       const st = doorState(R().cur, d);
-      txt = st === "sealed" ? `Mission Control (sealed)` : st === "locked" ? `Solve the ${sym.ch} door's riddle lock` : `Open the ${sym.ch} door`;
-      txt = `<span style="color:${sym.color};filter:brightness(1.4)">${sym.ch}</span> ${esc(txt.replace(sym.ch + " ", ""))}`;
+      txt = st === "sealed" ? t("pr.mcSealed") : st === "locked" ? t("pr.riddle") : d.next || d.back ? `${t(d.next ? "door.next" : "door.back")}: ${roomName(d.to)}` : t("pr.open");
+      txt = `<span style="color:${sym.color};filter:brightness(1.4)">${sym.ch}</span> ${esc(txt)}`;
     } else {
-      txt = esc({
-        secret: "Search the odd-looking wall", bay: "Open Robot Bay", console: "Check the signal console", fact: "Read the sign",
-        note: "Read the old note", launch: "Send the Homecoming Signal",
-      }[s.kind] || `Look closer: ${s.ex.name}`);
+      const k = { secret: "pr.secret", bay: "pr.bay", console: "pr.console", fact: "pr.fact", note: "pr.note", launch: "pr.launch", orrery: "pr.orrery" }[s.kind];
+      if (s.kind === "kiosk") txt = esc(s.ex ? t("pr.kiosk", { name: s.ex.name }) : t("pr.help", { robot: S.robotName }));
+      else txt = esc(k ? (s.kind === "launch" && isLearn() ? t("fin.learnTitle") : t(k)) : t("pr.look", { name: s.ex.name }));
     }
     pr.innerHTML = `${txt}<kbd>Enter</kbd>`;
     pr.hidden = false;
@@ -1190,8 +1789,10 @@
     if (s.kind === "door") useDoor(s.door);
     else if (s.kind === "secret") revealSecret(s.door);
     else if (s.kind === "bay") openWorkshop();
-    else if (s.kind === "console") say(`Signal pieces: <b>${R().collected.length} of ${G().pieces.length}</b>. ${allCollected() ? "We have them all! Now find Mission Control." : "Each one is with a machine somewhere behind these doors."}`);
-    else if (s.kind === "fact") say(esc(s.hall.fact), 8000);
+    else if (s.kind === "kiosk") openChat(s.ex);
+    else if (s.kind === "orrery") openRules("wings");
+    else if (s.kind === "console") say(`${t("echo.console", { n: R().collected.length, k: G().pieces.length })} ${t(allCollected() ? "echo.consoleAll" : "echo.consoleMore")}`);
+    else if (s.kind === "fact") say(esc(t(`hall.${M.halls.indexOf(s.hall)}.fact`)), 8000);
     else if (s.kind === "note") readNote();
     else if (s.kind === "launch") openFinale();
     else openExhibit(s.ex);
@@ -1204,8 +1805,8 @@
     const px = P.x, pz = P.z;
     buildRoom(R().cur);
     P.x = px; P.z = pz;
-    award(1, "secret passage found");
-    say(`A <b>secret door</b>! I wonder what's behind it...`);
+    award(1, "secret");
+    say(t("echo.secretDoor"));
   }
 
   function readNote() {
@@ -1215,7 +1816,7 @@
       save();
     }
     drawNote();
-    say(`An old note from a student who explored this morning: <b>"From this secret room, ${r.note.steps.map((s) => `<span style="color:${SYM[s.sym].color}">${SYM[s.sym].ch}</span>`).join(" then ")} leads to a signal piece."</b> Let's follow it and check if it's right!`, 9000);
+    say(t("echo.note", { steps: r.note.steps.map((s) => `<span style="color:${SYM[s.sym].color}">${SYM[s.sym].ch}</span>`).join(esc(t("echo.then"))) }), 9000);
   }
 
   /* ---------------- pointer + keyboard ---------------- */
@@ -1256,6 +1857,7 @@
     if (k === "q") want.yaw -= Math.PI / 4;
     if (k === "e") want.yaw += Math.PI / 4;
     if ((k === "Enter" || k === " ") && nearSpot) { e.preventDefault(); activate(nearSpot); }
+    if (k === "n" || k === "p") { e.preventDefault(); cycleSpot(k === "n" ? 1 : -1); }
   });
   addEventListener("keyup", (e) => held.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key));
   addEventListener("blur", () => held.clear());
@@ -1271,15 +1873,73 @@
   function say(html, ms = 5500) {
     const b = $("#say");
     b.innerHTML = `<span class="who">${esc(S.robotName)}</span>${html}`;
+    if (S.a11y.speak) speak(html);
+    if (S.a11y.text !== "n" || S.a11y.speak) ms = Math.round(ms * 1.6); // more time to read or listen
     b.classList.add("show");
     clearTimeout(sayTimer);
     sayTimer = setTimeout(() => b.classList.remove("show"), ms);
   }
 
+  /* read text aloud in the player's language, when the device has a voice for it */
+  function speak(html) {
+    if (!("speechSynthesis" in window)) return;
+    const text = String(html).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (!text) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const voice = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(I18N.lang));
+    if (voice) u.voice = voice;
+    u.lang = voice ? voice.lang : I18N.lang;
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+  }
+
+  /* ---------------- settings and accessibility ---------------- */
+  function applyA11y() {
+    const h = document.documentElement, a = S.a11y;
+    h.classList.toggle("a11y-text-l", a.text === "l");
+    h.classList.toggle("a11y-text-xl", a.text === "xl");
+    h.classList.toggle("a11y-contrast", a.contrast);
+    h.classList.toggle("a11y-calm", a.motion);
+    h.classList.toggle("a11y-font", a.font);
+    $("#a11yText").querySelectorAll("[data-size]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.size === a.text)));
+    $("#a11yContrast").checked = a.contrast;
+    $("#a11yMotion").checked = a.motion;
+    $("#a11yFont").checked = a.font;
+    $("#a11ySpeak").checked = a.speak;
+    if (!a.speak && "speechSynthesis" in window) speechSynthesis.cancel();
+  }
+  document.querySelectorAll(".a11y-open").forEach((b) => b.addEventListener("click", () => { applyA11y(); $("#a11yDialog").showModal(); }));
+  $("#a11yText").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-size]");
+    if (!b) return;
+    S.a11y.text = b.dataset.size; save(); applyA11y();
+  });
+  [["#a11yContrast", "contrast"], ["#a11yMotion", "motion"], ["#a11yFont", "font"], ["#a11ySpeak", "speak"]].forEach(([sel, key]) =>
+    $(sel).addEventListener("change", (e) => {
+      S.a11y[key] = e.target.checked; save(); applyA11y();
+      if (key === "speak" && e.target.checked) speak(t("a11y.speak"));
+    }));
+
+  /* keyboard: N / P walk to the next or previous door, machine, or kiosk in the room */
+  let spotCursor = -1;
+  function cycleSpot(dir) {
+    if (!spots.length || transit) return;
+    const list = spots.filter((x) => x.kind !== "secret");
+    spotCursor = (spotCursor + dir + list.length) % list.length;
+    const sp = list[spotCursor];
+    walkTo(sp.pos, null, sp.face); // walk there and wait: Enter opens or looks closer
+    let name;
+    if (sp.kind === "door") name = sp.door.sealed ? t("room.mc") : `${SYM[sp.door.sym].ch} ${R().known[`${R().cur}:${sp.door.i}`] || LV().learn ? roomName(sp.door.to) : "?"}`;
+    else name = sp.ex ? sp.ex.name : sp.hall ? t(`hall.${M.halls.indexOf(sp.hall)}.name`) : t({ bay: "hud.bay", console: "pr.console", launch: "pr.launch", note: "pr.note", orrery: "pr.orrery", kiosk: "chat.kiosk" }[sp.kind] || "pr.look");
+    toast(t("a11y.target", { name }));
+  }
+
   function drawActors() {
     if (kid) scene.remove(kid);
     if (robot) scene.remove(robot);
-    kid = Models.kid(S.kid);
+    // off Earth, everyone suits up before going inside
+    kid = Models.kid({ ...S.kid, suit: PLACE() !== "earth" });
     kid.scale.setScalar(1.15);
     robot = Models.robot(S.look);
     robot.scale.setScalar(0.85);
@@ -1289,7 +1949,7 @@
   /* ---------------- scanner (Medium) ---------------- */
   $("#scanBtn").addEventListener("click", () => {
     const run = R();
-    if (run.scans === 0) return say(`My scanner's batteries are empty. We'll have to explore the old-fashioned way!`);
+    if (run.scans === 0) return say(t("echo.noBattery"));
     run.scans--;
     save();
     updateHUD();
@@ -1302,8 +1962,8 @@
     }
     updateHint();
     const h = Maze.hint(G(), run.cur, { collected: run.collected });
-    if (h && h.here) say(`The signal piece is right here! Hear this machine's story.`);
-    else if (h) say(`Scanning... <b style="color:${SYM[r.doors[h.door].sym].color}">${SYM[r.doors[h.door].sym].ch}</b> is the way to go! (${run.scans} scan${run.scans === 1 ? "" : "s"} left)`);
+    if (h && h.here) say(t("echo.pieceHere"));
+    else if (h) say(t("echo.scanning", { sym: `<b style="color:${SYM[r.doors[h.door].sym].color}">${SYM[r.doors[h.door].sym].ch}</b>`, n: run.scans }));
   });
 
   /* =========================================================
@@ -1319,6 +1979,7 @@
         bindPointer();
         requestAnimationFrame((t) => { last = t; tick(t); });
       }
+      applyPlace();
       drawActors();
       resize();
       buildRoom(R().cur);
@@ -1326,26 +1987,87 @@
       if (R().cur !== 0) { P.z = 1.8; Rb.z = 2.6; }
       cam.tx = P.x * 0.55; cam.tz = P.z * 0.55 + 0.6;
       $("#hudName").textContent = S.player;
+      $("#chatFabLabel").textContent = t("chat.fab", { robot: S.robotName });
+      $("#chatFab").classList.add("pulse");
       updateHUD();
       drawNote();
       showBanner(R().cur);
       if (isNew) setTimeout(openStory, 500);
-      else say(`Welcome back! We have <b>${R().collected.length} of ${G().pieces.length}</b> signal pieces.`);
+      else say(isLearn() ? t("echo.learnWelcomeBack") : t("echo.welcomeBack", { n: R().collected.length, k: G().pieces.length }));
     }, isNew ? 600 : 0);
   }
 
   function openStory() {
-    const k = G().pieces.length;
-    const L = LV();
-    $("#storyBody").innerHTML = M.adventure.intro.map((p) => `<p>${esc(p.replace("ROBOT", S.robotName).replace("PIECES", k))}</p>`).join("") +
-      `<p class="story-level"><b>${L.label}</b> · ${k} signal pieces · layout #${R().seed}${G().par ? ` · gold route: ${G().par} doors or fewer` : ""}</p>`;
+    fillStory();
     $("#storyDialog").showModal();
   }
+  function fillStory() {
+    const k = G().pieces.length;
+    const vars = { robot: esc(S.robotName), k };
+    const pl = PLACE();
+    // off Earth, the trip starts with a rocket ride and spacesuits
+    const trip = pl !== "earth" ? `<p class="story-place">${esc(t("story.trip." + pl))}</p>` : "";
+    const place = `<p class="story-place">${esc(t("echo.place." + pl))}</p>`;
+    if (isLearn()) {
+      $("#storyKicker").textContent = t("story.learnKicker");
+      $("#storyTitle").textContent = t("story.learnTitle");
+      $("#storyBody").innerHTML = trip + ["story.learn1", "story.learn2", "story.learn3"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place;
+    } else {
+      $("#storyKicker").textContent = t("story.kicker");
+      $("#storyTitle").textContent = t("story.title");
+      $("#storyBody").innerHTML = trip + ["story.p1", "story.p2", "story.p3", "story.p4"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place +
+        `<p class="story-level">${t("story.level", { level: `<b>${esc(levelLabel(R().level))}</b>`, k, seed: R().seed })}${G().par ? " · " + t("story.gold", { n: G().par }) : ""}</p>`;
+    }
+  }
+  /* ---------------- How to play: the mission, the wings, the rules ---------------- */
+  const WING_ICON = { moon: "moon", mars: "mars", deep: "deep" };
+  function openRules(focus) {
+    const learn = isLearn();
+    const k = S.run ? G().pieces.length : 4;
+    const robot = esc(S.robotName);
+    const wingCards = wings.map((w) => `
+      <div class="wing-card" style="--wc:${w.color}">
+        <span class="wing-orb ${WING_ICON[w.id] || "deep"}"></span>
+        <div><p>${t("rules." + w.id)}</p>
+        <p class="wing-list">${esc(t("rules.machines", { list: w.exhibits.map((e) => e.name).join(", ") }))}</p></div>
+      </div>`).join("");
+    const rules = learn ? ["rules.r1", "rules.r7"] : ["rules.r1", "rules.r2", "rules.r3", "rules.r4", "rules.r5", "rules.r6", "rules.r7"];
+    $("#rulesBody").innerHTML = `
+      <section><h3>${esc(t("rules.goalTitle"))}</h3>
+        <p class="big">${esc(plain(learn ? t("rules.goalLearn") : t("rules.goalGame", { k })))}</p>
+        ${S.run ? `<p class="rules-level">${esc(t("rules.level", { level: levelLabel(R().level) }))}${learn ? "" : " · " + esc(t("level." + R().level + "Desc"))}</p>` : ""}
+      </section>
+      <section><h3>${esc(t("rules.aboutTitle"))}</h3><p>${esc(t("rules.about"))}</p></section>
+      <section id="rulesWings"><h3>${esc(t("rules.wingsTitle"))}</h3><div class="wing-cards">${wingCards}</div></section>
+      <section><h3>${esc(t("rules.howTitle"))}</h3><ul class="rules-list">${rules.map((key) => `<li>${esc(t(key))}</li>`).join("")}</ul></section>
+      <p class="rules-chat">${t("rules.chat", { robot })}</p>`;
+    $("#rulesDialog").showModal();
+    if (focus === "wings") $("#rulesWings").scrollIntoView({ block: "start" });
+    else $("#rulesBody").scrollTop = 0;
+  }
+  $("#rulesBtn").addEventListener("click", () => openRules());
+  $("#rulesDialog").addEventListener("close", () => {
+    if (pendingTip) { say(pendingTip, 9000); pendingTip = null; }
+  });
+  let pendingTip = null;
+
   $("#storyDialog").addEventListener("close", () => {
     if (R().route.length === 0 && R().cur === 0) {
+      // first time in each mode: show How to play right after the story
+      S.seenRules = S.seenRules || {};
+      const mode = isLearn() ? "learn" : "game";
+      const tip = isLearn() ? `${t("echo.learnStart")} ${t("echo.chatTip", { robot: esc(S.robotName) })}` : null;
+      if (!S.seenRules[mode]) {
+        S.seenRules[mode] = true;
+        save();
+        const L = LV();
+        pendingTip = tip || `${t("echo.tipStart")} ${L.scanner === "always" ? t("echo.tipAlways") : L.scanner > 0 ? t("echo.tipScans", { n: L.scanner }) : t("echo.tipNone")} ${t("echo.chatTip", { robot: esc(S.robotName) })}`;
+        return setTimeout(() => openRules(), 200);
+      }
+      if (isLearn()) return say(tip, 9000);
       const L = LV();
-      const tip = L.scanner === "always" ? ` My scanner will point to a good door, look for the blue arrow.` : L.scanner > 0 ? ` I can <b>scan</b> ${L.scanner} times to point the way.` : ` My scanner is broken today, so let's explore and remember the doors!`;
-      say(`Every door has a symbol. We won't know what's behind one until we open it.${tip}`, 9000);
+      const tip2 = L.scanner === "always" ? t("echo.tipAlways") : L.scanner > 0 ? t("echo.tipScans", { n: L.scanner }) : t("echo.tipNone");
+      say(`${t("echo.tipStart")} ${tip2} ${t("echo.chatTip", { robot: esc(S.robotName) })}`, 9000);
     }
   });
 
@@ -1356,13 +2078,19 @@
     $("#starCount").textContent = S.stars;
     if (!R()) return;
     const g = G();
-    $("#pieces").innerHTML = g.pieces.map((p) => `<i class="${R().collected.includes(p) ? "got" : ""}"></i>`).join("") + `<span class="sr-only">${R().collected.length} of ${g.pieces.length} signal pieces</span>`;
-    $("#doorsCount").innerHTML = `Doors <b>${R().route.length}</b>${g.par ? `<small> / gold ${g.par}</small>` : ""}`;
-    $("#hudLevel").textContent = LV().label;
-    $("#hudSeed").textContent = `#${R().seed}`;
+    $("#hudPlace").textContent = t("place." + PLACE());
+    $("#hudLevel").textContent = levelLabel(R().level);
+    $("#hudSeed").textContent = isLearn() ? "" : `· ${t("hud.layout", { seed: "#" + R().seed })}`;
+    $("#pieces").hidden = isLearn();
+    $("#pieces").innerHTML = g.pieces.map((p) => `<i class="${R().collected.includes(p) ? "got" : ""}"></i>`).join("") + `<span class="sr-only">${t("echo.console", { n: R().collected.length, k: g.pieces.length }).replace(/<[^>]+>/g, "")}</span>`;
+    $("#doorsCount").dataset.i18nTip = isLearn() ? "tip.rooms" : "tip.doors";
+    I18N.apply($("#doorsCount").parentElement);
+    $("#doorsCount").innerHTML = isLearn()
+      ? t("hud.rooms", { n: R().visited.length, m: g.rooms.length })
+      : `${esc(t("hud.doors"))} <b>${R().route.length}</b>${g.par ? `<small> / ${esc(t("hud.gold", { n: g.par }))}</small>` : ""}`;
     const sc = R().scans;
-    $("#scanBtn").hidden = sc === -1 || LV().scanner === 0;
-    $("#scanBtn").textContent = `Scan (${sc})`;
+    $("#scanBtn").hidden = isLearn() || sc === -1 || LV().scanner === 0;
+    $("#scanBtn").textContent = t("hud.scan", { n: sc });
     if (pop) {
       const el = $("#starCount").parentElement;
       el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
@@ -1373,7 +2101,7 @@
     S.stars += n;
     save();
     updateHUD(true);
-    toast(`+${n} star${n > 1 ? "s" : ""} · ${why}`);
+    toast(t("toast.stars", { n, why: t("why." + why) }));
   }
   function toast(text) {
     const t = document.createElement("div");
@@ -1385,12 +2113,12 @@
 
   $("#journalBtn").addEventListener("click", () => {
     const met = everything.filter((e) => S.met[e.id]).length;
-    $("#jTitle").textContent = `Machines you've met: ${met} of ${everything.length}`;
+    $("#jTitle").textContent = t("j.title", { n: met, m: everything.length });
     $("#journalGrid").innerHTML = everything.map((e) => `
       <div class="j-cell${S.met[e.id] ? " got" : ""}" style="--wc:${e.wing.color}">
         <span class="j-art">${Art.hardware(e.art)}</span>
         <span class="j-name">${S.met[e.id] ? esc(e.name) : "???"}</span>
-        <span class="j-stamp">${S.met[e.id] ? (e.treasure ? "Treasure" : "Met") : e.treasure ? "Secret" : "Not yet"}</span>
+        <span class="j-stamp">${esc(S.met[e.id] ? (e.treasure ? t("j.treasure") : t("j.met")) : e.treasure ? t("j.secret") : t("j.notYet"))}</span>
       </div>`).join("");
     $("#journalDialog").showModal();
   });
@@ -1412,7 +2140,7 @@
         <span class="ro-art">${Art.hardware(o.art)}</span>
         ${L.riddleNames ? `<span class="ro-name">${esc(o.name)}</span>` : `<span class="ro-name">?</span>`}
       </button>`).join("");
-    $("#riddleFb").textContent = L.riddleHint ? `Hint: this machine lives in the ${ans.wing.name.replace(" Wing", "")} part of space.` : L.riddleNames ? "" : "No names on Hard mode. Look closely at the machines!";
+    $("#riddleFb").textContent = L.riddleHint ? t("riddle.hint", { wing: t("wing." + ans.wing.id) }) : L.riddleNames ? "" : t("riddle.noNames");
     $("#riddleDialog").showModal();
   }
   $("#riddleOpts").addEventListener("click", (e) => {
@@ -1420,16 +2148,16 @@
     if (!b) return;
     if (b.dataset.ans !== "1") {
       b.disabled = true; b.classList.add("no");
-      $("#riddleFb").textContent = "Not that one. Try again!";
+      $("#riddleFb").textContent = t("riddle.no");
       return;
     }
     b.classList.add("yes");
     const d = riddleDoor;
     const ans = exById(d.lock.exhibit);
-    $("#riddleFb").textContent = `Yes! It's ${ans.name}. The lock clicks open...`;
+    $("#riddleFb").textContent = t("riddle.yes", { name: ans.name });
     R().solved[d.lock.id] = true;
     save();
-    award(1, "riddle solved");
+    award(1, "riddle");
     setTimeout(() => {
       $("#riddleDialog").close();
       const px = P.x, pz = P.z, ph = P.heading;
@@ -1443,11 +2171,11 @@
    * EXHIBIT PLACARD
    * ========================================================= */
   const TABS = [
-    { id: "story", label: "In its own words", has: (e) => e.story },
-    { id: "left", label: "Still there today", has: (e) => e.leftBehind },
-    { id: "learned", label: "What we learned", has: (e) => e.discovery },
-    { id: "next", label: "What came next", has: (e) => e.next },
-    { id: "quiz", label: "Quick quiz", has: (e) => e.quiz },
+    { id: "story", has: (e) => e.story },
+    { id: "left", has: (e) => e.leftBehind },
+    { id: "learned", has: (e) => e.discovery },
+    { id: "next", has: (e) => e.next },
+    { id: "quiz", has: (e) => e.quiz },
   ];
   let ex = null, tab = "story", page = 0, tries = 0, tabs = TABS;
   const visit = (id) => (R().visits[id] = R().visits[id] || {});
@@ -1456,38 +2184,43 @@
     ex = e;
     tabs = TABS.filter((t) => t.has(e));
     tab = "story"; page = 0; tries = 0;
-    $("#exVisual").innerHTML = `<div class="ex-diorama">${Art.backdrop(e.backdrop)}</div><div class="ex-model">${Art.hardware(e.art)}</div>`;
+    const ph = window.PHOTOS && PHOTOS[e.id];
+    $("#exVisual").innerHTML = ph
+      ? `<figure class="ex-photo"><img src="${ph.src}" alt="${esc(ph.caption)}"><figcaption>${esc(ph.caption)} <span>${esc(t("photo.credit"))}: ${esc(ph.credit)}</span></figcaption></figure><div class="ex-model small">${Art.hardware(e.art)}</div>`
+      : `<div class="ex-diorama">${Art.backdrop(e.backdrop)}</div><div class="ex-model">${Art.hardware(e.art)}</div>`;
     $("#exVisual").style.setProperty("--wc", e.wing.color);
-    $("#exCatalog").textContent = e.treasure ? `Hidden treasure · ${e.place}` : `Exhibit ${e.code} · ${e.wing.name}`;
+    $("#exCatalog").textContent = e.treasure ? t("ex.treasure", { place: e.place }) : t("ex.catalog", { code: e.code, wing: t("wing." + e.wing.id) });
     $("#exTitle").textContent = e.name;
-    const status = { silent: "Silent now", parked: "Still there", "still talking": "Still talking to Earth" }[e.status] || "";
+    const status = { silent: t("status.silent"), parked: t("status.parked"), "still talking": t("status.talking") }[e.status] || "";
     $("#exMeta").innerHTML = `${e.year} · ${esc(e.kind)} · ${esc(e.place)} · <span class="status ${e.status.replace(" ", "-")}">${status}</span>`;
-    $("#askBtn").hidden = !e.faq;
+    $("#askBtn").hidden = false;
     renderTab();
     $("#exhibitDialog").showModal();
   }
   function renderTab() {
-    $("#exTabs").innerHTML = tabs.map((t) => `<button role="tab" data-tab="${t.id}" aria-selected="${t.id === tab}">${t.label}</button>`).join("");
+    $("#exTabs").innerHTML = tabs.map((x) => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id === tab}">${esc(t("tab." + x.id))}</button>`).join("");
     const body = $("#exBody");
     const v = R().visits[ex.id] || {};
     if (tab === "story") {
-      body.innerHTML = `<blockquote class="voice">${esc(ex.story[page])}</blockquote>
-        <p class="voice-by">${ex.treasure ? "A story from the Moon" : `${esc(ex.name)}, speaking for itself`} · part ${page + 1} of ${ex.story.length}</p>`;
+      body.innerHTML = `<blockquote class="voice" lang="en" dir="ltr">${esc(ex.story[page])}</blockquote>
+        <p class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: ex.story.length }))}</p>${englishNote()}`;
       if (page === ex.story.length - 1 && !v.story) storyHeard(ex);
     } else if (tab === "left") {
-      body.innerHTML = `<h3>Still out there right now</h3><ul class="left">${ex.leftBehind.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`;
+      body.innerHTML = `<h3>${esc(t("ex.leftTitle"))}</h3><ul class="left" lang="en" dir="ltr">${ex.leftBehind.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>${englishNote()}`;
     } else if (tab === "learned") {
-      body.innerHTML = `<h3>The science it made possible</h3><p class="big">${esc(ex.discovery)}</p>`;
+      body.innerHTML = `<h3>${esc(t("ex.learnedTitle"))}</h3><p class="big" lang="en" dir="ltr">${esc(ex.discovery)}</p>${englishNote()}`;
     } else if (tab === "next") {
-      body.innerHTML = `<h3>How the story continued</h3><p class="big">${esc(ex.next)}</p>`;
+      body.innerHTML = `<h3>${esc(t("ex.nextTitle"))}</h3><p class="big" lang="en" dir="ltr">${esc(ex.next)}</p>${englishNote()}`;
     } else renderQuiz();
     const lastTab = tabs[tabs.length - 1].id === tab;
-    $("#exNext").textContent = tab === "story" && page < ex.story.length - 1 ? "Keep listening" : lastTab ? "Back to the room" : "Next";
+    $("#exNext").textContent = tab === "story" && page < ex.story.length - 1 ? t("ex.keep") : lastTab ? t("ex.back") : t("ex.next");
   }
+  // machine stories are English for now: say so when another language is picked
+  const englishNote = () => (I18N.lang === "en" ? "" : `<p class="en-note">${esc(t("ex.englishOnly"))}</p>`);
   function storyHeard(e) {
     visit(e.id).story = true;
     S.met[e.id] = true;
-    award(1, "story heard");
+    award(1, "story");
     const sp = spots.find((s) => s.ex && s.ex.id === e.id);
     if (sp && sp.labelBoard) sp.labelBoard.redraw();
     const r = room(R().cur);
@@ -1498,10 +2231,10 @@
       if (pieceHalo) pieceHalo.visible = false;
       updateHUD();
       const n = R().collected.length, k = G().pieces.length;
-      toast(`Signal piece ${n} of ${k}!`);
+      toast(t("toast.piece", { n, k }));
       pendingLine = n === k
-        ? `That's every signal piece! Now we need to reach <b>Mission Control</b>.${R().sawMC ? " Remember that sealed door we found?" : " We haven't found its door yet..."}`
-        : `${esc(e.name)} gave us a signal piece! That's <b>${n} of ${k}</b>.`;
+        ? `${t("echo.allPieces")} ${t(R().sawMC ? "echo.sawMC" : "echo.notMC")}`
+        : t("echo.gotPiece", { name: esc(e.name), n, k });
       updateHint();
     }
     save();
@@ -1510,16 +2243,16 @@
   function renderQuiz() {
     const v = R().visits[ex.id] || {};
     const q = ex.quiz;
-    $("#exBody").innerHTML = `<h3>${esc(q.q)}</h3>
-      <div class="opts">${q.options.map((o, i) => `<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
-      <p class="fb" id="fb" aria-live="polite">${v.quiz != null ? "You already earned stars for this one. Try it again anyway!" : ""}</p>`;
+    $("#exBody").innerHTML = `<h3 lang="en" dir="ltr">${esc(q.q)}</h3>
+      <div class="opts" lang="en" dir="ltr">${q.options.map((o, i) => `<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
+      <p class="fb" id="fb" aria-live="polite">${v.quiz != null ? esc(t("quiz.again")) : ""}</p>${englishNote()}`;
     $("#exBody").querySelectorAll("[data-opt]").forEach((b) => b.addEventListener("click", () => answer(+b.dataset.opt, b)));
   }
   function answer(i, btn) {
     tries++;
     if (i !== ex.quiz.answer) {
       btn.classList.add("no"); btn.disabled = true;
-      $("#fb").textContent = "Not quite. Want a hint? Check “In its own words”.";
+      $("#fb").textContent = t("quiz.no");
       return;
     }
     btn.classList.add("yes");
@@ -1545,30 +2278,70 @@
     if (pendingLine) { say(pendingLine, 8000); pendingLine = null; }
   });
   $("#readAloud").addEventListener("click", () => {
-    if (!("speechSynthesis" in window)) return toast("This browser can't read aloud.");
+    if (!("speechSynthesis" in window)) return toast(t("toast.noRead"));
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance($("#exBody").innerText);
+    const read = $("#exBody").cloneNode(true);
+    read.querySelectorAll(".en-note").forEach((n) => n.remove());
+    const u = new SpeechSynthesisUtterance(read.innerText);
+    u.lang = "en-US"; // the stories themselves are English for now
     u.rate = 0.95;
     speechSynthesis.speak(u);
   });
 
-  /* ---------------- ask the placard ---------------- */
-  let chatHistory = [];
-  $("#askBtn").addEventListener("click", () => {
+  /* ---------------- chat: ask one machine, or ask the robot about the whole museum ---------------- */
+  let chatHistory = [], chatEx = null;
+  function openChat(e) {
+    chatEx = e || null;
     chatHistory = [];
-    $("#chatExhibit").textContent = ex.name;
-    $("#chatMode").textContent = window.CONFIG.askEndpoint ? "AI guide" : "offline guide";
     $("#chatLog").innerHTML = "";
-    addMsg("bot", `Hi! I'm the placard for ${ex.name}. What do you want to know?`);
-    const prompts = ["What is it doing now?", ...(ex.faq || []).slice(0, 3).map((f) => `Tell me about the ${f.keys[0]}`)];
+    $("#chatMode").textContent = window.CONFIG.askEndpoint ? t("chat.ai") : t("chat.offline");
+    let prompts;
+    if (chatEx) {
+      $("#chatTitle").textContent = t("chat.title", { name: chatEx.name });
+      addMsg("bot", t("chat.hi", { name: chatEx.name }));
+      prompts = [t("chat.now"), ...(chatEx.faq || []).slice(0, 3).map((f) => `Tell me about the ${f.keys[0]}`)];
+    } else {
+      $("#chatTitle").textContent = t("chat.fab", { robot: S.robotName });
+      addMsg("bot", t("chat.hiMuseum", { robot: S.robotName }));
+      prompts = [t("chat.sugGoal"), t("chat.sugMoon"), t("chat.sugMars"), t("chat.sugDeep")];
+    }
     $("#chatSuggest").innerHTML = prompts.map((p) => `<button type="button">${esc(p)}</button>`).join("");
+    $("#chatFab").classList.remove("pulse");
     $("#chatDialog").showModal();
     $("#chatInput").focus();
+  }
+  $("#askBtn").addEventListener("click", () => openChat(ex));
+  $("#chatFab").addEventListener("click", () => {
+    // in a machine's room, the corner button chats with that machine
+    const r = S.run && room(R().cur);
+    openChat(r && r.type === "exhibit" ? exById(r.exhibit) : null);
   });
   $("#chatSuggest").addEventListener("click", (e) => {
     if (e.target.tagName !== "BUTTON") return;
     $("#chatInput").value = e.target.textContent;
     $("#chatForm").requestSubmit();
+  });
+  // answers about the whole museum (offline), in the player's language where we can
+  const plain = (h) => h.replace(/<[^>]+>/g, "");
+  function wingAnswer(id) {
+    const w = wings.find((x) => x.id === id);
+    return `${plain(t("rules." + id))} ${t("rules.machines", { list: w.exhibits.map((e) => e.name).join(", ") })}`;
+  }
+  function museumAnswer(q) {
+    const ql = q.toLowerCase();
+    const hit = everything.find((e) => ql.includes(e.name.toLowerCase()) || ql.includes(e.id.replace(/-/g, " ")));
+    if (hit) return { ex: hit };
+    if (q === t("chat.sugGoal") || /how|play|win|goal|rule|piece|door|jugar|regla/.test(ql)) {
+      return { text: `${plain(isLearn() ? t("rules.goalLearn") : t("rules.goalGame", { k: G().pieces.length }))} ${plain(t("rules.r2"))}` };
+    }
+    if (q === t("chat.sugMoon") || /moon|lun|apollo/.test(ql)) return { text: wingAnswer("moon") };
+    if (q === t("chat.sugMars") || /mars|marte|rover/.test(ql)) return { text: wingAnswer("mars") };
+    if (q === t("chat.sugDeep") || /deep|voyager|pioneer|pluto|jupiter|space/.test(ql)) return { text: wingAnswer("deep") };
+    return { text: t("chat.dontKnow") };
+  }
+  const MUSEUM_GUIDE = () => ({
+    name: "Reach for the Stars Museum guide", kind: "museum guide", place: "the museum", year: "", status: "still talking",
+    story: wings.map((w) => `${w.name}: ${w.intro}`), leftBehind: allEx.map((e) => `${e.name} (${e.place})`), discovery: "",
   });
   $("#chatForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1576,14 +2349,30 @@
     if (!q) return;
     $("#chatInput").value = "";
     addMsg("me", q);
-    const wait = addMsg("bot wait", "Thinking…");
-    const res = await ExhibitGuide.ask(ex, q, chatHistory);
+    const wait = addMsg("bot wait", t("chat.thinking"));
+    let res;
+    if (chatEx) res = await ExhibitGuide.ask(chatEx, q, chatHistory);
+    else if (window.CONFIG.askEndpoint) res = await ExhibitGuide.ask(MUSEUM_GUIDE(), q, chatHistory);
+    else {
+      const m = museumAnswer(q);
+      res = m.ex ? await ExhibitGuide.ask(m.ex, q, chatHistory) : { text: m.text, mode: "offline" };
+      if (m.ex) res.text = `${m.ex.name}: ${res.text}`;
+    }
     wait.remove();
-    addMsg("bot", res.text);
-    $("#chatMode").textContent = res.mode === "ai" ? "AI guide" : "offline guide";
+    const msg = addMsg("bot", res.text);
+    if (res.sources && res.sources.length) {
+      // the NASA pages the answer came from
+      const src = document.createElement("div");
+      src.className = "msg-sources";
+      src.innerHTML = `<span>${esc(t("chat.sources"))}</span>` + res.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`).join("");
+      msg.appendChild(src);
+      $("#chatLog").scrollTop = $("#chatLog").scrollHeight;
+    }
+    $("#chatMode").textContent = res.mode === "ai" ? t("chat.ai") : t("chat.offline");
     chatHistory.push({ role: "user", content: q }, { role: "assistant", content: res.text });
-    const v = visit(ex.id);
-    if (!v.asked) { v.asked = true; award(1, "curious question"); }
+    const key = chatEx ? chatEx.id : "museum";
+    const v = visit(key);
+    if (!v.asked) { v.asked = true; award(1, "question"); }
   });
   function addMsg(who, text) {
     const d = document.createElement("div");
@@ -1599,7 +2388,8 @@
    * ========================================================= */
   function openFinale() {
     const g = G(), run = R();
-    if (!allCollected()) return say(`We need all the signal pieces first.`);
+    if (isLearn()) return openTourEnd();
+    if (!allCollected()) return say(t("echo.needAll"));
     const t0 = performance.now();
     const v = Maze.verify(g, run.route);
     const ms = performance.now() - t0;
@@ -1609,18 +2399,18 @@
       const name = s.to == null ? "?" : roomName(s.to);
       return `<li class="${s.ok ? "" : "bad"}" style="animation-delay:${(i + 1) * delay}ms;--c:${s.sym != null ? SYM[s.sym].color : "#999"}"><span class="sy">${s.sym != null ? SYM[s.sym].ch : "?"}</span><span class="rn">${esc(name)}</span></li>`;
     };
-    $("#finTitle").textContent = "Flight plan check";
+    $("#finTitle").textContent = t("fin.title");
     $("#finaleBody").innerHTML = `
-      <p class="fin-lead">Before the Homecoming Signal can launch, ${esc(S.robotName)} checks the route you found, one door at a time.</p>
-      <ol class="route"><li class="start"><span class="sy">●</span><span class="rn">Atrium</span></li>${v.steps.map(chip).join("")}</ol>
-      <ul class="checks">${v.checks.map((c, i) => `<li class="${c.ok ? "ok" : c.bonus ? "miss" : "bad"}" style="animation-delay:${v.steps.length * delay + 200 + i * 250}ms">${c.ok ? "✓" : c.bonus ? "–" : "✗"} ${esc(c.label)}</li>`).join("")}</ul>
+      <p class="fin-lead">${t("fin.lead", { robot: esc(S.robotName) })}</p>
+      <ol class="route"><li class="start"><span class="sy">●</span><span class="rn">${esc(t("room.atrium"))}</span></li>${v.steps.map(chip).join("")}</ol>
+      <ul class="checks">${v.checks.map((c, i) => `<li class="${c.ok ? "ok" : c.bonus ? "miss" : "bad"}" style="animation-delay:${v.steps.length * delay + 200 + i * 250}ms">${c.ok ? "✓" : c.bonus ? "–" : "✗"} ${esc(t(c.key, c.vars))}</li>`).join("")}</ul>
       <div class="fin-stats" style="animation-delay:${v.steps.length * delay + 1400}ms">
-        <div><b>${run.route.length}</b><span>doors you opened to <em>find</em> this route</span></div>
-        <div><b>${ms < 1 ? "&lt;1 ms" : ms.toFixed(1) + " ms"}</b><span>for ${esc(S.robotName)} to <em>check</em> it</span></div>
-        <div><b>${g.best}</b><span>doors in today's shortest route. To be sure, the computer tried all ${g.orders} orders of the ${k} pieces</span></div>
+        <div><b>${run.route.length}</b><span>${t("fin.find")}</span></div>
+        <div><b>${ms < 1 ? "&lt;1 ms" : ms.toFixed(1) + " ms"}</b><span>${t("fin.check", { robot: esc(S.robotName) })}</span></div>
+        <div><b>${g.best}</b><span>${t("fin.best", { orders: g.orders, k })}</span></div>
       </div>
-      <blockquote class="voice fin-quote" style="animation-delay:${v.steps.length * delay + 1900}ms">Finding the route took exploring: lots of doors, some dead ends. Checking it took one quick look at each door. Puzzles like this are one of the biggest mysteries in computer science. It's called <b>P vs NP</b>: nobody knows if every puzzle that's quick to check is also quick to solve.${k >= 5 ? " With 20 pieces, there would be more than 2 quintillion orders to try!" : ""}</blockquote>`;
-    $("#finaleFoot").innerHTML = `<span class="grow"></span><button class="btn primary" id="sendSignal">Send the Homecoming Signal</button>`;
+      <blockquote class="voice fin-quote" style="animation-delay:${v.steps.length * delay + 1900}ms">${t("fin.quote")}${k >= 5 ? " " + t("fin.quote20") : ""}</blockquote>`;
+    $("#finaleFoot").innerHTML = `<span class="grow"></span><button class="btn primary" id="sendSignal">${esc(t("fin.send"))}</button>`;
     $("#finaleDialog").showModal();
     $("#sendSignal").onclick = () => sendSignal(v);
   }
@@ -1633,47 +2423,69 @@
       const gold = g.par && run.route.length <= g.par;
       S.best[run.level] = Math.min(S.best[run.level] || Infinity, run.route.length);
       save();
-      award(5, "signal sent");
-      if (gold) setTimeout(() => award(3, "gold route"), 900);
+      award(5, "signal");
+      if (gold) setTimeout(() => award(3, "gold"), 900);
     }
-    $("#finTitle").textContent = "Signal sent!";
+    $("#finTitle").textContent = t("fin.sent");
     const slices = [...Array(k)].map((_, i) => `<div class="pbd-slice" style="--i:${i};--k:${k};background-position:${k > 1 ? (i / (k - 1)) * 100 : 0}% 0"></div>`).join("");
     $("#finaleBody").innerHTML = `
       <div class="pbd" style="--k:${k}">${slices}<div class="pbd-dot"></div></div>
-      <p class="fin-lead">The ${k} pieces snap together into a picture: the <b>Pale Blue Dot</b>.</p>
-      <p>On February 14, 1990, Voyager 1 turned its camera back toward home and took this picture from about 6 billion kilometers away. That tiny speck in the sunbeam is Earth.</p>
-      <p>Every machine in this museum came from that dot. Their missions are over, but they're not forgotten: the Homecoming Signal is how we say <b>we remember you</b>.</p>
-      <p class="story-level">${LV().label} · layout #${run.seed} · ${run.route.length} doors${g.par ? (run.route.length <= g.par ? " · gold route!" : ` · gold was ${g.par}`) : ""}</p>`;
-    $("#finaleFoot").innerHTML = `<button class="btn ghost" id="keepExploring">Keep exploring</button><span class="grow"></span>
-      <span class="fin-new">New museum:</span>
-      ${["easy", "medium", "hard"].map((l) => `<button class="btn ${l === run.level ? "primary" : ""}" data-newrun="${l}">${Maze.LEVELS[l].label}</button>`).join("")}`;
+      <p class="fin-lead">${t("fin.pbd1", { k })}</p>
+      <p>${t("fin.pbd2")}</p>
+      <p>${t("fin.pbd3")}</p>
+      <p class="story-level">${esc(t("fin.summary", { level: levelLabel(run.level), seed: run.seed, n: run.route.length }))}${g.par ? " · " + esc(run.route.length <= g.par ? t("fin.goldYes") : t("fin.goldWas", { n: g.par })) : ""}</p>`;
+    finaleButtons(run.level);
+  }
+  function finaleButtons(current) {
+    $("#finaleFoot").innerHTML = `<button class="btn ghost" id="keepExploring">${esc(t("fin.keep"))}</button><span class="grow"></span>
+      <span class="fin-new">${esc(t("fin.new"))}</span>
+      ${["learn", "easy", "medium", "hard"].map((l) => `<button class="btn ${l === current ? "primary" : ""}" data-newrun="${l}">${esc(levelLabel(l))}</button>`).join("")}`;
     $("#keepExploring").onclick = () => $("#finaleDialog").close();
     $("#finaleFoot").querySelectorAll("[data-newrun]").forEach((b) => (b.onclick = () => {
       $("#finaleDialog").close();
+      S.mode = b.dataset.newrun === "learn" ? "learn" : "game";
       newRun(b.dataset.newrun);
       enterMuseum(false);
       setTimeout(openStory, 300);
     }));
   }
 
+  /* Learning mode ends here: no route check, just the picture and a recap */
+  function openTourEnd() {
+    const run = R(), g = G();
+    const heard = Object.values(run.visits).filter((v) => v.story).length;
+    if (!run.done) { run.done = true; save(); award(3, "tour"); }
+    const k = 5;
+    const slices = [...Array(k)].map((_, i) => `<div class="pbd-slice" style="--i:${i};--k:${k};background-position:${(i / (k - 1)) * 100}% 0"></div>`).join("");
+    $("#finTitle").textContent = t("fin.learnTitle");
+    $("#finaleBody").innerHTML = `
+      <p class="fin-lead">${t("fin.learnLead", { n: run.visited.length, m: g.rooms.length, s: heard })}</p>
+      <div class="pbd" style="--k:${k}">${slices}<div class="pbd-dot"></div></div>
+      <p>${t("fin.pbd2")}</p>
+      <p>${t("fin.pbd3")}</p>
+      <p class="story-level">${esc(t("fin.learnGame"))}</p>`;
+    finaleButtons("learn");
+    if (!$("#finaleDialog").open) $("#finaleDialog").showModal();
+  }
+
   /* =========================================================
    * ROBOT BAY
    * ========================================================= */
-  const SLOTS = { color: "Paint", eyes: "Eye lights", hat: "Hats", gear: "Gear" };
+  const SLOTS = { color: "ws.paint", eyes: "ws.eyes", hat: "ws.hats", gear: "ws.gear" };
   $("#workshopBtn").addEventListener("click", openWorkshop);
   function openWorkshop() { renderWorkshop(); $("#workshopDialog").showModal(); }
   function renderWorkshop() {
-    $("#wsRobotName").textContent = S.robotName;
-    $("#wsPreview").innerHTML = Robot.svg(S.look) + `<p class="ws-stars">${S.stars} star${S.stars === 1 ? "" : "s"} to spend</p>`;
+    $("#wsTitle").textContent = t("ws.title", { name: S.robotName });
+    $("#wsPreview").innerHTML = Robot.svg(S.look) + `<p class="ws-stars">${esc(t("ws.stars", { n: S.stars }))}</p>`;
     $("#wsShop").innerHTML = Object.keys(SLOTS).map((slot) => {
       const items = M.shop.filter((i) => i.slot === slot).map((it) => {
         const owned = S.owned.includes(it.id);
         const on = S.look[slot] === it.value;
         const sw = slot === "color" || slot === "eyes" ? `<i class="sw" style="background:${it.value}"></i>` : "";
-        const tag = on ? "Wearing" : owned ? "Yours" : `${it.cost} ★`;
+        const tag = on ? t("ws.wearing") : owned ? t("ws.yours") : `${it.cost} ★`;
         return `<button class="part${on ? " on" : ""}${!owned && S.stars < it.cost ? " short" : ""}" data-item="${it.id}">${sw}<span>${esc(it.name)}</span><em>${tag}</em></button>`;
       }).join("");
-      return `<h4>${SLOTS[slot]}</h4><div class="parts">${items}</div>`;
+      return `<h4>${esc(t(SLOTS[slot]))}</h4><div class="parts">${items}</div>`;
     }).join("");
   }
   $("#wsShop").addEventListener("click", (e) => {
@@ -1681,10 +2493,10 @@
     if (!b) return;
     const it = M.shop.find((i) => i.id === b.dataset.item);
     if (!S.owned.includes(it.id)) {
-      if (S.stars < it.cost) { const need = it.cost - S.stars; return toast(`${need} more star${need > 1 ? "s" : ""} needed for ${it.name}`); }
+      if (S.stars < it.cost) return toast(`${it.name}: ${t("ws.need", { n: it.cost - S.stars })}`);
       S.stars -= it.cost;
       S.owned.push(it.id);
-      toast(`Unlocked: ${it.name}`);
+      toast(`${t("ws.unlocked")} ${it.name}`);
     }
     S.look[it.slot] = it.value;
     save();
@@ -1703,8 +2515,38 @@
   document.querySelectorAll("dialog [data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
   document.querySelectorAll("dialog:not(#finaleDialog):not(#storyDialog)").forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close(); }));
 
+  /* ---------- language ---------- */
+  function setLang(code) {
+    S.lang = code;
+    save();
+    I18N.set(code);
+  }
+  I18N.onChange((lang) => {
+    document.querySelectorAll(".lang-select").forEach((sel) => (sel.value = lang));
+    drawIntroText();
+    if (!S.run || $("#museum").hidden) return;
+    updateHUD();
+    drawNote();
+    $("#chatFabLabel").textContent = t("chat.fab", { robot: S.robotName });
+    if ($("#rulesDialog").open) openRules();
+    // signs in the room are drawn in 3D, so rebuild the room where you stand
+    const px = P.x, pz = P.z, ph = P.heading;
+    buildRoom(R().cur);
+    P.x = px; P.z = pz; P.heading = ph;
+    showBanner(R().cur);
+    if ($("#exhibitDialog").open) {
+      $("#exCatalog").textContent = ex.treasure ? t("ex.treasure", { place: ex.place }) : t("ex.catalog", { code: ex.code, wing: t("wing." + ex.wing.id) });
+      renderTab();
+    }
+    if ($("#workshopDialog").open) renderWorkshop();
+    if ($("#storyDialog").open) fillStory();
+    if ($("#finaleDialog").open && isLearn()) openTourEnd();
+  });
+
   /* ---------- boot ---------- */
   buildIntro();
+  applyA11y();
+  I18N.set(S.lang || "en");
   window.resetMuseum = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
   // for testing: Museum.debug() prints today's hidden network
   window.Museum = {
@@ -1713,5 +2555,7 @@
     // walk to door number i in this room and open it (same as clicking it)
     door: (i) => { const o = doorObjs.find((x) => x.door.i === i); if (o) goToSpot(o.spot); return !!o; },
     spot: (kind) => { const sp = spots.find((x) => x.kind === kind); if (sp) goToSpot(sp); return !!sp; },
+    story: () => openStory(),
+    rules: () => openRules(),
   };
 })();

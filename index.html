@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Silent Explorers Museum</title>
-  <meta name="description" content="A space museum whose doors rearrange every visit. Meet the NASA machines left on the Moon, on Mars and in deep space. Team Reach for the Stars, NASA Space Apps 2026." />
+  <title>Reach for the Stars Museum</title>
+  <link rel="icon" id="favicon" href="data:," />
+  <meta name="description" content="The Reach for the Stars Museum: a space museum whose doors rearrange every visit. Meet the NASA machines left on the Moon, on Mars, and in deep space. Team Reach for the Stars, NASA Space Apps 2026." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=15" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;700&family=Lexend:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=18" />
+  <link rel="stylesheet" href="css/cutscene.css?v=18" />
 </head>
 <body>
   <!-- Shared gradients used by every hardware drawing -->
@@ -27,88 +29,118 @@
   </svg>
 
   <!-- ============ INTRO: field trip arrival ============ -->
-  <section id="intro" class="intro" aria-label="Field trip arrival">
+  <section id="intro" class="intro" data-place="earth" aria-label="Field trip arrival">
     <div class="intro-scene" aria-hidden="true">
+      <div class="stars-bg"></div>
       <div class="sun"></div>
+      <div class="earth-in-sky"></div>
       <div class="cloud c1"></div><div class="cloud c2"></div>
+      <div class="dome"></div>
       <div class="facade">
         <div class="pediment"></div>
-        <div class="facade-sign">SILENT EXPLORERS MUSEUM</div>
+        <div class="facade-sign" data-i18n="intro.facade">REACH FOR THE STARS MUSEUM</div>
         <div class="columns"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="doors"></div>
         <div class="steps"></div>
       </div>
       <div class="street"></div>
       <div class="bus-wrap" id="busWrap"></div>
+      <div class="rocket-wrap" id="rocketWrap"></div>
     </div>
 
     <div class="intro-card" id="introCard">
-      <p class="kicker">Field trip day</p>
-      <h1>Abandoned, but not forgotten</h1>
-      <p>NASA has left robots, rovers and landers all over the solar system. Today your class visits the museum where their stories live. But this museum has a secret: <b>its doors never lead to the same place twice.</b></p>
+      <div class="card-top">
+        <p class="kicker" data-i18n="intro.kicker">Field trip day</p>
+        <button type="button" class="btn small icon a11y-open" data-i18n-aria="a11y.btn" data-i18n-tip="tip.settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 4.9-1.9-.5a6.9 6.9 0 0 0-.6-1.5l1-1.7-1.8-1.8-1.7 1a6.9 6.9 0 0 0-1.5-.6l-.5-1.9h-2.6l-.5 1.9a6.9 6.9 0 0 0-1.5.6l-1.7-1-1.8 1.8 1 1.7a6.9 6.9 0 0 0-.6 1.5l-1.9.5v2.6l1.9.5c.1.5.3 1 .6 1.5l-1 1.7 1.8 1.8 1.7-1c.5.3 1 .5 1.5.6l.5 1.9h2.6l.5-1.9c.5-.1 1-.3 1.5-.6l1.7 1 1.8-1.8-1-1.7c.3-.5.5-1 .6-1.5l1.9-.5z" fill="currentColor" transform="translate(0 -1.3)"/></svg></button>
+        <label class="lang-pick" data-i18n-tip="tip.lang"><span class="sr-only" data-i18n="lang.label">Language</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          <select class="lang-select" data-i18n-aria="lang.label"></select>
+        </label>
+      </div>
+      <h1 data-i18n="intro.title">Abandoned, but not forgotten</h1>
+      <p data-i18n-html="intro.lead"></p>
 
       <form id="introForm" class="intro-form">
         <div class="field-row">
-          <label>Your name
-            <input id="playerName" maxlength="18" placeholder="Explorer" autocomplete="off" />
+          <label><span data-i18n="intro.name">Your name</span>
+            <input id="playerName" maxlength="18" data-i18n-ph="intro.namePh" autocomplete="off" />
           </label>
-          <label>Your robot's name
+          <label><span data-i18n="intro.robotName">Your robot's name</span>
             <input id="robotName" maxlength="14" value="Echo" autocomplete="off" />
           </label>
         </div>
+
         <fieldset class="pick">
-          <legend>Choose your explorer</legend>
-          <div class="char-pick" id="charPick">
-            <button type="button" data-char="boy" aria-pressed="true"><span class="cp-art"></span><span>Boy</span></button>
-            <button type="button" data-char="girl" aria-pressed="false"><span class="cp-art"></span><span>Girl</span></button>
+          <legend data-i18n="intro.place">Where is the museum today?</legend>
+          <div class="place-pick" id="placePick">
+            <button type="button" data-place="earth"><span class="pp-orb earth"></span><b data-i18n="place.earth">On Earth</b><span data-i18n="place.earthDesc"></span></button>
+            <button type="button" data-place="moon"><span class="pp-orb moon"></span><b data-i18n="place.moon">On the Moon</b><span data-i18n="place.moonDesc"></span></button>
+            <button type="button" data-place="mars"><span class="pp-orb mars"></span><b data-i18n="place.mars">On Mars</b><span data-i18n="place.marsDesc"></span></button>
           </div>
         </fieldset>
-        <div class="looks">
-          <fieldset>
-            <legend>Skin</legend>
-            <div class="swatches" data-look="skin"></div>
-          </fieldset>
-          <fieldset>
-            <legend>Shirt</legend>
-            <div class="swatches" data-look="shirt"></div>
-          </fieldset>
-        </div>
+
         <fieldset class="pick">
-          <legend>How twisty should the museum be?</legend>
+          <legend data-i18n="intro.explorer">Make your explorer</legend>
+          <div class="maker">
+            <div class="maker-preview" id="kidPreview"></div>
+            <div class="maker-rows">
+              <div class="mk-row"><span class="mk-label" data-i18n="look.hair">Hair</span><div class="chips" id="hairPick"></div></div>
+              <div class="mk-row"><span class="mk-label" data-i18n="look.hairColor">Hair color</span><div class="swatches" data-look="hairColor"></div></div>
+              <div class="mk-row"><span class="mk-label" data-i18n="look.skin">Skin</span><div class="swatches" data-look="skin"></div></div>
+              <div class="mk-row"><span class="mk-label" data-i18n="look.shirt">Shirt</span><div class="swatches" data-look="shirt"></div></div>
+              <div class="mk-row"><span class="mk-label" data-i18n="look.pants">Pants</span><div class="swatches" data-look="pants"></div></div>
+              <div class="mk-row"><span class="mk-label" data-i18n="look.extras">Extras</span><div class="chips text-chips" id="extraPick"></div></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="pick">
+          <legend data-i18n="intro.mode">How do you want to explore?</legend>
+          <div class="mode-pick" id="modePick">
+            <button type="button" data-mode="learn"><b data-i18n="mode.learn">Learning mode</b><span data-i18n="mode.learnDesc"></span></button>
+            <button type="button" data-mode="game"><b data-i18n="mode.game">Game mode</b><span data-i18n="mode.gameDesc"></span></button>
+          </div>
+        </fieldset>
+        <fieldset class="pick" id="levelField">
+          <legend data-i18n="intro.level">How twisty should the museum be?</legend>
           <div class="level-pick" id="levelPick">
-            <button type="button" data-level="easy" aria-pressed="false"><b>Easy</b><span>Fewer doors. Your robot's scanner always points the way.</span></button>
-            <button type="button" data-level="medium" aria-pressed="true"><b>Medium</b><span>More doors, a one-way airlock, a secret room. 3 scans.</span></button>
-            <button type="button" data-level="hard" aria-pressed="false"><b>Hard</b><span>Tangled paths, dead ends, secret rooms. No scanner.</span></button>
+            <button type="button" data-level="easy" aria-pressed="false"><b data-i18n="level.easy">Easy</b><span data-i18n="level.easyDesc"></span></button>
+            <button type="button" data-level="medium" aria-pressed="true"><b data-i18n="level.medium">Medium</b><span data-i18n="level.mediumDesc"></span></button>
+            <button type="button" data-level="hard" aria-pressed="false"><b data-i18n="level.hard">Hard</b><span data-i18n="level.hardDesc"></span></button>
           </div>
         </fieldset>
+        <p class="intro-credit"><span data-i18n="intro.credit"></span></p>
         <div class="intro-actions">
-          <button class="btn primary" type="submit" id="startBtn">Start a new adventure</button>
-          <button class="btn" type="button" id="continueBtn" hidden>Continue my adventure</button>
+          <button class="btn primary" type="submit" id="startBtn" data-i18n="intro.start">Start a new adventure</button>
+          <button class="btn" type="button" id="continueBtn" hidden></button>
         </div>
       </form>
     </div>
-    <button class="skip" id="skipIntro">Skip ›</button>
+    <button class="skip" id="skipIntro" data-i18n="intro.skip">Skip ›</button>
   </section>
 
   <!-- ============ MUSEUM ============ -->
   <div id="museum" class="museum" hidden>
     <header class="hud">
       <div class="ticket">
-        <span class="ticket-title">Silent Explorers Museum</span>
-        <span class="ticket-sub"><b id="hudName">Explorer</b> · <span id="hudLevel">Medium</span> · layout <span id="hudSeed">0000</span></span>
+        <span class="ticket-title" data-i18n="hud.museum">Reach for the Stars Museum</span>
+        <span class="ticket-sub"><b id="hudName">Explorer</b> · <span id="hudPlace"></span> · <span id="hudLevel">Medium</span> <span id="hudSeed"></span></span>
       </div>
-      <div class="pieces" id="pieces" title="Signal pieces"></div>
-      <span class="counter doors-count" id="doorsCount" title="Doors opened"></span>
+      <div class="pieces" id="pieces" data-i18n-tip="tip.pieces" tabindex="0"></div>
+      <span class="counter doors-count" id="doorsCount" data-i18n-tip="tip.doors" tabindex="0"></span>
       <div class="hud-right">
-        <button class="btn small" id="scanBtn" hidden>Scan</button>
-        <span class="counter" title="Stars"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5l2.6 5.6 6 .7-4.5 4.1 1.2 6L10 15l-5.3 2.9 1.2-6L1.4 7.8l6-.7z" fill="#e8b53a"/></svg><b id="starCount">0</b><span class="sr-only"> stars</span></span>
-        <button class="btn small" id="journalBtn">Journal</button>
-        <button class="btn small" id="workshopBtn">Robot Bay</button>
+        <button class="btn small" id="scanBtn" data-i18n-tip="tip.scan" hidden>Scan</button>
+        <label class="lang-pick hud-lang" data-i18n-tip="tip.lang"><span class="sr-only" data-i18n="lang.label">Language</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12h19M12 2.5c3 3 3 16 0 19M12 2.5c-3 3-3 16 0 19" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><select class="lang-select" data-i18n-aria="lang.label"></select></label>
+        <span class="counter" data-i18n-tip="tip.stars" tabindex="0"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5l2.6 5.6 6 .7-4.5 4.1 1.2 6L10 15l-5.3 2.9 1.2-6L1.4 7.8l6-.7z" fill="#e8b53a"/></svg><b id="starCount">0</b><span class="sr-only"> stars</span></span>
+        <button type="button" class="btn small icon a11y-open" data-i18n-aria="a11y.btn" data-i18n-tip="tip.settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 4.9-1.9-.5a6.9 6.9 0 0 0-.6-1.5l1-1.7-1.8-1.8-1.7 1a6.9 6.9 0 0 0-1.5-.6l-.5-1.9h-2.6l-.5 1.9a6.9 6.9 0 0 0-1.5.6l-1.7-1-1.8 1.8 1 1.7a6.9 6.9 0 0 0-.6 1.5l-1.9.5v2.6l1.9.5c.1.5.3 1 .6 1.5l-1 1.7 1.8 1.8 1.7-1c.5.3 1 .5 1.5.6l.5 1.9h2.6l.5-1.9c.5-.1 1-.3 1.5-.6l1.7 1 1.8-1.8-1-1.7c.3-.5.5-1 .6-1.5l1.9-.5z" fill="currentColor" transform="translate(0 -1.3)"/></svg></button>
+        <button class="btn small" id="rulesBtn" data-i18n="rules.btn" data-i18n-tip="tip.rules">How to play</button>
+        <button class="btn small" id="journalBtn" data-i18n="hud.journal" data-i18n-tip="tip.journal">Journal</button>
+        <button class="btn small" id="workshopBtn" data-i18n="hud.bay" data-i18n-tip="tip.bay">Robot Bay</button>
       </div>
     </header>
 
     <div class="stage" id="stage">
-      <canvas id="scene" aria-label="A room in the museum, in 3D. Click the floor to walk, click a door to open it."></canvas>
+      <canvas id="scene" tabindex="0" aria-label="A room in the museum, in 3D. Click the floor to walk, click a door to open it."></canvas>
       <div class="overlay" id="overlay">
         <div class="say" id="say" aria-live="polite"></div>
         <button class="prompt" id="prompt" hidden>Look closer</button>
@@ -116,13 +148,17 @@
       <div class="room-banner" id="roomBanner" aria-live="polite"><span class="rb-kind" id="rbKind"></span><b id="rbName"></b></div>
       <div class="note-panel" id="notePanel" hidden></div>
       <div class="cam-controls">
-        <button class="btn small icon" id="rotL" title="Turn the camera (Q)" aria-label="Turn camera left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="btn small icon" id="rotR" title="Turn the camera (E)" aria-label="Turn camera right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn small icon" id="rotL" data-i18n-tip="tip.turn" data-i18n-aria="hud.turnL"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn small icon" id="rotR" data-i18n-tip="tip.turn" data-i18n-aria="hud.turnR"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="fade" id="fade" aria-hidden="true"><span id="fadeSym"></span></div>
+      <button class="chat-fab" id="chatFab" type="button" data-i18n-tip="tip.chat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z" fill="currentColor"/><circle cx="8.5" cy="9.5" r="1.3" fill="#1f2330"/><circle cx="12" cy="9.5" r="1.3" fill="#1f2330"/><circle cx="15.5" cy="9.5" r="1.3" fill="#1f2330"/></svg>
+        <span id="chatFabLabel">Ask Echo</span>
+      </button>
     </div>
 
-    <p class="hint" id="hint">Click the floor to walk · click a door to open it · drag to turn the camera · <kbd>Enter</kbd> to open or look closer</p>
+    <p class="hint" id="hint" data-i18n-html="hud.controls"></p>
   </div>
 
   <!-- ============ Exhibit placard ============ -->
@@ -138,35 +174,71 @@
       <nav class="tabs" id="exTabs" role="tablist"></nav>
       <div class="ex-body" id="exBody"></div>
       <footer class="ex-foot">
-        <button class="btn ghost" id="readAloud">Read to me</button>
-        <button class="btn ghost" id="askBtn">Ask the placard</button>
+        <button class="btn ghost" id="readAloud" data-i18n="ex.read">Read to me</button>
+        <button class="btn ask-cta" id="askBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z" fill="currentColor"/></svg><span data-i18n="ex.chatCta">Chat with this machine</span></button>
         <span class="grow"></span>
         <button class="btn primary" id="exNext">Next</button>
       </footer>
     </div>
   </dialog>
 
+  <!-- ============ Settings and accessibility ============ -->
+  <dialog id="a11yDialog" class="sheet small-sheet a11y-sheet" aria-labelledby="a11yTitle">
+    <header class="ex-head">
+      <p class="catalog" data-i18n="hud.museum">Reach for the Stars Museum</p>
+      <h2 id="a11yTitle" data-i18n="a11y.title">Settings and accessibility</h2>
+      <button class="close" data-close aria-label="Close">×</button>
+    </header>
+    <div class="a11y-body">
+      <fieldset class="a11y-row">
+        <legend data-i18n="a11y.text">Text size</legend>
+        <div class="seg" id="a11yText">
+          <button type="button" data-size="n" data-i18n="a11y.textN">Normal</button>
+          <button type="button" data-size="l" data-i18n="a11y.textL">Large</button>
+          <button type="button" data-size="xl" data-i18n="a11y.textXL">Extra large</button>
+        </div>
+      </fieldset>
+      <label class="a11y-switch"><input type="checkbox" id="a11yContrast"><span class="sw-track" aria-hidden="true"></span><span><b data-i18n="a11y.contrast">High contrast</b><small data-i18n="a11y.contrastDesc"></small></span></label>
+      <label class="a11y-switch"><input type="checkbox" id="a11yMotion"><span class="sw-track" aria-hidden="true"></span><span><b data-i18n="a11y.motion">Reduce motion</b><small data-i18n="a11y.motionDesc"></small></span></label>
+      <label class="a11y-switch"><input type="checkbox" id="a11yFont"><span class="sw-track" aria-hidden="true"></span><span><b data-i18n="a11y.font">Easy-read font</b><small data-i18n="a11y.fontDesc"></small></span></label>
+      <label class="a11y-switch"><input type="checkbox" id="a11ySpeak"><span class="sw-track" aria-hidden="true"></span><span><b data-i18n="a11y.speak">Read the robot's words aloud</b><small data-i18n="a11y.speakDesc"></small></span></label>
+      <div class="a11y-keys"><h3 data-i18n="a11y.keysTitle">Playing with a keyboard</h3><p data-i18n-html="a11y.keys"></p></div>
+    </div>
+    <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close data-i18n="a11y.done">Done</button></footer>
+  </dialog>
+
+  <!-- ============ How to play ============ -->
+  <dialog id="rulesDialog" class="sheet rules-sheet" aria-labelledby="rulesTitle">
+    <header class="ex-head">
+      <p class="catalog" data-i18n="hud.museum">Reach for the Stars Museum</p>
+      <h2 id="rulesTitle" data-i18n="rules.title">How to play</h2>
+      <button class="close" data-close aria-label="Close">×</button>
+    </header>
+    <div class="rules-body" id="rulesBody"></div>
+    <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close data-i18n="rules.go">Got it!</button></footer>
+  </dialog>
+
   <!-- ============ Ask the placard (AI) ============ -->
   <dialog id="chatDialog" class="sheet chat-sheet" aria-labelledby="chatTitle">
     <header class="ex-head">
-      <p class="catalog">Ask the placard · <span id="chatMode">offline guide</span></p>
-      <h2 id="chatTitle">Ask <span id="chatExhibit"></span></h2>
+      <p class="catalog"><span data-i18n="chat.catalog">Ask the placard</span> · <span id="chatMode">offline guide</span></p>
+      <h2 id="chatTitle"></h2>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
     <div class="chat-log" id="chatLog" aria-live="polite"></div>
     <div class="chat-suggest" id="chatSuggest"></div>
     <form class="chat-form" id="chatForm">
-      <input id="chatInput" placeholder="Type your question…" autocomplete="off" maxlength="200" />
-      <button class="btn primary" type="submit">Ask</button>
+      <input id="chatInput" data-i18n-ph="chat.ph" autocomplete="off" maxlength="200" />
+      <button class="btn primary" type="submit" data-i18n="chat.ask">Ask</button>
     </form>
   </dialog>
 
   <!-- ============ Robot Bay ============ -->
   <dialog id="workshopDialog" class="sheet workshop-sheet" aria-labelledby="wsTitle">
     <header class="ex-head">
-      <p class="catalog">Robot Bay</p>
-      <h2 id="wsTitle">Upgrade <span id="wsRobotName">Echo</span></h2>
-      <p class="ex-meta">Earn stars by reading stories, answering questions and asking the placards. Parts you unlock are yours to swap anytime.</p>
+      <p class="catalog" data-i18n="ws.catalog">Robot Bay</p>
+      <h2 id="wsTitle"></h2>
+      <p class="ex-meta" data-i18n="ws.meta"></p>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
     <div class="ws-grid">
@@ -182,14 +254,14 @@
       <h2 id="storyTitle">Lights out!</h2>
     </header>
     <div class="story-body" id="storyBody"></div>
-    <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close>Let's go!</button></footer>
+    <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close data-i18n="story.go">Let's go!</button></footer>
   </dialog>
 
   <!-- ============ Riddle lock ============ -->
   <dialog id="riddleDialog" class="sheet small-sheet" aria-labelledby="riddleTitle">
     <header class="ex-head">
-      <p class="catalog">This door has a riddle lock</p>
-      <h2 id="riddleTitle">Which machine am I?</h2>
+      <p class="catalog" data-i18n="riddle.catalog">This door has a riddle lock</p>
+      <h2 id="riddleTitle" data-i18n="riddle.title">Which machine am I?</h2>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
     <blockquote class="voice riddle-q" id="riddleQ"></blockquote>
@@ -200,9 +272,9 @@
   <!-- ============ Field trip journal ============ -->
   <dialog id="journalDialog" class="sheet small-sheet" aria-labelledby="jTitle">
     <header class="ex-head">
-      <p class="catalog">Your field trip journal · every adventure</p>
+      <p class="catalog" data-i18n="j.catalog">Your field trip journal · every adventure</p>
       <h2 id="jTitle">Machines you've met</h2>
-      <p class="ex-meta" id="jMeta">Every adventure puts different machines behind the doors. Some treasures only show up in secret rooms.</p>
+      <p class="ex-meta" id="jMeta" data-i18n="j.meta"></p>
       <button class="close" data-close aria-label="Close">×</button>
     </header>
     <div class="journal-grid" id="journalGrid"></div>
@@ -211,7 +283,7 @@
   <!-- ============ Mission Control finale ============ -->
   <dialog id="finaleDialog" class="sheet finale-sheet" aria-labelledby="finTitle">
     <header class="ex-head">
-      <p class="catalog">Mission Control</p>
+      <p class="catalog" data-i18n="fin.catalog">Mission Control</p>
       <h2 id="finTitle">Flight plan check</h2>
     </header>
     <div class="finale-body" id="finaleBody"></div>
@@ -219,12 +291,16 @@
   </dialog>
 
   <script src="js/vendor/three.min.js"></script>
-  <script src="js/data.js?v=15"></script>
-  <script src="js/art.js?v=15"></script>
-  <script src="js/robot.js?v=15"></script>
-  <script src="js/models.js?v=15"></script>
-  <script src="js/maze.js?v=15"></script>
-  <script src="js/ai.js?v=15"></script>
-  <script src="js/app.js?v=15"></script>
+  <script src="js/i18n.js?v=18"></script>
+  <script src="js/i18n/en.js?v=18"></script>
+  <script src="js/data.js?v=18"></script>
+  <script src="js/photos.js?v=18"></script>
+  <script src="js/art.js?v=18"></script>
+  <script src="js/robot.js?v=18"></script>
+  <script src="js/models.js?v=18"></script>
+  <script src="js/maze.js?v=18"></script>
+  <script src="js/cutscene.js?v=18"></script>
+  <script src="js/ai.js?v=18"></script>
+  <script src="js/app.js?v=18"></script>
 </body>
 </html>

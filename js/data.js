@@ -1,7 +1,7 @@
 /*
  * MUSEUM CONTENT
  * ------------------------------------------------------------
- * Every wing, exhibit, story page, quiz and offline-guide answer lives here,
+ * Every wing, exhibit, story page, quiz, and offline-guide answer lives here,
  * so the team can edit content without touching app code.
  *
  * DRAFT CONTENT: facts were written from well-known NASA mission history but
@@ -22,7 +22,7 @@
  */
 
 window.MUSEUM = {
-  name: "The Silent Explorers Museum",
+  name: "The Reach for the Stars Museum",
   tagline: "Abandoned, but not forgotten",
 
   wings: [
@@ -36,7 +36,7 @@ window.MUSEUM = {
       question: "Can we land on another world, and can people go there?",
       badge: { name: "Moonwalker", icon: "🌕" },
       intro:
-        "Footprints, rovers and a mirror that still bounces lasers. Everything in this wing is still sitting on the Moon right now.",
+        "Footprints, rovers, and a mirror that still bounces lasers. Everything in this wing is still sitting on the Moon right now.",
       exhibits: [
         {
           id: "ranger-7",
@@ -166,7 +166,7 @@ window.MUSEUM = {
         },
         {
           id: "lrv",
-          riddle: "Astronauts drove me across the Moon on Apollo 15, 16 and 17.",
+          riddle: "Astronauts drove me across the Moon on Apollo 15, 16, and 17.",
           art: "lrv",
           backdrop: "moon-earth",
           next: 'New Moon rovers are being designed for the Artemis astronauts who will return to the Moon.',
@@ -178,10 +178,10 @@ window.MUSEUM = {
           story: [
             "Vroom! I'm a Lunar Roving Vehicle, the Moon buggy. I rode to the Moon folded up against the side of the lunar module, and astronauts unfolded me like a pop-up book.",
             "I run on batteries and drive about as fast as a kid on a bike. With me, astronauts could explore miles away from their lander instead of just walking around it.",
-            "There are three of us parked on the Moon: from Apollo 15, 16 and 17. On those trips, astronauts found the 'Genesis Rock', more than 4 billion years old, and orange soil made of tiny glass beads from ancient volcanoes.",
+            "There are three of us parked on the Moon: from Apollo 15, 16, and 17. On those trips, astronauts found the 'Genesis Rock', more than 4 billion years old, and orange soil made of tiny glass beads from ancient volcanoes.",
           ],
           leftBehind: [
-            "Three Lunar Roving Vehicles (Apollo 15, 16 and 17)",
+            "Three Lunar Roving Vehicles (Apollo 15, 16, and 17)",
             "Tire tracks across the lunar surface",
           ],
           discovery:
@@ -190,7 +190,7 @@ window.MUSEUM = {
             q: "How many Moon buggies are parked on the Moon?",
             options: ["One", "Three", "Ten"],
             answer: 1,
-            explain: "Correct! Apollo 15, 16 and 17 each left one behind.",
+            explain: "Correct! Apollo 15, 16, and 17 each left one behind.",
           },
           faq: [
             {
@@ -542,13 +542,13 @@ window.MUSEUM = {
           year: 1977,
           status: "still talking",
           story: [
-            "I'm Voyager 1, launched in 1977. I flew past Jupiter and Saturn and sent home amazing pictures of their storms, rings and moons.",
+            "I'm Voyager 1, launched in 1977. I flew past Jupiter and Saturn and sent home amazing pictures of their storms, rings, and moons.",
             "In 1990 I turned around and took a photo of Earth from about 6 billion km away. Earth looked like a tiny blue dot in a sunbeam. People call it the 'Pale Blue Dot'.",
             "In 2012 I became the first human-made object to reach interstellar space, the space between the stars. I'm still talking to Earth, though my messages take almost a whole day to arrive! I carry a Golden Record with sounds and music from Earth.",
           ],
           leftBehind: [
             "Voyager 1, the farthest human-made object",
-            "The Golden Record: greetings, music and sounds of Earth",
+            "The Golden Record: greetings, music, and sounds of Earth",
           ],
           discovery:
             "The first measurements from interstellar space, beyond the bubble of the Sun's solar wind.",
@@ -565,7 +565,7 @@ window.MUSEUM = {
           faq: [
             {
               keys: ["golden record", "record", "music"],
-              a: "The Golden Record has greetings in many languages, music from around the world, and sounds like thunder, birds and a baby's cry, a message about life on Earth.",
+              a: "The Golden Record has greetings in many languages, music from around the world, and sounds like thunder, birds, and a baby's cry, a message about life on Earth.",
             },
             {
               keys: ["far", "distance", "where"],
@@ -734,7 +734,7 @@ window.MUSEUM = {
       "name": "Signal Room",
       "deco": "dish",
       "wall": "#24384a",
-      "fact": "NASA talks to faraway spacecraft through giant radio dishes in California, Spain and Australia. Together they're called the Deep Space Network."
+      "fact": "NASA talks to faraway spacecraft through giant radio dishes in California, Spain, and Australia. Together they're called the Deep Space Network."
     },
     {
       "name": "Starlight Lounge",
@@ -760,9 +760,9 @@ window.MUSEUM = {
   adventure: {
     pieceName: "signal piece",
     intro: [
-      "Field trip day! Your class has just stepped into the Silent Explorers Museum when... BZZZT. The lights flicker, the floor rumbles, and every door in the building swaps places.",
+      "Field trip day! Your class has just stepped into the Reach for the Stars Museum when... BZZZT. The lights flicker, the floor rumbles, and every door in the building swaps places.",
       "\"It happened again,\" beeps ROBOT. \"The museum rearranged itself! And the Homecoming Signal broke into PIECES pieces.\"",
-      "Every year the museum beams the Homecoming Signal into space, to remember the machines NASA left behind on the Moon, on Mars and beyond. Now each piece is hiding with one of those machines.",
+      "Every year the museum beams the Homecoming Signal into space, to remember the machines NASA left behind on the Moon, on Mars, and beyond. Now each piece is hiding with one of those machines.",
       "Find the machines, hear their stories, and carry every piece to Mission Control. But careful: you never know what's behind a door until you open it.",
     ],
   },

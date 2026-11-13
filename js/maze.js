@@ -38,6 +38,10 @@ window.Maze = (function () {
 
   /* How each difficulty changes the NAVIGATION, not just the questions */
   const LEVELS = {
+    // Learning mode: no puzzle. A fixed tour with NEXT and BACK doors through every room.
+    learn: {
+      label: "Learning", learn: true, scanner: "always", signs: "names", riddleNames: true, riddleHint: true, parFactor: null,
+    },
     easy: {
       label: "Easy", main: 7, pieces: 3, discoveries: 2, maxDoors: 3, extraLinks: 1, oneWay: 0, locks: 1, hidden: 0,
       deadEnds: false, scanner: "always", signs: "names", riddleNames: true, riddleHint: true, parFactor: null,
@@ -260,12 +264,12 @@ window.Maze = (function () {
     }
     const allPieces = g.pieces.every((p) => seen.has(p));
     const checks = [
-      { label: "Starts in the Atrium", ok: route.length === 0 || route[0].from === g.start },
-      { label: `Every door on the route really connects (${steps.length} doors)`, ok },
-      { label: `Passes through all ${g.pieces.length} signal-piece rooms`, ok: allPieces },
-      { label: "Ends in Mission Control", ok: at === g.mc },
+      { key: "check.start", label: "Starts in the Atrium", ok: route.length === 0 || route[0].from === g.start },
+      { key: "check.connect", vars: { n: steps.length }, label: `Every door on the route really connects (${steps.length} doors)`, ok },
+      { key: "check.pieces", vars: { k: g.pieces.length }, label: `Passes through all ${g.pieces.length} signal-piece rooms`, ok: allPieces },
+      { key: "check.end", label: "Ends in Mission Control", ok: at === g.mc },
     ];
-    if (g.par) checks.push({ label: `Gold route: ${g.par} doors or fewer`, ok: steps.length <= g.par, bonus: true });
+    if (g.par) checks.push({ key: "check.gold", vars: { n: g.par }, label: `Gold route: ${g.par} doors or fewer`, ok: steps.length <= g.par, bonus: true });
     return { ok: checks.filter((c) => !c.bonus).every((c) => c.ok), steps, checks };
   }
 
@@ -281,5 +285,28 @@ window.Maze = (function () {
     return p.length ? { door: p[0].door, target, steps: p.length } : null;
   }
 
-  return { LEVELS, SYMBOLS, generate, verify, hint, shortest, factorial, bfs };
+  /**
+   * Learning mode: one long, friendly tour. Atrium, then each wing (a hall, then
+   * its machines), then the secret treasures, then Mission Control.
+   * content = { wings: [{ hall, exhibits: [ids] }], treasures: [ids] }
+   */
+  function tour(content) {
+    const rooms = [{ id: 0, type: "atrium", doors: [] }];
+    const push = (r) => { r.id = rooms.length; r.doors = []; rooms.push(r); return r.id; };
+    content.wings.forEach((w) => {
+      push({ type: "hall", hall: w.hall });
+      w.exhibits.forEach((e) => push({ type: "exhibit", exhibit: e, piece: false }));
+    });
+    content.treasures.forEach((t) => push({ type: "hidden", find: "treasure", treasure: t }));
+    const mc = push({ type: "mc" });
+    for (let i = 0; i < rooms.length - 1; i++) {
+      const a = rooms[i], b = rooms[i + 1];
+      a.doors.push({ to: b.id, next: true, sym: 3, slot: "E1" });
+      b.doors.push({ to: a.id, back: true, sym: 1, slot: "W1" });
+    }
+    rooms.forEach((r) => r.doors.forEach((d, i) => (d.i = i)));
+    return { level: "learn", seed: 0, rooms, start: 0, mc, pieces: [], best: rooms.length - 1, orders: 1, par: null, tour: true };
+  }
+
+  return { LEVELS, SYMBOLS, generate, verify, hint, shortest, factorial, bfs, tour };
 })();

@@ -269,18 +269,61 @@ window.Art = (function () {
     return `<svg class="hw hw-${key}" viewBox="${h.vb}" preserveAspectRatio="xMidYMax meet" aria-hidden="true">${h.svg}</svg>`;
   }
 
-  /* ---------- Player character (60 x 128, feet at bottom) ---------- */
+  /* ---------- Player character (60 x 128, feet at bottom, facing right) ----------
+   * look = { skin, shirt, pants, hair: style, hairColor, extra: "none"|"glasses"|"cap" }
+   * hair styles: short, buzz, curly, long, ponytail, braids, buns, scarf
+   */
+  const HAIR_STYLES = ["short", "buzz", "curly", "long", "ponytail", "braids", "buns", "scarf"];
   function kid(look) {
     const skin = look.skin || "#c98d63";
     const shirt = look.shirt || "#2f6fb5";
-    const hair = look.hair || "#2b1d14";
-    const girl = look.char === "girl";
+    const pants = look.pants || "#2b3346";
+    const hc = look.hairColor || "#2b1d14";
+    // older saves used char: "boy" | "girl"
+    const style = look.hair || (look.char === "girl" ? "ponytail" : "short");
+    const top = "M16 26 Q16 7 33 8 Q49 9 48 26 Q42 15 30 17 Q21 18 16 26z";
+    let behind = "", front = "";
+    switch (style) {
+      case "buzz":
+        front = `<path d="M18 21 Q19 10 33 10.5 Q46 11 46.5 20 Q40 14.5 30 15.5 Q23 16 18 21z" fill="${hc}" opacity=".9"/>`;
+        break;
+      case "curly":
+        behind = `<circle cx="30" cy="20" r="18" fill="${hc}"/>` + [[14, 14], [20, 5], [31, 2], [42, 6], [47, 15], [13, 27], [16, 36]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" fill="${hc}"/>`).join("");
+        front = `<path d="M22 14 Q32 6 45 15 Q38 13 30 16z" fill="${hc}"/>`;
+        break;
+      case "long":
+        behind = `<path d="M15 24 Q11 50 19 60 L27 58 L24 30z" fill="${hc}"/>`;
+        front = `<path d="${top}" fill="${hc}"/>`;
+        break;
+      case "ponytail":
+        behind = `<path d="M15 26 Q12 46 20 52 L22 30z" fill="${hc}"/><circle cx="14" cy="30" r="8" fill="${hc}"/><rect x="14" y="20" width="5" height="5" rx="2" fill="${shirt}"/>`;
+        front = `<path d="${top}" fill="${hc}"/>`;
+        break;
+      case "braids":
+        behind = [0, 1, 2, 3, 4, 5].map((i) => `<circle cx="${17 - i * 0.6}" cy="${32 + i * 5.5}" r="${3.6 - i * 0.15}" fill="${hc}"/>`).join("") + `<circle cx="13.5" cy="64" r="2.2" fill="${shirt}"/>`;
+        front = `<path d="${top}" fill="${hc}"/><path d="M20 14 l3 6 M27 11 l2 6 M35 10 l1 6" stroke="#0003" stroke-width="1.2"/>`;
+        break;
+      case "buns":
+        behind = `<circle cx="22" cy="9" r="6.5" fill="${hc}"/><circle cx="40" cy="8" r="6.5" fill="${hc}"/>`;
+        front = `<path d="${top}" fill="${hc}"/>`;
+        break;
+      case "scarf":
+        behind = `<path d="M13 28 Q12 6 32 6 Q51 6 50 28 Q50 44 44 50 L18 54 Q13 46 13 28z" fill="${hc}"/>`;
+        front = `<path d="M17 25 Q18 9 33 9 Q47 9 48 22 Q44 13 32 13 Q22 14 19 26z" fill="${hc}"/><path d="M24 38 Q32 44 44 38 L44 46 Q32 50 22 46z" fill="${hc}"/>`;
+        break;
+      default:
+        front = `<path d="M17 24 Q18 8 33 9 Q48 10 47 24 Q40 16 30 18 Q22 19 17 24z" fill="${hc}"/>`;
+    }
+    let extra = "";
+    if (look.extra === "glasses") extra = `<circle cx="38.5" cy="27" r="4.6" fill="#ffffff55" stroke="#1f1a17" stroke-width="1.6"/><path d="M34 26 L24 24" stroke="#1f1a17" stroke-width="1.4"/>`;
+    if (look.extra === "cap" && style !== "scarf") extra = `<path d="M17 20 Q18 6 33 7 Q47 8 47 19z" fill="${shirt}" stroke="#0003" stroke-width="1"/><path d="M44 18 L57 20 Q56 23 44 22z" fill="${shirt}" stroke="#0003" stroke-width="1"/>`;
     return `
 <svg class="kid" viewBox="0 0 60 128" aria-hidden="true">
   <ellipse cx="30" cy="125" rx="16" ry="3" fill="#000" opacity=".25"/>
+  ${behind}
   <rect x="8" y="50" width="16" height="34" rx="5" fill="#d65a3a"/>
-  <g class="leg leg-b"><rect x="25" y="84" width="9" height="34" rx="4" fill="#2b3346"/><rect x="23" y="114" width="15" height="8" rx="3" fill="#f2efe6"/></g>
-  <g class="leg leg-f"><rect x="30" y="84" width="9" height="34" rx="4" fill="#323b52"/><rect x="28" y="114" width="15" height="8" rx="3" fill="#ffffff"/></g>
+  <g class="leg leg-b"><rect x="25" y="84" width="9" height="34" rx="4" fill="${pants}" style="filter:brightness(.85)"/><rect x="23" y="114" width="15" height="8" rx="3" fill="#f2efe6"/></g>
+  <g class="leg leg-f"><rect x="30" y="84" width="9" height="34" rx="4" fill="${pants}"/><rect x="28" y="114" width="15" height="8" rx="3" fill="#ffffff"/></g>
   <g class="arm arm-b"><rect x="38" y="52" width="8" height="28" rx="4" fill="${skin}" opacity=".85"/></g>
   <rect x="18" y="46" width="28" height="42" rx="9" fill="${shirt}"/>
   <path d="M26 47 L32 66 L38 47" stroke="#f2c14e" stroke-width="2" fill="none"/>
@@ -288,10 +331,10 @@ window.Art = (function () {
   <g class="arm arm-f"><rect x="22" y="52" width="8" height="28" rx="4" fill="${skin}"/></g>
   <rect x="26" y="38" width="10" height="10" fill="${skin}"/>
   <circle cx="32" cy="26" r="15" fill="${skin}"/>
-  ${girl ? `<path d="M15 26 Q12 46 20 52 L22 30z" fill="${hair}"/><circle cx="14" cy="30" r="8" fill="${hair}"/><circle cx="17" cy="22" r="3.5" fill="#ff6bd0"/>` : ""}
-  <path d="${girl ? "M16 26 Q16 7 33 8 Q49 9 48 26 Q42 15 30 17 Q21 18 16 26z" : "M17 24 Q18 8 33 9 Q48 10 47 24 Q40 16 30 18 Q22 19 17 24z"}" fill="${hair}"/>
+  ${front}
   <circle cx="38" cy="27" r="2" fill="#1f1a17"/>
   <path d="M36 33 q3 2 6 0" stroke="#1f1a17" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  ${extra}
 </svg>`;
   }
 
@@ -312,5 +355,99 @@ window.Art = (function () {
 </svg>`;
   }
 
-  return { hardware, backdrop, kid, bus };
+  /* ---------- Team mission patch (120 x 120) ----------
+   * Our own emblem for team Reach for the Stars: a gold star inside an orbit,
+   * over a sliver of Earth. (Not the NASA insignia, which needs NASA's permission.)
+   */
+  let patchN = 0;
+  function patch(opts) {
+    opts = opts || {};
+    const id = "rfs" + ++patchN;
+    const top = opts.top || "REACH FOR THE STARS";
+    const bottom = opts.bottom || "MUSEUM \u2605 2026";
+    const star = (cx, cy, r) => {
+      let d = "";
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.42 : r;
+        d += (i ? "L" : "M") + (cx + Math.cos(a) * rr).toFixed(1) + " " + (cy + Math.sin(a) * rr).toFixed(1);
+      }
+      return d + "z";
+    };
+    return `
+<svg class="patch" viewBox="0 0 120 120" ${opts.size ? `width="${opts.size}" height="${opts.size}"` : ""} role="img" aria-label="Reach for the Stars mission patch">
+  <defs>
+    <radialGradient id="${id}g" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#2f3a8f"/><stop offset="1" stop-color="#0e1130"/></radialGradient>
+    <path id="${id}t" d="M18 60 A42 42 0 0 1 102 60"/>
+    <path id="${id}b" d="M14 60 A46 46 0 0 0 106 60"/>
+    <clipPath id="${id}c"><circle cx="60" cy="60" r="40"/></clipPath>
+  </defs>
+  <circle cx="60" cy="60" r="58" fill="#14183f" stroke="#e8b53a" stroke-width="4"/>
+  <circle cx="60" cy="60" r="40" fill="url(#${id}g)" stroke="#e8b53a" stroke-width="1.5"/>
+  <g clip-path="url(#${id}c)">
+    <circle cx="60" cy="128" r="46" fill="#3f7fd9"/>
+    <path d="M30 92 q10 -8 22 -4 q8 3 16 -2 q10 -5 22 2" fill="none" stroke="#4f9a52" stroke-width="5" stroke-linecap="round"/>
+    ${[[34, 36], [86, 40], [42, 70], [84, 72], [70, 30], [50, 28]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2" fill="#fff"/>`).join("")}
+  </g>
+  <ellipse cx="60" cy="56" rx="34" ry="12" fill="none" stroke="#5ef2ff" stroke-width="2.5" transform="rotate(-18 60 56)"/>
+  <path d="${star(60, 55, 17)}" fill="#ffd34d" stroke="#fff3c4" stroke-width="1.2"/>
+  <circle cx="90" cy="45" r="3" fill="#5ef2ff"/>
+  <text font-family="IBM Plex Mono, monospace" font-weight="700" font-size="9.2" letter-spacing="1.2" fill="#ffffff"><textPath href="#${id}t" startOffset="50%" text-anchor="middle">${top}</textPath></text>
+  <text font-family="IBM Plex Mono, monospace" font-weight="700" font-size="8" letter-spacing="1.5" fill="#ffd34d"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" dominant-baseline="hanging">${bottom}</textPath></text>
+</svg>`;
+  }
+
+  /* ---------- NASA insignia (120 x 120), simplified ----------
+   * Used only on the spacesuit and the rocket. NASA's insignia normally needs
+   * NASA's permission to use: set SHOW_NASA to false to swap in the team patch.
+   */
+  const SHOW_NASA = true;
+  function nasa() {
+    if (!SHOW_NASA) return patch();
+    return `
+<svg class="nasa-logo" viewBox="0 0 120 120" role="img" aria-label="NASA">
+  <circle cx="60" cy="60" r="57" fill="#0b3d91"/>
+  ${[[30, 30], [44, 18], [84, 22], [96, 44], [24, 58], [38, 88], [88, 84], [70, 100], [52, 40], [100, 64]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.3 : 2}" fill="#fff"/>`).join("")}
+  <ellipse cx="60" cy="62" rx="52" ry="17" fill="none" stroke="#fff" stroke-width="3" transform="rotate(-24 60 62)"/>
+  <path d="M10 96 C40 74 72 56 112 30 L104 44 C76 62 48 80 22 102 Z" fill="#fc3d21"/>
+  <text x="60" y="71" text-anchor="middle" font-family="Arial Black, Helvetica, Arial, sans-serif" font-weight="900" font-size="27" fill="#fff" letter-spacing="1">NASA</text>
+</svg>`;
+  }
+
+  /* ---------- Field-trip rocket (140 x 300), for trips to the Moon and Mars ----------
+   * The top window shows the player's own face; classmates fill the others.
+   */
+  function rocket(look) {
+    look = look || {};
+    const faces = [look.skin || "#c98d63", "#8a5434", "#f1c7a5"];
+    const win = (cy, skin, hair) => `
+      <circle cx="70" cy="${cy}" r="15" fill="#bfe0f2" stroke="#2a2b2f" stroke-width="3"/>
+      <circle cx="70" cy="${cy + 4}" r="9" fill="${skin}"/>
+      <path d="M61 ${cy + 2} Q62 ${cy - 7} 70 ${cy - 7} Q78 ${cy - 7} 79 ${cy + 2} Q74 ${cy - 3} 70 ${cy - 3} Q65 ${cy - 3} 61 ${cy + 2}z" fill="${hair}"/>
+      <circle cx="67" cy="${cy + 4}" r="1.3" fill="#1f1a17"/><circle cx="73" cy="${cy + 4}" r="1.3" fill="#1f1a17"/>
+      <path d="M67 ${cy + 8} q3 2 6 0" stroke="#1f1a17" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M60 ${cy - 8} q6 -4 12 -2" stroke="#fff" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round"/>`;
+    return `
+<svg class="rocket" viewBox="0 0 140 300" aria-hidden="true">
+  <g class="flame">
+    <path d="M52 236 Q70 312 88 236z" fill="#ffb347"/>
+    <path d="M60 236 Q70 286 80 236z" fill="#fff3b0"/>
+  </g>
+  <path d="M40 186 L14 236 L14 246 L42 230z" fill="#e0533b" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M100 186 L126 236 L126 246 L98 230z" fill="#e0533b" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M40 70 Q40 40 70 12 Q100 40 100 70 L100 228 Q70 238 40 228z" fill="#f4f1ea" stroke="#2a2b2f" stroke-width="3"/>
+  <path d="M46 56 Q55 32 70 16 Q85 32 94 56z" fill="#e0533b" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M41 196 h58" stroke="#2a2b2f" stroke-width="3"/>
+  <rect x="41" y="200" width="58" height="10" fill="#3f7fd9"/>
+  ${win(76, faces[0], look.hairColor || "#2b1d14")}
+  ${win(112, faces[1], "#1c1714")}
+  ${win(148, faces[2], "#c98a3c")}
+  <g transform="translate(55 167) scale(.25)">${nasa().replace(/^\s*<svg[^>]*>|<\/svg>\s*$/g, "")}</g>
+  <text transform="translate(92 182) rotate(-90)" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="9" fill="#2a2b2f" letter-spacing="1">FIELD TRIP</text>
+  <path d="M60 228 L56 244 L84 244 L80 228z" fill="#6b7790" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M30 236 L22 258 M110 236 L118 258" stroke="#2a2b2f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M14 258 h16 M110 258 h16" stroke="#2a2b2f" stroke-width="4" stroke-linecap="round"/>
+</svg>`;
+  }
+
+  return { hardware, backdrop, kid, bus, rocket, patch, nasa, HAIR_STYLES };
 })();

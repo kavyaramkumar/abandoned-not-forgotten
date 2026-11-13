@@ -9,7 +9,10 @@
  */
 
 window.CONFIG = window.CONFIG || {
-  askEndpoint: null, // e.g. "http://localhost:8787/ask"
+  // The AI server (server/ask_server.py) answers from NASA websites only.
+  // When the museum is opened from this computer, use the local server.
+  // For the live site, set this to wherever the server is hosted.
+  askEndpoint: /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://localhost:8787/ask" : null,
 };
 
 window.ExhibitGuide = (function () {
@@ -69,7 +72,9 @@ window.ExhibitGuide = (function () {
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
-      return { text: data.answer, mode: "ai" };
+      // only ever show links to NASA's own websites
+      const sources = (data.sources || []).filter((s) => /^https:\/\/([a-z0-9-]+\.)*nasa\.gov(\/|$)/i.test(s.url));
+      return { text: data.answer, mode: "ai", sources };
     } catch (err) {
       console.warn("AI guide unavailable, using offline notes:", err);
       return { text: offlineAnswer(exhibit, question), mode: "offline" };
