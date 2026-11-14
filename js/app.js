@@ -366,7 +366,7 @@
       body: [
         "Every machine in this museum finished the job it was sent to do. But its story didn't end there.",
         "Some still sit right where they landed. Some are still flying, farther from home than anything else people have built.",
-      ], bodySize: 3.2,
+      ], bodySize: 2.6,
       footer: "← MOON WING     MARS WING ↑     DEEP SPACE →",
     }, -7, 2.3);
 
@@ -414,10 +414,10 @@
     scene.add(Models.shadowAll(ped), Models.shadowAll(globe), Models.shadowAll(orbit));
     spin.push({ o: globe, s: 0.15 }, { o: orbit, s: 0.35 });
     obstacles.push({ x: 0, z: 0, r: 1.5 });
-    const plaque = Models.board({ w: 1.6, h: 0.45, ppm: 300, bg: "#f6f0e3", accent: "#2c6fb0", draw: (x, W, H) => {
+    const plaque = Models.board({ w: 2.4, h: 0.45, ppm: 300, bg: "#f6f0e3", accent: "#2c6fb0", draw: (x, W, H) => { 
       x.fillStyle = "#2c6fb0"; x.fillRect(0, 0, W, 8);
       x.fillStyle = "#1f2330"; x.font = `800 ${H * 0.36}px Fraunces, Georgia, serif`; x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillText("Earth: where every trip starts", W / 2, H * 0.55);
+      x.fillText("Earth: where every trip starts", W / 2, H * 0.55); 
     } });
     boards.push(plaque);
     plaque.mesh.position.set(0, 0.55, 1.06);
@@ -484,8 +484,8 @@
     // the wing's big question on the far end wall
     const endSide = r.axis === "x" ? (r.dir < 0 ? r.sides.W : r.sides.E) : r.sides.N;
     addBoard(endSide, {
-      w: 6.4, h: 3, bg: "#f6f0e3", accent: w.color, kicker: "The big question", kickerColor: "#8a6420",
-      title: w.question, titleSize: 6.4, body: w.intro, bodySize: 3.3, footer: `${w.name.toUpperCase()} · ${w.exhibits.length} MACHINES`,
+      w: 6.4, h: 3.3, bg: "#f6f0e3", accent: w.color, kicker: "The big question", kickerColor: "#8a6420", 
+      title: w.question, titleSize: 6, body: w.intro, bodySize: 3.3, footer: `${w.name.toUpperCase()} · ${w.exhibits.length} MACHINES`,
     }, endSide.alongX ? r.cx : r.cz, 2.3);
 
     w.exhibits.forEach((e, i) => {
