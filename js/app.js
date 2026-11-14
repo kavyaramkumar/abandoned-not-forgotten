@@ -2655,9 +2655,9 @@ const speechRate = () => {
     }
     const kb = ExhibitGuide.kbAnswer(q, null);
     if (kb && !(q === t("chat.sugMoon") || q === t("chat.sugMars") || q === t("chat.sugDeep"))) return { text: kb };
-    if (q === t("chat.sugMoon") || /moon|lun|apollo/.test(ql)) return { text: wingAnswer("moon") };
-    if (q === t("chat.sugMars") || /mars|marte|rover/.test(ql)) return { text: wingAnswer("mars") };
-    if (q === t("chat.sugDeep") || /deep|voyager|pioneer|pluto|jupiter|space/.test(ql)) return { text: wingAnswer("deep") };
+    if (q === t("chat.sugMoon") || /\b(moon|lunar|apollo)\b/.test(ql)) return { text: wingAnswer("moon") };
+    if (q === t("chat.sugMars") ||/\b(mars|marte|rover)\b/.test(ql)) return { text: wingAnswer("mars") };
+    if (q === t("chat.sugDeep") || /\b(deep|voyager|pioneer|pluto|jupiter|space)\b/.test(ql)) return { text: wingAnswer("deep") };
     return { text: t("chat.dontKnow") };
   }
   const MUSEUM_GUIDE = () => ({
