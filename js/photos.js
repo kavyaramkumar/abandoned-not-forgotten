@@ -103,5 +103,41 @@ window.PHOTOS = {
     caption: "The tiny goodwill message disc left on the Moon, next to a half dollar coin.",
     credit: "NASA",
     source: "https://images.nasa.gov/details/S69-39148"
+  },
+  "alsep": {
+    src: "assets/photos/alsep.jpg", w: 1200, h: 938,
+    caption: "Alan Bean sets up ALSEP on the Moon during Apollo 12 in 1969.",
+    credit: "NASA",
+    source: "https://images.nasa.gov/details/as12-47-6919"
+  },
+  "viking-2": {
+    src: "assets/photos/viking-2.jpg", w: 626, h: 512,
+    caption: "Viking 2's first color picture of Utopia Planitia, Mars, in 1976.",
+    credit: "NASA/JPL",
+    source: "https://images.nasa.gov/details/PIA00568"
+  },
+  "pioneer-11": {
+    src: "assets/photos/pioneer-11.jpg", w: 960, h: 1200,
+    caption: "Pioneer 11, then called Pioneer G, waits for launch in 1973.",
+    credit: "NASA",
+    source: "https://images.nasa.gov/details/KSC-73P-0116"
+  },
+  "dawn": {
+    src: "assets/photos/dawn.jpg", w: 1200, h: 843,
+    caption: "Dawn's giant solar wing is unfolded for a test before its 2007 launch.",
+    credit: "NASA/David Lyons-Orbital Sciences",
+    source: "https://images.nasa.gov/details/KSC-07pd1295"
+  },
+  "near-shoemaker": {
+    src: "assets/photos/near-shoemaker.jpg", w: 694, h: 1000,
+    caption: "The NEAR spacecraft gets ready at Kennedy Space Center before its 1996 launch.",
+    credit: "NASA",
+    source: "https://images.nasa.gov/details/9701593"
+  },
+  "kepler": {
+    src: "assets/photos/kepler.jpg", w: 1200, h: 803,
+    caption: "Workers check the Kepler Space Telescope before its 2009 launch.",
+    credit: "NASA/Kim Shiflett",
+    source: "https://images.nasa.gov/details/KSC-2009-1042"
   }
 };

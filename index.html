@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;700&family=Lexend:wght@400;600;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=18" />
-  <link rel="stylesheet" href="css/cutscene.css?v=18" />
+  <link rel="stylesheet" href="css/styles.css?v=35" />
+  <link rel="stylesheet" href="css/cutscene.css?v=35" />
 </head>
 <body>
   <!-- Shared gradients used by every hardware drawing -->
@@ -134,6 +134,7 @@
         <span class="counter" data-i18n-tip="tip.stars" tabindex="0"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.5l2.6 5.6 6 .7-4.5 4.1 1.2 6L10 15l-5.3 2.9 1.2-6L1.4 7.8l6-.7z" fill="#e8b53a"/></svg><b id="starCount">0</b><span class="sr-only"> stars</span></span>
         <button type="button" class="btn small icon a11y-open" data-i18n-aria="a11y.btn" data-i18n-tip="tip.settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 4.9-1.9-.5a6.9 6.9 0 0 0-.6-1.5l1-1.7-1.8-1.8-1.7 1a6.9 6.9 0 0 0-1.5-.6l-.5-1.9h-2.6l-.5 1.9a6.9 6.9 0 0 0-1.5.6l-1.7-1-1.8 1.8 1 1.7a6.9 6.9 0 0 0-.6 1.5l-1.9.5v2.6l1.9.5c.1.5.3 1 .6 1.5l-1 1.7 1.8 1.8 1.7-1c.5.3 1 .5 1.5.6l.5 1.9h2.6l.5-1.9c.5-.1 1-.3 1.5-.6l1.7 1 1.8-1.8-1-1.7c.3-.5.5-1 .6-1.5l1.9-.5z" fill="currentColor" transform="translate(0 -1.3)"/></svg></button>
         <button class="btn small" id="rulesBtn" data-i18n="rules.btn" data-i18n-tip="tip.rules">How to play</button>
+        <button class="btn small" id="learnBtn" data-i18n="learn.btn" data-i18n-tip="tip.learn">Learn more</button>
         <button class="btn small" id="journalBtn" data-i18n="hud.journal" data-i18n-tip="tip.journal">Journal</button>
         <button class="btn small" id="workshopBtn" data-i18n="hud.bay" data-i18n-tip="tip.bay">Robot Bay</button>
       </div>
@@ -206,6 +207,20 @@
     </div>
     <footer class="ex-foot"><span class="grow"></span><button class="btn primary" data-close data-i18n="a11y.done">Done</button></footer>
   </dialog>
+
+  <!-- ============ Learn more: space words, patents, law, health ============ -->
+  <dialog id="learnDialog" class="sheet learn-sheet" aria-labelledby="learnTitle">
+    <header class="ex-head">
+      <p class="catalog" data-i18n="hud.museum">Reach for the Stars Museum</p>
+      <h2 id="learnTitle" data-i18n="learn.title">Learn more</h2>
+      <button class="close" data-close aria-label="Close">×</button>
+    </header>
+    <nav class="tabs" id="learnTabs" role="tablist"></nav>
+    <div class="learn-body" id="learnBody"></div>
+  </dialog>
+
+  <!-- a space word's definition -->
+  <div class="term-pop" id="termPop" role="dialog" aria-live="polite" hidden></div>
 
   <!-- ============ How to play ============ -->
   <dialog id="rulesDialog" class="sheet rules-sheet" aria-labelledby="rulesTitle">
@@ -291,17 +306,22 @@
   </dialog>
 
   <script src="js/vendor/three.min.js"></script>
-  <script src="js/i18n.js?v=18"></script>
-  <script src="js/i18n/en.js?v=18"></script>
-  <script src="js/data.js?v=18"></script>
-  <script src="js/photos.js?v=18"></script>
-  <script src="js/facts.js?v=18"></script>
-  <script src="js/art.js?v=18"></script>
-  <script src="js/robot.js?v=18"></script>
-  <script src="js/models.js?v=18"></script>
-  <script src="js/maze.js?v=18"></script>
-  <script src="js/cutscene.js?v=18"></script>
-  <script src="js/ai.js?v=18"></script>
-  <script src="js/app.js?v=18"></script>
+  <script src="js/i18n.js?v=35"></script>
+  <script src="js/i18n/en.js?v=35"></script>
+  <script src="js/data.js?v=35"></script>
+  <script src="js/photos.js?v=35"></script>
+  <script src="js/facts.js?v=35"></script>
+  <script src="js/data-extra.js?v=35"></script>
+  <script src="js/nasa-data.js?v=35"></script>
+  <script src="js/orbit.js?v=35"></script>
+  <script src="js/sounds.js?v=35"></script>
+  <script src="js/learn.js?v=35"></script>
+  <script src="js/art.js?v=35"></script>
+  <script src="js/robot.js?v=35"></script>
+  <script src="js/models.js?v=35"></script>
+  <script src="js/maze.js?v=35"></script>
+  <script src="js/cutscene.js?v=35"></script>
+  <script src="js/ai.js?v=35"></script>
+  <script src="js/app.js?v=35"></script>
 </body>
 </html>

@@ -217,3 +217,28 @@ The gear button (welcome screen and top bar) opens a settings panel. Everything 
 ## Quick facts for the offline chat
 
 `js/facts.js` gives every machine short answers to the questions students ask most: who built it, when it launched and landed, how long it worked, how big and heavy it is, what powered it, and how fast it went. The offline guide (`js/ai.js`) recognizes those questions, and the chat offers "Who built it?", "When did it launch?", and "How long did it work?" as buttons. These facts are drafts written from NASA mission history and should be checked against NASA's official data.
+
+## Learning more
+
+- **Fact file:** every machine's card has a Fact file tab (who built it, launch and landing, how long it worked, size, weight, power, speed, and its famous first), so everything the chat can answer is also on the card. Facts live in `js/facts.js`.
+- **Space words:** words like Kuiper Belt, retroreflector, perchlorate, and RTG are underlined on the cards and in chat answers. Click one for a short definition, or ask the robot for more. Definitions live in `js/learn.js` (`GLOSSARY`).
+- **Learn more page** (top bar): Space words A to Z, plus three sections that connect the missions to bigger topics: **Inventions and patents** (intellectual property: patents, copyright, trademarks, trade secrets, NASA spinoffs, and why NASA photos are public domain), **Space law** (the Outer Space Treaty, who owns things left on the Moon, protecting the Apollo sites), and **Space and health** (what space does to the body, the Twins Study, and medical spinoffs). Content lives in `js/learn.js` (`LEARN`) and is a draft to check against official sources.
+
+## NASA data (official challenge resources)
+
+- **Verified against NASA's NSSDCA** (https://nssdc.gsfc.nasa.gov/), the challenge's official catalog, plus NASA mission pages. Every exhibit has `sources` (NSSDCA first) and `verified: true`. About 30 claims were corrected in the check.
+- **`js/nasa-data.js`:** each machine's NSSDCA catalog ID, launch, arrival, last contact, mass, resting place (with coordinates where NASA gives them), and status. The Fact file tab shows where it rests now, its last contact (as a date in the player's language), and a link to its NSSDCA page, with a Sources line on each card.
+- **20 machines:** the challenge's resource list added ALSEP (Moon), Viking 2 (Mars), and Pioneer 11, Dawn, NEAR Shoemaker, and Kepler (deep space). They live in `js/data-extra.js`, with NASA photos in `assets/photos/`.
+- **Learn more** sections (patents, space law, health) were checked against NASA Spinoff, NASA Technology Transfer, USPTO, the FCC, congress.gov, and UNOOSA, with sources listed on each section.
+
+## The chat's knowledge
+
+- **Offline:** `js/ai.js` builds a searchable knowledge base from every story, fact file, NASA catalog entry, space word, Learn more section, and hall fact, and answers with the best-matching notes. It understands everyday wording ("what killed Opportunity?", "who owns the landers on the Moon?").
+- **With the AI server:** each question is sent with the 8 best-matching museum notes, and the server can also search NASA websites for anything the museum doesn't cover.
+- **Two ways to chat:** a small chat docked in the corner (the "Ask" button) that stays open while you explore, and the full chat from any machine's card.
+
+## Seen from orbit and real NASA sounds
+
+- **Seen from orbit:** 17 machines and treasures have a card tab with a then-and-now slider: the mission photo next to a NASA picture taken from orbit years later (Lunar Reconnaissance Orbiter for the Moon, Mars Reconnaissance Orbiter's HiRISE for Mars, NEAR's own camera for Eros), mostly labeled by NASA. Images in `assets/orbit/`, listed in `js/orbit.js`.
+- **Listen:** real NASA audio for InSight (a marsquake made audible), Voyager 1 (sounds of interstellar space), Ingenuity (Perseverance's microphone recording of it flying), Apollo 11 ("one small step"), and Kepler (a star's light turned into sound). Files in `assets/sounds/`, listed in `js/sounds.js`.
+- Credits for every photo, orbital image, and sound are in `assets/photos/CREDITS.md`.

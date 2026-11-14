@@ -83,6 +83,61 @@ window.Art = (function () {
   const S = 'stroke="#3b3a36" stroke-width="2" stroke-linecap="round"';
 
   const HW = {
+    // Apollo Lunar Surface Experiments Package: central station, nuclear power unit, seismometer, laser mirror
+    alsep: { vb: "0 0 250 150", svg: `
+      <path d="M0 140 Q125 130 250 140 V150 H0z" fill="#b9b4a8"/>
+      <path d="M44 128 C70 110 96 132 120 118 M150 122 C170 112 190 126 206 116" stroke="#2a2b2f" stroke-width="1.6" fill="none"/>
+      <g><rect x="22" y="96" width="22" height="34" rx="3" fill="#4a4b50" stroke="#2a2b2f" stroke-width="1.5"/>
+        ${[0, 1, 2, 3].map((i) => `<rect x="${14 + 0}" y="${100 + i * 8}" width="38" height="3" fill="#6b6e75"/>`).join("")}</g>
+      <rect x="100" y="98" width="52" height="30" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <rect x="92" y="78" width="68" height="6" fill="#e7e2d4" stroke="#3b3a36" stroke-width="1.5"/>
+      <line x1="100" y1="84" x2="100" y2="98" ${S}/><line x1="152" y1="84" x2="152" y2="98" ${S}/>
+      <line x1="126" y1="78" x2="126" y2="44" ${S}/>
+      <path d="M112 44 Q126 30 140 44z" fill="#f2efe6" stroke="#3b3a36" stroke-width="1.5"/>
+      <path d="M54 128 q12 -24 24 0z" fill="url(#silver)" stroke="#3b3a36" stroke-width="1.5"/>
+      <rect x="52" y="126" width="28" height="4" fill="#e7e2d4" stroke="#3b3a36" stroke-width="1"/>
+      <g transform="translate(184 92) rotate(-20)"><rect x="0" y="0" width="44" height="30" fill="#2a2b2f" stroke="#3b3a36" stroke-width="1.5"/>
+        ${[0, 1, 2, 3, 4].map((c) => [0, 1, 2].map((r) => `<circle cx="${6 + c * 8}" cy="${6 + r * 9}" r="3" fill="#8fd0ff"/>`).join("")).join("")}</g>
+      <line x1="200" y1="118" x2="196" y2="138" ${S}/><line x1="220" y1="112" x2="224" y2="136" ${S}/>` },
+
+    // Dawn: ion-engine spacecraft with long solar wings, now orbiting Ceres
+    dawn: { vb: "0 0 280 120", svg: `
+      <circle cx="140" cy="88" r="16" fill="#5ef2ff" opacity=".35"/><circle cx="140" cy="86" r="8" fill="#a8f7ff" opacity=".8"/>
+      <rect x="2" y="44" width="104" height="26" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+      <rect x="174" y="44" width="104" height="26" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+      <path d="M28 44v26M54 44v26M80 44v26M200 44v26M226 44v26M252 44v26" stroke="#7fa0d8" stroke-width="1"/>
+      <line x1="106" y1="57" x2="120" y2="57" ${S}/><line x1="160" y1="57" x2="174" y2="57" ${S}/>
+      <rect x="120" y="36" width="40" height="44" fill="url(#gold)" stroke="#6b4e12" stroke-width="2"/>
+      <rect x="132" y="80" width="16" height="6" fill="#4a4b50"/>
+      <line x1="140" y1="36" x2="140" y2="26" ${S}/>
+      <ellipse cx="140" cy="22" rx="20" ry="7" fill="#f2efe6" stroke="#3b3a36" stroke-width="1.5"/>` },
+
+    // NEAR Shoemaker: resting on asteroid Eros, with four solar panels and a dish antenna
+    near: { vb: "0 0 230 160", svg: `
+      <path d="M0 132 Q40 112 80 124 T160 118 T230 128 V160 H0z" fill="#9a8a72"/>
+      <circle cx="40" cy="138" r="6" fill="#7e705a"/><circle cx="190" cy="140" r="9" fill="#7e705a"/><circle cx="120" cy="146" r="4" fill="#7e705a"/>
+      <g transform="rotate(-14 115 86)">
+        <rect x="20" y="70" width="58" height="30" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+        <rect x="152" y="70" width="58" height="30" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+        <rect x="86" y="96" width="58" height="22" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5" opacity=".9"/>
+        <polygon points="92,66 138,66 150,80 138,96 92,96 80,80" fill="url(#gold)" stroke="#6b4e12" stroke-width="2"/>
+        <line x1="78" y1="84" x2="80" y2="84" ${S}/><line x1="150" y1="84" x2="152" y2="84" ${S}/>
+        <line x1="115" y1="66" x2="115" y2="52" ${S}/>
+        <path d="M89 52 Q115 30 141 52z" fill="#f2efe6" stroke="#3b3a36" stroke-width="1.5"/>
+      </g>` },
+
+    // Kepler: a planet-hunting telescope with a slanted sunshade and a solar-panel shield
+    kepler: { vb: "0 0 170 230", svg: `
+      <path d="M40 34 L118 14 L118 172 L40 172z" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
+      <path d="M40 34 L118 14" stroke="#2a2b2f" stroke-width="3"/>
+      <ellipse cx="79" cy="26" rx="40" ry="9" fill="#14183f" stroke="#3b3a36" stroke-width="1.5" transform="rotate(-14 79 26)"/>
+      <path d="M58 60h40M58 90h40M58 120h40M58 150h40" stroke="#9c988a" stroke-width="1.2"/>
+      <path d="M118 40 L150 52 L150 196 L118 184z" fill="url(#panel)" stroke="#3b3a36" stroke-width="1.5"/>
+      <path d="M118 80 L150 92M118 120 L150 132M118 160 L150 172" stroke="#7fa0d8" stroke-width="1"/>
+      <rect x="32" y="172" width="94" height="30" fill="url(#gold)" stroke="#6b4e12" stroke-width="2"/>
+      <rect x="62" y="202" width="34" height="10" fill="#4a4b50"/>
+      <line x1="40" y1="190" x2="20" y2="208" ${S}/><ellipse cx="16" cy="212" rx="12" ry="5" fill="#f2efe6" stroke="#3b3a36" stroke-width="1.5"/>` },
+
     surveyor: { vb: "0 0 200 170", svg: `
       <line x1="100" y1="104" x2="30" y2="152" ${S}/><line x1="100" y1="104" x2="170" y2="152" ${S}/><line x1="100" y1="104" x2="104" y2="160" ${S}/>
       ${pad(30, 154)}${pad(170, 154)}${pad(104, 162)}

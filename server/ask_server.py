@@ -120,7 +120,7 @@ def collect_sources(content):
     return out[:4]
 
 
-def ask(exhibit, question, history):
+def ask(exhibit, question, history, notes=None):
     messages = [
         {"role": m["role"], "content": m["content"]}
         for m in history
@@ -131,6 +131,10 @@ def ask(exhibit, question, history):
         {"type": "text", "text": SYSTEM},
         {"type": "text", "text": "Exhibit notes (JSON):\n" + json.dumps(exhibit)[:6000]},
     ]
+    if notes:
+        # the museum's own notes that best match this question (checked against NASA's NSSDCA catalog)
+        clean = [str(n)[:400] for n in notes if isinstance(n, str)][:8]
+        system.append({"type": "text", "text": "Museum notes that match this question (from NASA sources; use them, and search NASA for anything they don't cover):\n- " + "\n- ".join(clean)})
 
     response = None
     for _ in range(3):  # web search can pause a long turn; resume up to twice
@@ -170,7 +174,12 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_OPTIONS(self):
-        self._send(204, {})
+        # CORS preflight: 204 means no body
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.end_headers()
 
     def do_GET(self):
         # quick health check: http://localhost:8787/health
@@ -181,13 +190,20 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path != "/ask":
             return self._send(404, {"error": "not found"})
-        length = int(self.headers.get("Content-Length") or 0)
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return self._send(400, {"error": "bad length"})
+        if length < 0:
+            return self._send(400, {"error": "bad length"})
         if length > 20000:
             return self._send(413, {"error": "too large"})
         try:
             body = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return self._send(400, {"error": "bad json"})
+        if not isinstance(body, dict):
+            return self._send(400, {"error": "expected a JSON object"})
         question = body.get("question")
         if not isinstance(question, str) or not question.strip():
             return self._send(400, {"error": "missing question"})
@@ -195,7 +211,7 @@ class Handler(BaseHTTPRequestHandler):
             print("No API key yet: add ANTHROPIC_API_KEY to server/.env. The museum uses its offline notes until then.")
             return self._send(503, {"error": "AI guide not set up"})
         try:
-            self._send(200, ask(body.get("exhibit") or {}, question, body.get("history") or []))
+            self._send(200, ask(body.get("exhibit") or {}, question, body.get("history") or [], body.get("notes")))
         except anthropic.AuthenticationError:
             print("The Anthropic API key is missing or wrong. Check server/.env.")
             self._send(500, {"error": "AI guide not set up"})

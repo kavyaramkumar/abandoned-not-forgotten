@@ -49,20 +49,24 @@ window.MUSEUM = {
           place: "Sea of Clouds, Moon",
           year: 1964,
           status: "silent",
-          story: ["Before anyone could land on the Moon, people needed to know what the ground looks like up close. That was my job. I launched on July 28, 1964.", "I had no legs and no brakes. I was built to fly straight at the Moon and take pictures the whole way down. In my last 17 minutes, my six TV cameras sent back more than 4,000 pictures.", "My final pictures showed craters only about a meter across, far smaller than any telescope on Earth could see. Then I crashed, just as planned. The area was renamed Mare Cognitum: the Sea That Has Become Known."],
+          story: ["Before anyone could land on the Moon, people needed to know what the ground looks like up close. That was my job. I launched on July 28, 1964.", "I had no legs and no brakes. I was built to fly straight at the Moon and take pictures the whole way down. In my last 17 minutes, my six TV cameras sent back more than 4,000 pictures.", "My final pictures showed details only about half a meter across, far smaller than any telescope on Earth could see. Then I crashed into the Moon on purpose, just as planned. The area was renamed Mare Cognitum: the Sea That Has Become Known."],
           leftBehind: ["What's left of Ranger 7, scattered around its crash site", "A new name on the map: Mare Cognitum, the Sea That Has Become Known"],
           discovery: "Ranger 7's pictures showed that the Moon is covered in craters of every size, even tiny ones. Knowing what the ground looked like up close helped NASA plan how and where to land.",
           quiz: {"q": "How did Ranger 7 end its mission?", "options": ["It landed softly on legs", "It crashed into the Moon on purpose while taking pictures", "It flew back home to Earth"], "answer": 1, "explain": "Right! It was built to crash, sending pictures all the way down."},
           faq: [{"keys": ["pictures", "photos", "camera", "cameras"], "a": "Ranger 7 had six TV cameras. It sent more than 4,000 pictures in its last 17 minutes before impact."}, {"keys": ["name", "cognitum", "sea", "clouds"], "a": "Ranger 7 crashed in a part of the Sea of Clouds that was later named Mare Cognitum, which means 'the Sea That Has Become Known'."}],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1964-041A",
+            "https://science.nasa.gov/mission/ranger-7/",
+            "https://www.nasa.gov/history/60-years-ago-ranger-7-photographs-the-moon/",
+          ],
+          verified: true,
         },
         {
           id: "surveyor-3",
           riddle: "I landed on the Moon in 1967. Two years later, Apollo 12 astronauts walked over and took pieces of me home.",
           art: "surveyor",
           backdrop: "moon-earth",
-          next: "Surveyor 3 and its robot sisters showed the Moon's ground was safe to land on, so astronauts could follow. Two and a half years later, they did!",
+          next: "Surveyor 3 and its robot sisters showed the Moon's ground was safe to land on, so astronauts could follow. About two years later, they did!",
           name: "Surveyor 3",
           kind: "Robot lander",
           place: "Ocean of Storms, Moon",
@@ -104,8 +108,13 @@ window.MUSEUM = {
               a: "Surveyor 3 had a robot arm with a scoop. It dug little trenches to test how hard the Moon's soil was.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1967-035A",
+            "https://science.nasa.gov/mission/surveyor-3/",
+            "https://science.nasa.gov/mission/lunar-rangers-and-surveyors/",
+            "https://ntrs.nasa.gov/citations/20100036597",
+          ],
+          verified: true,
         },
         {
           id: "apollo-11",
@@ -161,8 +170,14 @@ window.MUSEUM = {
               a: "Astronaut Buzz Aldrin reported the Apollo 11 flag was knocked over by engine exhaust when the top half of Eagle launched.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-059C",
+            "https://www.nasa.gov/mission/apollo-11/",
+            "https://www.nasa.gov/missions/apollo/apollo-11/the-apollo-experiment-that-keeps-on-giving/",
+            "https://www.nasa.gov/wp-content/uploads/static/history/alsj/ApolloFlags-Condition.html",
+            "https://www.nasa.gov/wp-content/uploads/static/history/Apollo204/spacecraft.html",
+          ],
+          verified: true,
         },
         {
           id: "lrv",
@@ -178,7 +193,7 @@ window.MUSEUM = {
           story: [
             "Vroom! I'm a Lunar Roving Vehicle, the Moon buggy. I rode to the Moon folded up against the side of the lunar module, and astronauts unfolded me like a pop-up book.",
             "I run on batteries and drive about as fast as a kid on a bike. With me, astronauts could explore miles away from their lander instead of just walking around it.",
-            "There are three of us parked on the Moon: from Apollo 15, 16, and 17. On those trips, astronauts found the 'Genesis Rock', more than 4 billion years old, and orange soil made of tiny glass beads from ancient volcanoes.",
+            "There are three of us parked on the Moon: from Apollo 15, 16, and 17. On those trips, astronauts found the 'Genesis Rock', about 4 billion years old, and orange soil made of tiny glass beads from ancient volcanoes.",
           ],
           leftBehind: [
             "Three Lunar Roving Vehicles (Apollo 15, 16, and 17)",
@@ -195,11 +210,11 @@ window.MUSEUM = {
           faq: [
             {
               keys: ["fast", "speed"],
-              a: "The Moon buggy drove about 13 km/h (8 mph), roughly as fast as riding a bike.",
+              a: "The Moon buggy could drive up to about 16 km/h (10 mph), roughly as fast as riding a bike.",
             },
             {
               keys: ["genesis", "rock", "old"],
-              a: "The Genesis Rock was found on Apollo 15. It's more than 4 billion years old and is a piece of the Moon's ancient crust.",
+              a: "The Genesis Rock was found on Apollo 15. It's about 4 billion years old and is a piece of the Moon's ancient crust.",
             },
             {
               keys: ["orange", "soil", "glass", "volcano"],
@@ -210,8 +225,16 @@ window.MUSEUM = {
               a: "The rover ran on batteries, with no gas needed.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1971-063C",
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-096C",
+            "https://nssdc.gsfc.nasa.gov/planetary/lunar/apollo_lrv.html",
+            "https://www.nasa.gov/image-article/apollo-15-catches-earth-horizon/",
+            "https://science.nasa.gov/solar-system/moon/genesis-rock/",
+            "https://www.nasa.gov/history/50-years-ago-apollo-17-astronauts-return-to-houston/",
+          ],
+          verified: true,
         },
       ],
     },
@@ -272,8 +295,13 @@ window.MUSEUM = {
               a: "Mars' sky looks butterscotch or pinkish in the daytime because of fine dust in the air.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1975-075C",
+            "https://science.nasa.gov/mission/viking-1/",
+            "https://science.nasa.gov/mission/viking/",
+            "https://www.nasa.gov/image-article/technician-checks-soil-sampler-viking-lander/",
+          ],
+          verified: true,
         },
         {
           id: "sojourner",
@@ -321,8 +349,15 @@ window.MUSEUM = {
               a: "The science team nicknamed rocks so they could talk about them easily. Barnacle Bill and Yogi were two rocks Sojourner studied.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1996-068A",
+            "https://science.nasa.gov/mission/mars-pathfinder/",
+            "https://www.jpl.nasa.gov/missions/mars-pathfinder-sojourner-rover/",
+            "https://spaceplace.nasa.gov/mars-sojourner/en/",
+            "https://mars.nasa.gov/internal_resources/816/",
+            "https://science.nasa.gov/resource/sojourner-barnacle-bill-yogi/",
+          ],
+          verified: true,
         },
         {
           id: "opportunity",
@@ -368,8 +403,12 @@ window.MUSEUM = {
               a: "Spirit was Opportunity's twin. It got stuck in soft sand in 2009 and went silent in 2010.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2003-032A",
+            "https://science.nasa.gov/mission/mer-opportunity/",
+            "https://science.nasa.gov/resource/meridiani-planum-2/",
+          ],
+          verified: true,
         },
         {
           id: "ingenuity",
@@ -410,8 +449,14 @@ window.MUSEUM = {
               a: "Ingenuity rode to Mars attached to the belly of the Perseverance rover, which is still exploring.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2020-052A",
+            "https://science.nasa.gov/mission/mars-2020-perseverance/ingenuity-mars-helicopter/",
+            "https://www.jpl.nasa.gov/news/press_kits/ingenuity/landing/quick_facts/",
+            "https://science.nasa.gov/photojournal/swatch-of-wright-brothers-flyer-1-attached-to-mars-helicopter/",
+            "https://www.jpl.nasa.gov/news/after-three-years-on-mars-nasas-ingenuity-helicopter-mission-ends/",
+          ],
+          verified: true,
         },
         {
           id: "spirit",
@@ -425,12 +470,16 @@ window.MUSEUM = {
           year: 2004,
           status: "silent",
           story: ["I'm Spirit, Opportunity's twin. I bounced down onto Mars inside giant airbags on January 4, 2004. Three weeks later, my twin landed on the other side of the planet.", "My mission was planned to last 90 Martian days. I kept going for more than six years, even after one of my front wheels stopped turning in 2006. I just drove backwards and dragged it along.", "That dragging wheel scraped up bright white soil that turned out to be almost pure silica. On Earth, soil like that forms around hot springs and steam vents. In 2009 I got stuck in soft sand, and my last message came in March 2010."],
-          leftBehind: ["Spirit, stuck for good at a spot called Troy", "Its landing platform, named Columbia Memorial Station", "Its parachute and back shell"],
+          leftBehind: ["Spirit, stuck for good at a spot called Troy", "Its landing platform, at a site named Columbia Memorial Station", "Its parachute and back shell"],
           discovery: "The silica Spirit dug up, along with rocks it studied later, showed that Gusev Crater once had hot water. Places with hot water and rock are the kind of places where tiny life could have lived.",
           quiz: {"q": "What did Spirit's broken, dragging wheel do?", "options": ["It stopped Spirit from ever moving again", "It scraped up soil that showed Mars once had hot water", "It fell off and rolled away"], "answer": 1, "explain": "Yes! Its bad wheel became a digging tool and uncovered the silica."},
           faq: [{"keys": ["twin", "opportunity"], "a": "Spirit and Opportunity were twin rovers with the same design. They landed three weeks apart on opposite sides of Mars in January 2004."}, {"keys": ["stuck", "sand", "troy"], "a": "In 2009 Spirit's wheels sank into soft sand at a place called Troy. The team tried for months to free it, then used it as a parked science station until it went silent in 2010."}],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2003-027A",
+            "https://science.nasa.gov/mission/mer-spirit/",
+            "https://www.jpl.nasa.gov/news/nasa-to-begin-attempts-to-free-sand-trapped-mars-rover/",
+          ],
+          verified: true,
         },
         {
           id: "phoenix",
@@ -444,12 +493,19 @@ window.MUSEUM = {
           year: 2008,
           status: "silent",
           story: ["I landed near the north pole of Mars on May 25, 2008. The ground there is cracked into polygon shapes, like a giant honeycomb, because of the ice underneath.", "I dug little trenches with my robotic arm and found bright white chunks. A few days later, some of the chunks had vanished into the thin air. That proved they were water ice!", "I also watched snow falling from Martian clouds, though it disappeared before it reached the ground. Then winter came. In the cold and dark my solar panels couldn't make enough power, and my last signal came in November 2008."],
-          leftBehind: ["The Phoenix lander, with a solar panel broken by the weight of winter ice", "The trenches it dug, with names like Dodo-Goldilocks"],
-          discovery: "Phoenix was the first spacecraft to touch water ice on Mars. It also found a salt called perchlorate in the soil, which future astronauts will need to be careful about.",
+          leftBehind: ["The Phoenix lander, with a solar panel probably broken by the weight of winter ice", "The trenches it dug, with names like Dodo-Goldilocks"],
+          discovery: "Phoenix proved that water ice hides just under the dirt of Mars' arctic plains. It also found a salt called perchlorate in the soil, which could be a useful resource for future human explorers.",
           quiz: {"q": "How did Phoenix know the white chunks were water ice?", "options": ["They melted into a puddle", "They slowly vanished into the air over a few days", "They tasted salty"], "answer": 1, "explain": "Exactly! In Mars' thin air, the ice turned straight into vapor and disappeared."},
           faq: [{"keys": ["ice", "water", "white"], "a": "Phoenix scraped away dirt and found white chunks just under the surface. Some vanished within a few days, which is what water ice does in Mars' thin, dry air."}, {"keys": ["snow", "cloud", "weather"], "a": "Phoenix's laser instrument spotted snow falling from clouds above it. The snow turned to vapor before it reached the ground."}],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2007-034A",
+            "https://science.nasa.gov/mission/phoenix/",
+            "https://www.jpl.nasa.gov/news/nasa-mars-lander-sees-falling-snow-soil-data-suggest-liquid-past/",
+            "https://www.jpl.nasa.gov/news/phoenix-mars-lander-is-silent-new-image-shows-damage/",
+            "https://science.nasa.gov/photojournal/polygon-on-mars/",
+            "https://www.jpl.nasa.gov/news/press_kits/phoenix-launch-presskit.pdf",
+          ],
+          verified: true,
         },
         {
           id: "insight",
@@ -467,8 +523,14 @@ window.MUSEUM = {
           discovery: "By timing how marsquake waves traveled through the planet, scientists measured Mars' insides: its crust, its mantle, and a big core of liquid metal.",
           quiz: {"q": "What was InSight listening for?", "options": ["Martian music", "Marsquakes", "Radio messages from aliens"], "answer": 1, "explain": "Right! Its seismometer felt more than 1,300 marsquakes."},
           faq: [{"keys": ["mole", "heat", "dig", "probe"], "a": "The heat probe was supposed to hammer itself 5 meters into the ground to measure heat flowing out of Mars. The soil was too clumpy, so it could only get just below the surface."}, {"keys": ["quake", "marsquake", "seismometer", "shake"], "a": "InSight's seismometer was so sensitive it could feel tiny vibrations. It recorded more than 1,300 marsquakes."}],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2018-042A",
+            "https://science.nasa.gov/mission/insight/",
+            "https://www.nasa.gov/missions/insight/nasa-retires-insight-mars-lander-mission-after-years-of-science/",
+            "https://www.nasa.gov/missions/insight/nasa-insight-study-provides-clearest-look-ever-at-martian-core/",
+            "https://www.jpl.nasa.gov/news/press_kits/insight/landing/mission/spacecraft/",
+          ],
+          verified: true,
         },
       ],
     },
@@ -527,8 +589,12 @@ window.MUSEUM = {
               a: "Pioneer 10 is drifting toward the star Aldebaran. It would take about 2 million years to get anywhere near it.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-012A",
+            "https://science.nasa.gov/mission/pioneer-10/",
+            "https://www.nasa.gov/history/50-years-ago-pioneer-10-launches-to-explore-jupiter/",
+          ],
+          verified: true,
         },
         {
           id: "voyager-1",
@@ -544,7 +610,7 @@ window.MUSEUM = {
           story: [
             "I'm Voyager 1, launched in 1977. I flew past Jupiter and Saturn and sent home amazing pictures of their storms, rings, and moons.",
             "In 1990 I turned around and took a photo of Earth from about 6 billion km away. Earth looked like a tiny blue dot in a sunbeam. People call it the 'Pale Blue Dot'.",
-            "In 2012 I became the first human-made object to reach interstellar space, the space between the stars. I'm still talking to Earth, though my messages take almost a whole day to arrive! I carry a Golden Record with sounds and music from Earth.",
+            "In 2012 I became the first human-made object to reach interstellar space, the space between the stars. I'm still talking to Earth, though my messages take about a whole day to arrive! I carry a Golden Record with sounds and music from Earth.",
           ],
           leftBehind: [
             "Voyager 1, the farthest human-made object",
@@ -565,19 +631,24 @@ window.MUSEUM = {
           faq: [
             {
               keys: ["golden record", "record", "music"],
-              a: "The Golden Record has greetings in many languages, music from around the world, and sounds like thunder, birds, and a baby's cry, a message about life on Earth.",
+              a: "The Golden Record has greetings in many languages, music from around the world, and sounds like whale songs and laughter, a message about life on Earth.",
             },
             {
               keys: ["far", "distance", "where"],
-              a: "Voyager 1 is more than 24 billion km (15 billion miles) away, farther than any other spacecraft.",
+              a: "Voyager 1 is about 26 billion km (16 billion miles) away, farther than any other spacecraft. In November 2026 it reached one light-day from Earth.",
             },
             {
               keys: ["power", "still", "working", "alive"],
               a: "Voyager 1 is still sending data, but its power slowly drops each year, so engineers turn off instruments one at a time to keep it going.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1977-084A",
+            "https://science.nasa.gov/mission/voyager/voyager-1/",
+            "https://science.nasa.gov/mission/voyager/where-are-voyager-1-and-voyager-2-now/",
+            "https://www.jpl.nasa.gov/news/nasas-voyager-2-probe-enters-interstellar-space/",
+          ],
+          verified: true,
         },
         {
           id: "new-horizons",
@@ -591,13 +662,13 @@ window.MUSEUM = {
           year: 2006,
           status: "still talking",
           story: [
-            "I'm New Horizons, about the size of a piano. I launched in 2006 on a long trip to Pluto, so long that the people who built me grew nine years older before I arrived!",
+            "I'm New Horizons, about the size of a grand piano. I launched in 2006 on a long trip to Pluto, so long that the people who built me grew nine years older before I arrived!",
             "On July 14, 2015, I zoomed past Pluto and took the first close-up pictures. Surprise: Pluto has a giant heart-shaped plain of ice!",
             "On New Year's Day 2019, I flew past Arrokoth, the most distant object any spacecraft had ever explored up close. I'm still flying through the Kuiper Belt today.",
           ],
           leftBehind: ["New Horizons, still exploring the Kuiper Belt"],
           discovery:
-            "Pluto is an active world with ice mountains and glaciers, not just a frozen rock.",
+            "Pluto is an active world with giant glaciers of ice, not just a frozen rock.",
           quiz: {
             q: "What shape did New Horizons spot on Pluto?",
             options: ["A star", "A heart", "A smiley face"],
@@ -607,7 +678,7 @@ window.MUSEUM = {
           faq: [
             {
               keys: ["heart", "ice"],
-              a: "Pluto's heart is a huge region of frozen nitrogen ice, nicknamed after Clyde Tombaugh, the astronomer who discovered Pluto.",
+              a: "Pluto's heart is a huge plain of frozen nitrogen ice. Its biggest part is a glacier called Sputnik Planitia, named after Sputnik 1, Earth's first satellite.",
             },
             {
               keys: ["arrokoth", "snowman"],
@@ -618,8 +689,13 @@ window.MUSEUM = {
               a: "New Horizons took about 9.5 years to reach Pluto.",
             },
           ],
-          sources: [],
-          verified: false,
+          sources: [
+            "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=2006-001A",
+            "https://science.nasa.gov/mission/new-horizons/",
+            "https://science.nasa.gov/solar-system/kuiper-belt/arrokoth-2014-mu69/facts/",
+            "https://www.nasa.gov/news-release/nasa-sets-sights-on-first-pluto-mission/",
+          ],
+          verified: true,
         },
       ],
     },
@@ -660,11 +736,17 @@ window.MUSEUM = {
       "status": "parked",
       "story": [
         "On February 6, 1971, astronaut Alan Shepard had a surprise. He had snuck the head of a golf club onto Apollo 14 and clipped it onto a tool handle meant for scooping up moon dust.",
-        "In his stiff spacesuit he could only swing with one hand. He joked that the second ball flew 'miles and miles'. Experts who studied the video in 2021 think it went about 40 yards. Both balls are still up there!"
+        "In his stiff spacesuit he could only swing with one hand. He joked that the second ball flew 'miles and miles'. NASA's historians say it really went about 40 yards. Both balls are still up there!"
       ],
       "leftBehind": [
         "Two golf balls near the Apollo 14 landing site"
-      ]
+      ],
+      "sources": [
+        "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1971-008C",
+        "https://www.nasa.gov/history/50-years-ago-apollo-14-lands-at-fra-mauro/",
+        "https://www.nasa.gov/mission/apollo-14/"
+      ],
+      "verified": true
     },
     {
       "id": "family-photo",
@@ -677,12 +759,18 @@ window.MUSEUM = {
       "year": 1972,
       "status": "parked",
       "story": [
-        "In April 1972, Apollo 16 astronaut Charlie Duke carried a photo of his wife and two sons all the way to the Moon.",
-        "He left it lying on the ground. On the back, his family wrote that they were from Planet Earth and had landed on the Moon in April 1972. Years of strong sunlight have probably faded it white by now."
+        "In April 1972, Apollo 16 astronaut Charlie Duke carried a photo of his family all the way to the Moon.",
+        "He left it lying on the ground. Its message says this is the family of Astronaut Duke from Planet Earth, and that it landed on the Moon in April 1972. Nobody knows how it looks after so many years of strong sunlight."
       ],
       "leftBehind": [
         "A family photo, lying in the dust at the Apollo 16 site"
-      ]
+      ],
+      "sources": [
+        "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
+        "https://www.nasa.gov/former-astronaut-charles-m-duke-jr/",
+        "https://www.nasa.gov/history/50-years-ago-apollo-16-on-the-moon-at-descartes/"
+      ],
+      "verified": true
     },
     {
       "id": "goodwill-disc",
@@ -695,12 +783,18 @@ window.MUSEUM = {
       "year": 1969,
       "status": "parked",
       "story": [
-        "Apollo 11 left a small silicon disc, about the size of a large coin, at Tranquility Base. Its shiny surface holds messages from the leaders of 73 countries.",
-        "To make them fit, the messages were shrunk to 200 times smaller than normal writing. You'd need a microscope to read them!"
+        "Apollo 11 left a small silicon disc, about the size of a half-dollar coin, at Tranquility Base. Its shiny surface holds messages from the leaders of 73 countries.",
+        "To make them fit, each message was shrunk until it was smaller than the head of a pin. You'd need a microscope to read them!"
       ],
       "leftBehind": [
         "A silicon disc with goodwill messages from 73 countries"
-      ]
+      ],
+      "sources": [
+        "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-059C",
+        "https://www.nasa.gov/history/55-years-ago-one-month-until-the-moon-landing/",
+        "https://spinoff.nasa.gov/Spinoff2012/it_6.html"
+      ],
+      "verified": true
     }
   ],
 
@@ -716,7 +810,7 @@ window.MUSEUM = {
       "name": "Gallery of Orbits",
       "deco": "planets",
       "wall": "#2b2d4a",
-      "fact": "Sunlight takes about 8 minutes to reach Earth. A radio message to Voyager 1 takes almost a whole day."
+      "fact": "Sunlight takes about 8 minutes to reach Earth. A radio message to Voyager 1 takes about a whole day."
     },
     {
       "name": "Hall of Footprints",

@@ -251,7 +251,12 @@
         .then(() => enterMuseum(true));
     } else enterMuseum(true);
   });
-  $("#continueBtn").addEventListener("click", () => { readIntro(); save(); enterMuseum(false); });
+  $("#continueBtn").addEventListener("click", () => {
+    readIntro();
+    if (S.run && !S.run.place) S.run.place = S.place; // older saves didn't record where the museum was
+    save();
+    enterMuseum(false);
+  });
   $("#skipIntro").addEventListener("click", () => $("#intro").classList.add("skipped"));
 
   // which hall opens each wing on the learning tour
@@ -1499,7 +1504,7 @@
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     clock += dt;
-    if (!document.querySelector("dialog[open]")) step(dt);
+    if (!document.querySelector("dialog[open]:not(.docked)")) step(dt);
     updateCamera(dt);
     updateWalls(dt);
     spin.forEach((s) => {
@@ -1851,7 +1856,11 @@
   }
   const MOVE_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"];
   addEventListener("keydown", (e) => {
-    if (document.querySelector("dialog[open]") || $("#museum").hidden || e.target.tagName === "INPUT") return;
+    if (document.querySelector("dialog[open]:not(.docked)") || $("#museum").hidden) return;
+    // never steal keys from text boxes, menus, or anything inside the docked chat
+    if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable], dialog.docked")) return;
+    // a focused button handles its own Enter/Space
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest("button, a")) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     if (MOVE_KEYS.includes(k)) { held.add(k); e.preventDefault(); hideIdleHint(); }
     if (k === "q") want.yaw -= Math.PI / 4;
@@ -1935,9 +1944,10 @@
     toast(t("a11y.target", { name }));
   }
 
+  const disposeModel = (m) => m && m.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && !o.material.map) o.material.dispose(); });
   function drawActors() {
-    if (kid) scene.remove(kid);
-    if (robot) scene.remove(robot);
+    if (kid) { scene.remove(kid); disposeModel(kid); }
+    if (robot) { scene.remove(robot); disposeModel(robot); }
     // off Earth, everyone suits up before going inside
     kid = Models.kid({ ...S.kid, suit: PLACE() !== "earth" });
     kid.scale.setScalar(1.15);
@@ -2141,7 +2151,7 @@
         ${L.riddleNames ? `<span class="ro-name">${esc(o.name)}</span>` : `<span class="ro-name">?</span>`}
       </button>`).join("");
     $("#riddleFb").textContent = L.riddleHint ? t("riddle.hint", { wing: t("wing." + ans.wing.id) }) : L.riddleNames ? "" : t("riddle.noNames");
-    $("#riddleDialog").showModal();
+    if (!$("#riddleDialog").open) $("#riddleDialog").showModal();
   }
   $("#riddleOpts").addEventListener("click", (e) => {
     const b = e.target.closest("[data-ans]");
@@ -2152,14 +2162,17 @@
       return;
     }
     b.classList.add("yes");
-    const d = riddleDoor;
+    $("#riddleOpts").querySelectorAll("button").forEach((x) => (x.disabled = true));
+    const d = riddleDoor, fromRoom = R().cur;
+    if (!d || R().solved[d.lock.id]) return;
     const ans = exById(d.lock.exhibit);
     $("#riddleFb").textContent = t("riddle.yes", { name: ans.name });
     R().solved[d.lock.id] = true;
     save();
     award(1, "riddle");
     setTimeout(() => {
-      $("#riddleDialog").close();
+      if ($("#riddleDialog").open) $("#riddleDialog").close();
+      if (R().cur !== fromRoom || transit) return; // the player already went somewhere else
       const px = P.x, pz = P.z, ph = P.heading;
       buildRoom(R().cur);
       P.x = px; P.z = pz; P.heading = ph;
@@ -2168,17 +2181,119 @@
   });
 
   /* =========================================================
+   * SPACE WORDS: clickable definitions, and the Learn more page
+   * ========================================================= */
+  const GL = window.GLOSSARY || {};
+  // every way a word can appear, longest first so "solar wind" wins over "solar"
+  const glossMatches = Object.entries(GL).flatMap(([key, g]) => g.match.map((m) => [m, key])).sort((a, b) => b[0].length - a[0].length);
+  const glossRe = glossMatches.length ? new RegExp(`\\b(${glossMatches.map(([m]) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "gi") : null;
+  const glossKey = (word) => (glossMatches.find(([m]) => m.toLowerCase() === word.toLowerCase()) || [])[1];
+  // turn plain text into safe HTML with each space word clickable (once per piece of text)
+  function linkify(text) {
+    const safe = esc(text);
+    if (!glossRe) return safe;
+    const used = new Set();
+    return safe.replace(glossRe, (m) => {
+      const key = glossKey(m);
+      if (!key || used.has(key)) return m;
+      used.add(key);
+      return `<button type="button" class="term" data-term="${key}">${m}</button>`;
+    });
+  }
+  function showTerm(key, anchor) {
+    const g = GL[key];
+    if (!g) return;
+    const pop = $("#termPop");
+    pop.innerHTML = `<b>${esc(g.term)}</b><p lang="en" dir="ltr">${esc(g.def)}</p>
+      <button type="button" class="btn small ask-cta" data-ask-term="${key}">${esc(t("term.ask", { robot: S.robotName }))}</button>`;
+    pop.hidden = false;
+    // keep the pop-up inside whichever dialog is open, so it shows above it
+    const host = anchor.closest("dialog") || document.body;
+    if (pop.parentElement !== host) host.appendChild(pop);
+    const r = anchor.getBoundingClientRect(), hr = host === document.body ? { left: 0, top: 0 } : host.getBoundingClientRect();
+    const w = Math.min(320, innerWidth - 24);
+    pop.style.width = w + "px";
+    pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) - hr.left + "px";
+    pop.style.top = r.bottom + 8 - hr.top + "px";
+    // not enough room below? open upward instead
+    const h = pop.offsetHeight, limit = host === document.body ? innerHeight : hr.top + host.clientHeight;
+    if (r.bottom + 8 + h > limit - 8) pop.style.top = Math.max(8, r.top - h - 8) - hr.top + "px";
+  }
+  function hideTerm() { $("#termPop").hidden = true; }
+  document.addEventListener("click", (e) => {
+    const term = e.target.closest(".term");
+    if (term) { e.preventDefault(); e.stopPropagation(); return showTerm(term.dataset.term, term); }
+    const ask = e.target.closest("[data-ask-term]");
+    if (ask) {
+      const g = GL[ask.dataset.askTerm];
+      hideTerm();
+      openChat(null);
+      $("#chatInput").value = `What does "${g.term}" mean?`;
+      return $("#chatForm").requestSubmit();
+    }
+    if (!e.target.closest("#termPop")) hideTerm();
+  }, true);
+  addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    hideTerm();
+    const dlg = $("#chatDialog");
+    if (dlg.open && dlg.classList.contains("docked")) dlg.close(); // non-modal dialogs don't close on Esc by themselves
+  });
+  // "what is the Kuiper Belt?" answered from the glossary when the AI server isn't running
+  function glossaryAnswer(q) {
+    if (!glossRe) return null;
+    // only "what is X?", "what are X?", "what does X mean?", "define X": questions about the word itself
+    if (!/^\s*(what('s| is| are| was| does)|define|meaning of|explain)\b/i.test(q)) return null;
+    const m = q.match(glossRe);
+    if (!m) return null;
+    const rest = q.replace(m[0], " ").toLowerCase().replace(/\b(what|what's|is|are|was|does|do|a|an|the|mean|means|meaning|of|define|explain|word|it)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+    if (rest.split(" ").filter(Boolean).length > 1) return null; // there's more to the question than the word
+    const g = GL[glossKey(m[0])];
+    return g ? `${g.term}: ${g.def}` : null;
+  }
+
+
+  let learnTab = "words";
+  function openLearn(tabId) {
+    learnTab = tabId || learnTab;
+    const tabs = [{ id: "words", label: t("learn.words") }].concat((window.LEARN || []).map((x) => ({ id: x.id, label: t("learn." + x.id) })));
+    $("#learnTabs").innerHTML = tabs.map((x) => `<button role="tab" data-ltab="${x.id}" aria-selected="${x.id === learnTab}">${esc(x.label)}</button>`).join("");
+    const body = $("#learnBody");
+    if (learnTab === "words") {
+      const words = Object.entries(GL).sort((a, b) => a[1].term.localeCompare(b[1].term));
+      body.innerHTML = `<p class="learn-lead">${esc(t("learn.wordsLead"))}</p>
+        <dl class="glossary" lang="en" dir="ltr">${words.map(([k, g]) => `<dt id="g-${k}">${esc(g.term)}</dt><dd>${esc(g.def)}</dd>`).join("")}</dl>${englishNote()}`;
+    } else {
+      const L = LEARN.find((x) => x.id === learnTab);
+      body.innerHTML = `<div lang="en" dir="ltr"><p class="learn-lead">${esc(L.lead)}</p>${L.sections.map((sec) => `
+        <section><h3>${esc(sec.h)}</h3>${(sec.p || []).map((p) => `<p>${linkify(p)}</p>`).join("")}${sec.list ? `<ul>${sec.list.map((li) => `<li>${li}</li>`).join("")}</ul>` : ""}</section>`).join("")}
+        ${L.sources && L.sources.length ? `<p class="src-line"><b>${esc(t("fact.sources"))}:</b> ${L.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`).join(" · ")}</p>` : ""}</div>${englishNote()}`;
+    }
+    body.scrollTop = 0;
+    if (!$("#learnDialog").open) $("#learnDialog").showModal();
+  }
+  $("#learnBtn").addEventListener("click", () => openLearn());
+  $("#learnTabs").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ltab]");
+    if (b) openLearn(b.dataset.ltab);
+  });
+  $("#learnDialog").addEventListener("close", hideTerm);
+
+  /* =========================================================
    * EXHIBIT PLACARD
    * ========================================================= */
   const TABS = [
     { id: "story", has: (e) => e.story },
+    { id: "facts", has: (e) => window.FACTS && FACTS[e.id] },
+    { id: "orbit", has: (e) => window.ORBIT && ORBIT[e.id] },
+    { id: "listen", has: (e) => window.SOUNDS && SOUNDS[e.id] },
     { id: "left", has: (e) => e.leftBehind },
     { id: "learned", has: (e) => e.discovery },
     { id: "next", has: (e) => e.next },
     { id: "quiz", has: (e) => e.quiz },
   ];
   let ex = null, tab = "story", page = 0, tries = 0, tabs = TABS;
-  const visit = (id) => (R().visits[id] = R().visits[id] || {});
+  const visit = (id) => (R() ? (R().visits[id] = R().visits[id] || {}) : {});
 
   function openExhibit(e) {
     ex = e;
@@ -2198,22 +2313,81 @@
     $("#exhibitDialog").showModal();
   }
   function renderTab() {
+    $("#exBody").querySelectorAll("audio").forEach((x) => x.pause());
     $("#exTabs").innerHTML = tabs.map((x) => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id === tab}">${esc(t("tab." + x.id))}</button>`).join("");
     const body = $("#exBody");
     const v = R().visits[ex.id] || {};
     if (tab === "story") {
-      body.innerHTML = `<blockquote class="voice" lang="en" dir="ltr">${esc(ex.story[page])}</blockquote>
+      body.innerHTML = `<blockquote class="voice" lang="en" dir="ltr">${linkify(ex.story[page])}</blockquote>
         <p class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: ex.story.length }))}</p>${englishNote()}`;
       if (page === ex.story.length - 1 && !v.story) storyHeard(ex);
+    } else if (tab === "facts") {
+      const f = FACTS[ex.id];
+      const rows = ["builtBy", "launched", "lasted", "size", "mass", "power", "speed", "special"].filter((k) => f[k]);
+      // NASA's official catalog (NSSDCA): where it rests, last contact, catalog ID
+      const nd = (window.NASA_DATA || {})[ex.id] || {};
+      // "2018-10-31 (missed contacts...)" -> a date in the player's language, plus any note
+      const day = (iso) => {
+        const m = String(iso).match(/^(\d{4}-\d{2}-\d{2})(.*)$/);
+        if (!m) return iso;
+        try { return new Intl.DateTimeFormat(I18N.lang, { year: "numeric", month: "long", day: "numeric" }).format(new Date(m[1] + "T12:00:00Z")) + m[2]; } catch (e) { return iso; }
+      };
+      const catalog = [
+        nd.restingPlace && `<dt>${esc(t("fact.resting"))}</dt><dd lang="en" dir="ltr">${linkify(nd.restingPlace)}</dd>`,
+        nd.lastContact && `<dt>${esc(t("fact.lastContact"))}</dt><dd>${esc(day(nd.lastContact))}</dd>`,
+        nd.nssdcId && `<dt>${esc(t("fact.nssdc"))}</dt><dd><a href="${esc(nd.nssdcUrl || "https://nssdc.gsfc.nasa.gov/")}" target="_blank" rel="noopener">NSSDCA ${esc(nd.nssdcId)}</a></dd>`,
+      ].filter(Boolean).join("");
+      body.innerHTML = `<h3>${esc(t("fact.title"))}</h3><dl class="fact-file" lang="en" dir="ltr">${rows.map((k) => `<dt>${esc(t("fact." + k))}</dt><dd>${linkify(f[k])}</dd>`).join("")}${catalog}</dl>${sourcesLine(ex)}${englishNote()}`;
+    } else if (tab === "orbit") {
+      // then and now: the mission photo next to a picture taken from orbit years later
+      const o = ORBIT[ex.id], ph = window.PHOTOS && PHOTOS[ex.id];
+      const yr = String(o.taken || "").slice(0, 4);
+      body.innerHTML = `<h3>${esc(t("orbit.title"))}</h3>
+        ${ph ? `<div class="compare" style="--pos:50%;aspect-ratio:${o.w}/${o.h}">
+          <img class="cmp-now" src="${esc(o.src)}" alt="${esc(o.caption)}">
+          <img class="cmp-then" src="${esc(ph.src)}" alt="${esc(ph.caption)}">
+          <span class="cmp-label then">${esc(t("orbit.then"))}</span><span class="cmp-label now">${esc(t("orbit.now", { year: yr }))}</span>
+          <span class="cmp-line" aria-hidden="true"></span>
+        </div>
+        <input class="cmp-range" type="range" min="0" max="100" value="50" aria-label="${esc(t("orbit.drag"))}">
+        <p class="cmp-hint">${esc(t("orbit.drag"))}</p>`
+          : `<img class="orbit-solo" src="${esc(o.src)}" alt="${esc(o.caption)}">`}
+        <p class="big" lang="en" dir="ltr">${linkify(o.caption)}</p>
+        <p class="src-line">${esc(t("orbit.camera", { camera: o.camera || "" }))}${o.taken ? " · " + esc(o.taken) : ""} · ${esc(t("photo.credit"))}: ${esc(o.credit)}${o.source ? ` · <a href="${esc(o.source)}" target="_blank" rel="noopener">${esc(t("fact.sources"))}</a>` : ""}</p>${englishNote()}`;
+      const range = $(".cmp-range", body), cmp = $(".compare", body);
+      if (range) range.addEventListener("input", () => cmp.style.setProperty("--pos", range.value + "%"));
+    } else if (tab === "listen") {
+      // a real NASA recording (or NASA data turned into sound)
+      const a = SOUNDS[ex.id];
+      body.innerHTML = `<h3>${esc(t("listen.title"))}</h3>
+        <p class="listen-name" lang="en" dir="ltr"><b>${esc(a.title)}</b>${a.seconds ? ` · ${Math.round(a.seconds)} s` : ""}</p>
+        <audio class="listen-audio" controls preload="none" src="${esc(a.src)}"></audio>
+        <p class="big" lang="en" dir="ltr">${linkify(a.caption)}</p>
+        <p class="src-line">${esc(t("listen.credit"))}: ${esc(a.credit)}${a.source ? ` · <a href="${esc(a.source)}" target="_blank" rel="noopener">${esc(t("fact.sources"))}</a>` : ""}</p>${englishNote()}`;
     } else if (tab === "left") {
-      body.innerHTML = `<h3>${esc(t("ex.leftTitle"))}</h3><ul class="left" lang="en" dir="ltr">${ex.leftBehind.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>${englishNote()}`;
+      body.innerHTML = `<h3>${esc(t("ex.leftTitle"))}</h3><ul class="left" lang="en" dir="ltr">${ex.leftBehind.map((l) => `<li>${linkify(l)}</li>`).join("")}</ul>${sourcesLine(ex)}${englishNote()}`;
     } else if (tab === "learned") {
-      body.innerHTML = `<h3>${esc(t("ex.learnedTitle"))}</h3><p class="big" lang="en" dir="ltr">${esc(ex.discovery)}</p>${englishNote()}`;
+      body.innerHTML = `<h3>${esc(t("ex.learnedTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.discovery)}</p>${englishNote()}`;
     } else if (tab === "next") {
-      body.innerHTML = `<h3>${esc(t("ex.nextTitle"))}</h3><p class="big" lang="en" dir="ltr">${esc(ex.next)}</p>${englishNote()}`;
+      body.innerHTML = `<h3>${esc(t("ex.nextTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.next)}</p>${englishNote()}`;
     } else renderQuiz();
     const lastTab = tabs[tabs.length - 1].id === tab;
     $("#exNext").textContent = tab === "story" && page < ex.story.length - 1 ? t("ex.keep") : lastTab ? t("ex.back") : t("ex.next");
+  }
+  // where the facts come from: NASA's catalog first, then NASA mission pages
+  function sourcesLine(e) {
+    const nd = (window.NASA_DATA || {})[e.id] || {};
+    const urls = [nd.nssdcUrl, nd.missionUrl].concat(e.sources || []).filter((u, i, a) => u && a.indexOf(u) === i).slice(0, 4);
+    if (!urls.length) return "";
+    // "NSSDCA", or the site name plus the page's last part when a site appears more than once
+    const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (x) { return u; } };
+    const label = (u) => {
+      const h = host(u);
+      if (h.startsWith("nssdc")) return "NSSDCA";
+      if (urls.filter((x) => host(x) === h).length < 2) return h;
+      try { const seg = new URL(u).pathname.split("/").filter(Boolean).pop() || ""; return `${h}: ${decodeURIComponent(seg).replace(/[-_]/g, " ").replace(/\.\w+$/, "").slice(0, 28)}`; } catch (x) { return h; }
+    };
+    return `<p class="src-line"><b>${esc(t("fact.sources"))}:</b> ${urls.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(label(u))}</a>`).join(" · ")}<br><small>${esc(t("fact.fromNssdc"))}</small></p>`;
   }
   // machine stories are English for now: say so when another language is picked
   const englishNote = () => (I18N.lang === "en" ? "" : `<p class="en-note">${esc(t("ex.englishOnly"))}</p>`);
@@ -2232,6 +2406,11 @@
       updateHUD();
       const n = R().collected.length, k = G().pieces.length;
       toast(t("toast.piece", { n, k }));
+      if (n === k) {
+        const px = P.x, pz = P.z, ph = P.heading;
+        buildRoom(R().cur);
+        P.x = px; P.z = pz; P.heading = ph;
+      }
       pendingLine = n === k
         ? `${t("echo.allPieces")} ${t(R().sawMC ? "echo.sawMC" : "echo.notMC")}`
         : t("echo.gotPiece", { name: esc(e.name), n, k });
@@ -2257,7 +2436,7 @@
     }
     btn.classList.add("yes");
     $("#exBody").querySelectorAll("[data-opt]").forEach((b) => (b.disabled = true));
-    $("#fb").textContent = ex.quiz.explain;
+    $("#fb").innerHTML = linkify(ex.quiz.explain);
     const v = visit(ex.id);
     if (v.quiz == null) { v.quiz = tries === 1 ? 2 : 1; award(v.quiz, "quiz"); }
   }
@@ -2274,6 +2453,7 @@
     else $("#exhibitDialog").close();
   });
   $("#exhibitDialog").addEventListener("close", () => {
+    $("#exBody").querySelectorAll("audio").forEach((x) => x.pause());
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     if (pendingLine) { say(pendingLine, 8000); pendingLine = null; }
   });
@@ -2289,9 +2469,13 @@
   });
 
   /* ---------------- chat: ask one machine, or ask the robot about the whole museum ---------------- */
-  let chatHistory = [], chatEx = null;
-  function openChat(e) {
+  let chatHistory = [], chatEx = null, chatSession = 0;
+  function openChat(e, docked) {
     chatEx = e || null;
+    chatSession++;
+    const dlg = $("#chatDialog");
+    if (dlg.open) dlg.close();
+    dlg.classList.toggle("docked", !!docked);
     chatHistory = [];
     $("#chatLog").innerHTML = "";
     $("#chatMode").textContent = window.CONFIG.askEndpoint ? t("chat.ai") : t("chat.offline");
@@ -2307,14 +2491,17 @@
     }
     $("#chatSuggest").innerHTML = prompts.map((p) => `<button type="button">${esc(p)}</button>`).join("");
     $("#chatFab").classList.remove("pulse");
-    $("#chatDialog").showModal();
+    if (docked) dlg.show(); else dlg.showModal();
     $("#chatInput").focus();
   }
   $("#askBtn").addEventListener("click", () => openChat(ex));
   $("#chatFab").addEventListener("click", () => {
-    // in a machine's room, the corner button chats with that machine
+    // the corner button opens a small chat that stays open while you explore;
+    // click it again to close. In a machine's room it starts with that machine.
+    const dlg = $("#chatDialog");
+    if (dlg.open && dlg.classList.contains("docked")) return dlg.close();
     const r = S.run && room(R().cur);
-    openChat(r && r.type === "exhibit" ? exById(r.exhibit) : null);
+    openChat(r && r.type === "exhibit" ? exById(r.exhibit) : null, true);
   });
   $("#chatSuggest").addEventListener("click", (e) => {
     if (e.target.tagName !== "BUTTON") return;
@@ -2331,9 +2518,11 @@
     const ql = q.toLowerCase();
     const hit = everything.find((e) => ql.includes(e.name.toLowerCase()) || ql.includes(e.id.replace(/-/g, " ")));
     if (hit) return { ex: hit };
-    if (q === t("chat.sugGoal") || /how|play|win|goal|rule|piece|door|jugar|regla/.test(ql)) {
+    if (q === t("chat.sugGoal") || /\b(how (do|can|to) (i |you |we )?(play|win)|goal of the game|rules?|signal pieces?|mission control)\b/.test(ql)) {
       return { text: `${plain(isLearn() ? t("rules.goalLearn") : t("rules.goalGame", { k: G().pieces.length }))} ${plain(t("rules.r2"))}` };
     }
+    const kb = ExhibitGuide.kbAnswer(q, null);
+    if (kb && !(q === t("chat.sugMoon") || q === t("chat.sugMars") || q === t("chat.sugDeep"))) return { text: kb };
     if (q === t("chat.sugMoon") || /moon|lun|apollo/.test(ql)) return { text: wingAnswer("moon") };
     if (q === t("chat.sugMars") || /mars|marte|rover/.test(ql)) return { text: wingAnswer("mars") };
     if (q === t("chat.sugDeep") || /deep|voyager|pioneer|pluto|jupiter|space/.test(ql)) return { text: wingAnswer("deep") };
@@ -2350,18 +2539,27 @@
     $("#chatInput").value = "";
     addMsg("me", q);
     const wait = addMsg("bot wait", t("chat.thinking"));
+    const session = chatSession;
     let res;
     // suggestion buttons are in the player's language; the offline notes are English
     const canon = { [t("chat.sugBuilt")]: "Who built it?", [t("chat.sugWhen")]: "When did it launch?", [t("chat.sugLong")]: "How long did it last?", [t("chat.now")]: "What is it doing now?" }[q];
-    if (chatEx) res = await ExhibitGuide.ask(chatEx, canon || q, chatHistory);
-    else if (window.CONFIG.askEndpoint) res = await ExhibitGuide.ask(MUSEUM_GUIDE(), q, chatHistory);
-    else {
-      const m = museumAnswer(q);
-      res = m.ex ? await ExhibitGuide.ask(m.ex, q, chatHistory) : { text: m.text, mode: "offline" };
-      if (m.ex) res.text = `${m.ex.name}: ${res.text}`;
+    // 1. the AI guide (NASA websites only), when its server is running
+    if (window.CONFIG.askEndpoint) res = await ExhibitGuide.ask(chatEx || MUSEUM_GUIDE(), canon || q, chatHistory);
+    // 2. otherwise, or if it's not reachable: space-word definitions, then the offline notes
+    if (!res || res.mode !== "ai") {
+      const gloss = glossaryAnswer(q);
+      if (gloss) res = { text: gloss, mode: "offline" };
+      else if (chatEx) res = res || (await ExhibitGuide.ask(chatEx, canon || q, chatHistory)); // reuse the offline answer step 1 already got
+      else {
+        const m = museumAnswer(q);
+        res = m.ex ? await ExhibitGuide.ask(m.ex, q, chatHistory) : { text: m.text, mode: "offline" };
+        if (m.ex) res.text = `${m.ex.name}: ${res.text}`;
+      }
     }
     wait.remove();
+    if (session !== chatSession) return; // the chat was closed or restarted while this answer was loading
     const msg = addMsg("bot", res.text);
+    msg.innerHTML = linkify(res.text);
     if (res.sources && res.sources.length) {
       // the NASA pages the answer came from
       const src = document.createElement("div");
@@ -2414,7 +2612,8 @@
       <blockquote class="voice fin-quote" style="animation-delay:${v.steps.length * delay + 1900}ms">${t("fin.quote")}${k >= 5 ? " " + t("fin.quote20") : ""}</blockquote>`;
     $("#finaleFoot").innerHTML = `<span class="grow"></span><button class="btn primary" id="sendSignal">${esc(t("fin.send"))}</button>`;
     $("#finaleDialog").showModal();
-    $("#sendSignal").onclick = () => sendSignal(v);
+    $("#sendSignal").disabled = !v.ok;
+    $("#sendSignal").onclick = () => v.ok && sendSignal(v);
   }
 
   function sendSignal(v) {
@@ -2447,8 +2646,7 @@
       $("#finaleDialog").close();
       S.mode = b.dataset.newrun === "learn" ? "learn" : "game";
       newRun(b.dataset.newrun);
-      enterMuseum(false);
-      setTimeout(openStory, 300);
+      enterMuseum(true); // a fresh start: opens the story card, no "welcome back"
     }));
   }
 
@@ -2506,6 +2704,7 @@
     renderWorkshop();
     if (robot) {
       scene.remove(robot);
+      disposeModel(robot);
       robot = Models.robot(S.look);
       robot.scale.setScalar(0.85);
       robot.position.set(Rb.x, 0, Rb.z);
@@ -2542,6 +2741,10 @@
     }
     if ($("#workshopDialog").open) renderWorkshop();
     if ($("#storyDialog").open) fillStory();
+    if ($("#learnDialog").open) openLearn();
+    if ($("#journalDialog").open) { $("#journalDialog").close(); $("#journalBtn").click(); }
+    if ($("#riddleDialog").open && riddleDoor) openRiddle(riddleDoor);
+    if ($("#chatDialog").open) $("#chatTitle").textContent = chatEx ? t("chat.title", { name: chatEx.name }) : t("chat.fab", { robot: S.robotName });
     if ($("#finaleDialog").open && isLearn()) openTourEnd();
   });
 
@@ -2558,6 +2761,7 @@
     door: (i) => { const o = doorObjs.find((x) => x.door.i === i); if (o) goToSpot(o.spot); return !!o; },
     spot: (kind) => { const sp = spots.find((x) => x.kind === kind); if (sp) goToSpot(sp); return !!sp; },
     story: () => openStory(),
+    exhibit: (id) => openExhibit(exById(id)),
     rules: () => openRules(),
   };
 })();
