@@ -57,6 +57,13 @@
           <select class="lang-select" data-i18n-aria="lang.label"></select>
         </label>
       </div>
+      <div class="top-auth-bar" id="topAuthBar">
+        <span class="top-auth-label" id="topAuthLabel">Save your stars &amp; robot gear:</span>
+        <div class="top-auth-btns">
+          <button type="button" class="btn small primary" id="openAuthBtn" onclick="setAuthStatus(''); document.getElementById('authDialog').showModal()">Log in</button>
+          <button type="button" class="btn small" id="openSignUpBtn" onclick="setAuthStatus(''); document.getElementById('authDialog').showModal()">Create account</button>
+        </div>
+      </div>
       <h1 data-i18n="intro.title">Abandoned, but not forgotten</h1>
       <p data-i18n-html="intro.lead"></p>
 
@@ -113,7 +120,6 @@
         <div class="intro-actions">
           <button class="btn primary" type="submit" id="startBtn" data-i18n="intro.start">Start a new adventure</button>
           <button class="btn" type="button" id="continueBtn" hidden></button>
-          <button class="btn ghost" type="button" id="openAuthBtn" onclick="document.getElementById('authDialog').showModal()">Field Trip Pass (Log in)</button>
         </div>
       </form>
     </div>
@@ -367,17 +373,26 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    function setAuthUI(user) {
+function setAuthUI(user) {
       const outBox = document.getElementById("authLoggedOut");
       const inBox = document.getElementById("authLoggedIn");
       const emailEl = document.getElementById("authUserEmail");
       const openBtn = document.getElementById("openAuthBtn");
+      const signUpBtn = document.getElementById("openSignUpBtn");
+      const topLabel = document.getElementById("topAuthLabel");
 
       if (outBox) outBox.hidden = !!user;
       if (inBox) inBox.hidden = !user;
       if (user && emailEl) emailEl.textContent = user.email;
-      if (openBtn) {
-        openBtn.textContent = user ? `Pass: ${user.email}` : "Field Trip Pass (Log in)";
+
+      if (user) {
+        if (topLabel) topLabel.textContent = `Pass: ${user.email}`;
+        if (openBtn) openBtn.textContent = "Account";
+        if (signUpBtn) signUpBtn.hidden = true;
+      } else {
+        if (topLabel) topLabel.textContent = "Save your stars & robot gear:";
+        if (openBtn) openBtn.textContent = "Log in";
+        if (signUpBtn) signUpBtn.hidden = false;
       }
     }
 
