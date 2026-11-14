@@ -2,7 +2,7 @@
  * "ASK THE EXHIBIT" GUIDE
  * ------------------------------------------------------------
  * Two modes:
- *  1. LIVE AI: set CONFIG.askEndpoint to the URL of server/ask-server.mjs
+ *  1. LIVE AI: set CONFIG.askEndpoint to the URL of server/ask_server.py (Python)
  *     (or a deployed copy). The browser never sees the API key.
  *  2. OFFLINE GUIDE (default): answers from the exhibit's `faq` list in
  *     data.js, so the prototype works with no server at all.

@@ -1,0 +1,24 @@
+# Render Blueprint for the Ask Echo AI server.
+# In Render: New > Blueprint, pick this repo, and set the Blueprint path to server/render.yaml.
+# You'll be asked for ANTHROPIC_API_KEY (it is never stored in the repo).
+services:
+  - type: web
+    name: ask-echo
+    runtime: docker
+    plan: free
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGIN
+        value: https://kavyaramkumar.github.io
+      - key: TRUST_PROXY
+        value: "1"
+      - key: RATE_LIMIT
+        value: "20"
+      - key: RATE_WINDOW
+        value: "600"
