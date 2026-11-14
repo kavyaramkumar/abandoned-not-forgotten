@@ -806,3 +806,25 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .clamp.open { max-height: none; }
 .clamp.open::after { display: none; }
 .more-btn { margin: 4px 24px 8px; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; font: 700 14px var(--sans); cursor: pointer; }
+
+/* ---------- Top Intro Login / Sign-up Bar ---------- */
+.top-auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+  padding: 8px 12px;
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+}
+.top-auth-label {
+  font: 700 13px var(--sans);
+  color: var(--ink);
+}
+.top-auth-btns {
+  display: flex;
+  gap: 6px;
+}
