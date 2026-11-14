@@ -50,7 +50,7 @@
     place: "earth", // where the museum is: earth | moon | mars
     lang: "en",
     // accessibility: text size n | l | xl, and on/off switches
-    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false },
+    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false, rate: 1 },
     stars: 0,
     owned: ["c-silver", "e-cyan", "h-none", "g-none"],
     look: { color: "#c9d3e6", eyes: "#5ef2ff", hat: "none", gear: "none" },
@@ -109,7 +109,12 @@ function save() {
     if (S.lang && S.lang !== I18N.lang) I18N.set(S.lang);
     updateHUD();
   };
-
+  
+const speechRate = () => {
+  const rate = Number(S.a11y.rate);
+  return [0.5, 1, 1.5, 2].includes(rate) ? rate : 1;
+};
+  
   const R = () => S.run;
   const G = () => S.run.graph;
   const LV = () => Maze.LEVELS[S.run.level];
@@ -1933,7 +1938,7 @@ function save() {
     const voice = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(I18N.lang));
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : I18N.lang;
-    u.rate = 0.95;
+    u.rate = speechRate();
     speechSynthesis.speak(u);
   }
 
@@ -1950,6 +1955,12 @@ function save() {
     $("#a11yMotion").checked = a.motion;
     $("#a11yFont").checked = a.font;
     $("#a11ySpeak").checked = a.speak;
+    $("#a11yRate").querySelectorAll("[data-rate]").forEach((button) => {
+  button.setAttribute(
+    "aria-pressed",
+    String(Number(button.dataset.rate) === speechRate())
+  );
+});
     if (!a.speak && "speechSynthesis" in window) speechSynthesis.cancel();
   }
   document.querySelectorAll(".a11y-open").forEach((b) => b.addEventListener("click", () => { applyA11y(); $("#a11yDialog").showModal(); }));
@@ -1958,6 +1969,14 @@ function save() {
     if (!b) return;
     S.a11y.text = b.dataset.size; save(); applyA11y();
   });
+  $("#a11yRate").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-rate]");
+  if (!button) return;
+  S.a11y.rate = Number(button.dataset.rate);
+  save();
+  Reader.stop();
+  applyA11y();
+});
   [["#a11yContrast", "contrast"], ["#a11yMotion", "motion"], ["#a11yFont", "font"], ["#a11ySpeak", "speak"]].forEach(([sel, key]) =>
     $(sel).addEventListener("change", (e) => {
       S.a11y[key] = e.target.checked; save(); applyA11y();
@@ -2555,7 +2574,7 @@ function save() {
         const v = voiceFor(p.lang.slice(0, 2));
         if (v) u.voice = v;
         u.lang = v ? v.lang : p.lang;
-        u.rate = 0.95;
+        u.rate = speechRate();
         if (i === parts.length - 1) u.onend = () => { if (active === btn) stop(); };
         speechSynthesis.speak(u);
       });
