@@ -370,3 +370,50 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
   .prompt { bottom: 64px; font-size: 15px; }
   .prompt kbd { display: none; }
 }
+
+.auth-bar {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+.auth-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  opacity: 0.85;
+}
+.auth-link:hover { opacity: 1; }
+.auth-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+.auth-fields input {
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  font: inherit;
+}
+.auth-btns {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.4rem;
+}
+.auth-btns button {
+  flex: 1;
+  padding: 0.38rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.auth-status {
+  grid-column: 1 / -1;
+  color: #2f6fb5;
+}
+.auth-status.err { color: #c4472d; }

@@ -41,7 +41,34 @@
     } catch (e) {}
     return fresh();
   }
-  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+      if (typeof saveCloudProgress === "function") saveCloudProgress(S);
+    } catch (e) {}
+  }
+
+  window.applyCloudState = function (cloudData) {
+    if (!cloudData) return;
+    S.player = cloudData.player ?? "";
+    S.robotName = cloudData.robot_name ?? "Echo";
+    if (cloudData.kid) S.kid = cloudData.kid;
+    S.stars = cloudData.stars ?? 0;
+    S.visits = cloudData.visits ?? {};
+    S.owned = cloudData.owned ?? ["c-silver", "e-cyan", "h-none", "g-none"];
+    if (cloudData.look) S.look = cloudData.look;
+
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
+
+    buildIntro();
+    if ($("#hudName")) $("#hudName").textContent = S.player;
+    updateHUD();
+    drawActors();
+    if (robot) robot.position.set(Rb.x, 0, Rb.z);
+    renderJournal();
+    refreshPins();
+    spots.forEach((sp) => { if (sp.labelBoard) sp.labelBoard.redraw(); });
+  };
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const wings = M.wings.filter((w) => !w.comingSoon);
@@ -1536,7 +1563,38 @@
   document.querySelectorAll("dialog [data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
   document.querySelectorAll("dialog").forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close(); }));
 
-  /* ---------- boot ---------- */
+/* ---------- boot ---------- */
   buildIntro();
-  window.resetMuseum = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
+
+  window.resetMuseum = async () => {
+    localStorage.removeItem(SAVE_KEY);
+    if (typeof supabaseClient !== "undefined") {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const clean = fresh();
+        await supabaseClient
+          .from("player_progress")
+          .update({
+            player: clean.player,
+            robot_name: clean.robotName,
+            kid: clean.kid,
+            stars: clean.stars,
+            visits: clean.visits,
+            owned: clean.owned,
+            look: clean.look,
+          })
+          .eq("user_id", user.id);
+      }
+    }
+    location.reload();
+  };
+
+  (async function initCloudSession() {
+    if (typeof supabaseClient === "undefined") return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      const cloudData = await loadCloudProgress(session.user.id);
+      window.applyCloudState(cloudData);
+    }
+  })();
 })();
