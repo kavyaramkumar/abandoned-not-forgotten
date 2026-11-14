@@ -61,6 +61,8 @@ window.ExhibitGuide = (function () {
     end: "quiet silent stop last lost", stop: "quiet silent last lost", broke: "damag stuck fail", broken: "damag stuck fail",
     legal: "law treaty own belong agreement act", legally: "law treaty own belong agreement act", law: "treaty own belong agreement act", own: "belong treaty", owner: "belong treaty own",
     invent: "invent patent spinoff develop", invention: "patent spinoff develop", patent: "invent licens", medicine: "health medical doctor patient", medical: "health medicine doctor patient", doctor: "health medical",
+    fly: "flight flew helicopter aircraft rotor", flying: "flight flew helicopter aircraft rotor", flew: "flight helicopter aircraft",
+    old: "oldest first earliest 1964", oldest: "first earliest 1964", newest: "latest recent", alive: "talking still working", working: "still talking working",
     find: "discover found learn measur show", found: "discover learn measur show", discover: "found learn measur", inside: "crust mantle core interior",
     big: "size meter long tall", heavy: "kilogram weigh mass", weight: "kilogram mass", fast: "speed kilometer per", far: "kilometer distance away",
     first: "first", build: "built", built: "built made led managed", photo: "picture image camera", picture: "photo image camera", water: "ice water", alien: "life",
@@ -165,6 +167,89 @@ window.ExhibitGuide = (function () {
     return search(question, preferId, 8).map((h) => (h.d.name ? `[${h.d.name}] ` : "") + h.d.text);
   }
 
+  /* ---------------------------------------------------------------
+   * SMART SEARCH: a small AI language model in the browser
+   * all-MiniLM-L6-v2 (via transformers.js) turns every note and each question
+   * into a "meaning vector", so questions match notes by meaning, not just by
+   * shared words. Runs on the student's device: no key, no server, and the
+   * question never leaves the computer. Notes' vectors are cached in IndexedDB.
+   * If the model can't load, the keyword search above keeps working.
+   * --------------------------------------------------------------- */
+  const SEM = { state: "idle", extractor: null, vecs: null, dim: 384, listeners: [] };
+  const TF_URL = "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2";
+  const idb = (mode, fn) => new Promise((res) => {
+    try {
+      const open = indexedDB.open("rfs-smart-search", 1);
+      open.onupgradeneeded = () => open.result.createObjectStore("v");
+      open.onsuccess = () => { const tx = open.result.transaction("v", mode); const req = fn(tx.objectStore("v")); req.onsuccess = () => res(req.result); req.onerror = () => res(null); };
+      open.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+  const hashText = (t) => { let h = 2166136261; for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619); return (h >>> 0).toString(36); };
+  const docText = (d) => (d.name ? d.name + ": " : "") + d.text;
+  async function warmup() {
+    if (SEM.state !== "idle") return;
+    SEM.state = "loading";
+    try {
+      if (!KB) buildKB();
+      const tf = await import(TF_URL);
+      tf.env.allowLocalModels = false;
+      SEM.extractor = await tf.pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { quantized: true });
+      const key = "v1-" + KB.docs.length + "-" + hashText(KB.docs.map(docText).join("|"));
+      let vecs = await idb("readonly", (st) => st.get(key));
+      if (!vecs || vecs.length !== KB.docs.length * SEM.dim) {
+        vecs = new Float32Array(KB.docs.length * SEM.dim);
+        for (let i = 0; i < KB.docs.length; i += 16) {
+          const out = await SEM.extractor(KB.docs.slice(i, i + 16).map(docText), { pooling: "mean", normalize: true });
+          vecs.set(out.data, i * SEM.dim);
+          await new Promise((r) => setTimeout(r, 0)); // let the game keep running smoothly
+        }
+        idb("readwrite", (st) => st.put(vecs, key));
+      }
+      SEM.vecs = vecs;
+      SEM.state = "ready";
+    } catch (e) {
+      console.warn("Smart search unavailable, using keyword search:", e);
+      SEM.state = "failed";
+    }
+    SEM.listeners.forEach((f) => f(SEM.state));
+  }
+  /* hybrid ranking: meaning similarity + keyword score + the machine you're talking to */
+  async function smartHits(question, preferId, limit) {
+    if (SEM.state !== "ready") return null;
+    if (!KB) buildKB();
+    const qv = (await SEM.extractor([question], { pooling: "mean", normalize: true })).data;
+    const kw = new Map(search(question, preferId, 60).map((h) => [h.d, h.sc]));
+    const kwMax = Math.max(1, ...kw.values());
+    const ql = question.toLowerCase();
+    const named = KB.machines.find((m) => ql.includes(m.name.toLowerCase()) || ql.includes(m.id.replace(/-/g, " ")));
+    const target = named ? named.id : preferId;
+    const out = [];
+    for (let i = 0; i < KB.docs.length; i++) {
+      const d = KB.docs[i];
+      let sim = 0;
+      for (let j = 0, o = i * SEM.dim; j < SEM.dim; j++) sim += qv[j] * SEM.vecs[o + j];
+      let sc = sim * 0.75 + ((kw.get(d) || 0) / kwMax) * 0.25;
+      if (d.kind === "wing" || d.kind === "place" || d.text.length < 60) sc -= 0.06; // short slogans match everything a little
+      if (d.kind === "word" && !/\b(what (is|are|does)|mean|define)\b/.test(ql)) sc -= 0.05; // definitions only win definition questions
+      if (target && d.ex === target) sc += named ? 0.12 : 0.08;
+      else if (named && d.ex) sc -= 0.08;
+      out.push({ d, sc, sim });
+    }
+    return out.sort((a, b) => b.sc - a.sc).slice(0, limit || 4);
+  }
+  async function smartAnswer(question, preferId) {
+    const hits = await smartHits(question, preferId, 6);
+    if (!hits || !hits.length || hits[0].sim < 0.3) return null;
+    const best = hits[0].d;
+    let text = best.text;
+    const same = (d) => (best.ex ? d.ex === best.ex : best.about && d.about === best.about);
+    const second = hits.find((h, i) => i > 0 && same(h.d) && h.sc > hits[0].sc * 0.85 && h.d.text !== best.text);
+    if (second) text += " " + second.d.text;
+    const about = best.ex && best.ex !== preferId && best.name && !text.startsWith(best.name) ? `${best.name}: ` : "";
+    return about + text;
+  }
+
   function offlineAnswer(exhibit, question) {
     const q = question.toLowerCase();
     // treasures have no "discovery"; use their first story page instead
@@ -205,10 +290,16 @@ window.ExhibitGuide = (function () {
     return `I don't have that one in my notes yet. You can ask me ${can}. Here's my favorite fact: ${fav}`;
   }
 
+  async function offline(exhibit, question) {
+    const fact = factAnswer(exhibit, question.toLowerCase());
+    if (fact) return { text: fact, mode: "offline" };
+    const smart = await smartAnswer(question, exhibit.id);
+    if (smart) return { text: smart, mode: "smart" };
+    return { text: offlineAnswer(exhibit, question), mode: "offline" };
+  }
+
   async function ask(exhibit, question, history) {
-    if (!window.CONFIG.askEndpoint) {
-      return { text: offlineAnswer(exhibit, question), mode: "offline" };
-    }
+    if (!window.CONFIG.askEndpoint) return offline(exhibit, question);
     try {
       const res = await fetch(window.CONFIG.askEndpoint, {
         method: "POST",
@@ -236,9 +327,14 @@ window.ExhibitGuide = (function () {
       return { text: data.answer, mode: "ai", sources };
     } catch (err) {
       console.warn("AI guide unavailable, using offline notes:", err);
-      return { text: offlineAnswer(exhibit, question), mode: "offline" };
+      return offline(exhibit, question);
     }
   }
 
-  return { ask, search, kbAnswer, notesFor, rebuild: () => { KB = null; } };
+  return {
+    ask, search, kbAnswer, notesFor, smartAnswer, warmup,
+    get smartState() { return SEM.state; },
+    onSmart: (f) => SEM.listeners.push(f),
+    rebuild: () => { KB = null; SEM.state = "idle"; SEM.vecs = null; },
+  };
 })();

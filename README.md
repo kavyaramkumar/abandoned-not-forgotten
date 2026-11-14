@@ -242,3 +242,15 @@ The gear button (welcome screen and top bar) opens a settings panel. Everything 
 - **Seen from orbit:** 17 machines and treasures have a card tab with a then-and-now slider: the mission photo next to a NASA picture taken from orbit years later (Lunar Reconnaissance Orbiter for the Moon, Mars Reconnaissance Orbiter's HiRISE for Mars, NEAR's own camera for Eros), mostly labeled by NASA. Images in `assets/orbit/`, listed in `js/orbit.js`.
 - **Listen:** real NASA audio for InSight (a marsquake made audible), Voyager 1 (sounds of interstellar space), Ingenuity (Perseverance's microphone recording of it flying), Apollo 11 ("one small step"), and Kepler (a star's light turned into sound). Files in `assets/sounds/`, listed in `js/sounds.js`.
 - Credits for every photo, orbital image, and sound are in `assets/photos/CREDITS.md`.
+
+## Reading and accessibility, round 2
+
+- **Read to me** is in the header of every window that shows text (story card, How to play, Learn more, machine cards, riddles, Mission Control) and on every chat answer. Parts marked as English (the machine stories) are read with an English voice; everything else in the player's language when the device has that voice. Press again to stop.
+- **Shorter text:** long pages show the key part first. Learn more sections and the "What is this museum?" part of How to play fold open on click, and the opening story shows its first lines with a Read more button.
+- **Fact file** also shows each machine's official **status today** from NASA's NSSDCA catalog. Every machine and treasure has an NSSDCA ID, resting place, and status.
+
+## How the chat thinks (three layers)
+
+1. **Quick facts** (`js/facts.js`): instant answers to who built it, when, how long, size, power, and speed.
+2. **AI search on the device:** a small open-source language model (all-MiniLM-L6-v2 via transformers.js, about 23 MB, downloaded once and cached) turns every note and each question into meaning vectors, so questions match by meaning, not just keywords ("can a country claim the Moon?" finds the Outer Space Treaty). It runs entirely in the browser: no key, no server, and questions never leave the device. If it can't load, keyword search (BM25-style) answers instead.
+3. **Claude, NASA sources only** (`server/`): when the Python server is running (locally, or hosted for the live site), Claude answers in full sentences in the student's language, searching the museum's knowledge base and NASA websites. See `server/README.md`.

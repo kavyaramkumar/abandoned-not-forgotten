@@ -37,7 +37,7 @@ window.I18N = (function () {
     { code: "vi", name: "Tiếng Việt" },
     { code: "ko", name: "한국어" },
   ];
-  const VER = 35;
+  const VER = 38;
   const dict = {};
   const listeners = [];
   let lang = "en";

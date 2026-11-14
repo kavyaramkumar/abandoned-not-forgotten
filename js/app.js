@@ -2010,6 +2010,22 @@
   function openStory() {
     fillStory();
     $("#storyDialog").showModal();
+    clampText($("#storyBody"));
+  }
+  /* long text shows its first lines, with a Read more button for the rest */
+  function clampText(el) {
+    if (!el) return;
+    el.classList.add("clamp");
+    el.classList.remove("open");
+    const old = el.nextElementSibling && el.nextElementSibling.classList.contains("more-btn") ? el.nextElementSibling : null;
+    if (old) old.remove();
+    if (el.scrollHeight <= el.clientHeight + 6) { el.classList.remove("clamp"); return; }
+    el.insertAdjacentHTML("afterend", `<button type="button" class="more-btn">${esc(t("ex.more"))}</button>`);
+    const b = el.nextElementSibling;
+    b.addEventListener("click", () => {
+      const open = el.classList.toggle("open");
+      b.textContent = t(open ? "ex.less" : "ex.more");
+    });
   }
   function fillStory() {
     const k = G().pieces.length;
@@ -2047,7 +2063,7 @@
         <p class="big">${esc(plain(learn ? t("rules.goalLearn") : t("rules.goalGame", { k })))}</p>
         ${S.run ? `<p class="rules-level">${esc(t("rules.level", { level: levelLabel(R().level) }))}${learn ? "" : " · " + esc(t("level." + R().level + "Desc"))}</p>` : ""}
       </section>
-      <section><h3>${esc(t("rules.aboutTitle"))}</h3><p>${esc(t("rules.about"))}</p></section>
+      <details class="fold"><summary>${esc(t("rules.aboutTitle"))}</summary><p>${esc(t("rules.about"))}</p></details>
       <section id="rulesWings"><h3>${esc(t("rules.wingsTitle"))}</h3><div class="wing-cards">${wingCards}</div></section>
       <section><h3>${esc(t("rules.howTitle"))}</h3><ul class="rules-list">${rules.map((key) => `<li>${esc(t(key))}</li>`).join("")}</ul></section>
       <p class="rules-chat">${t("rules.chat", { robot })}</p>`;
@@ -2265,8 +2281,9 @@
         <dl class="glossary" lang="en" dir="ltr">${words.map(([k, g]) => `<dt id="g-${k}">${esc(g.term)}</dt><dd>${esc(g.def)}</dd>`).join("")}</dl>${englishNote()}`;
     } else {
       const L = LEARN.find((x) => x.id === learnTab);
-      body.innerHTML = `<div lang="en" dir="ltr"><p class="learn-lead">${esc(L.lead)}</p>${L.sections.map((sec) => `
-        <section><h3>${esc(sec.h)}</h3>${(sec.p || []).map((p) => `<p>${linkify(p)}</p>`).join("")}${sec.list ? `<ul>${sec.list.map((li) => `<li>${li}</li>`).join("")}</ul>` : ""}</section>`).join("")}
+      // short first: the lead, then each section folded (the first one open)
+      body.innerHTML = `<div lang="en" dir="ltr"><p class="learn-lead">${esc(L.lead)}</p>${L.sections.map((sec, i) => `
+        <details class="fold"${i === 0 ? " open" : ""}><summary>${esc(sec.h)}</summary>${(sec.p || []).map((p) => `<p>${linkify(p)}</p>`).join("")}${sec.list ? `<ul>${sec.list.map((li) => `<li>${li}</li>`).join("")}</ul>` : ""}</details>`).join("")}
         ${L.sources && L.sources.length ? `<p class="src-line"><b>${esc(t("fact.sources"))}:</b> ${L.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>`).join(" · ")}</p>` : ""}</div>${englishNote()}`;
     }
     body.scrollTop = 0;
@@ -2314,6 +2331,7 @@
   }
   function renderTab() {
     $("#exBody").querySelectorAll("audio").forEach((x) => x.pause());
+    Reader.stop();
     $("#exTabs").innerHTML = tabs.map((x) => `<button role="tab" data-tab="${x.id}" aria-selected="${x.id === tab}">${esc(t("tab." + x.id))}</button>`).join("");
     const body = $("#exBody");
     const v = R().visits[ex.id] || {};
@@ -2334,6 +2352,7 @@
       };
       const catalog = [
         nd.restingPlace && `<dt>${esc(t("fact.resting"))}</dt><dd lang="en" dir="ltr">${linkify(nd.restingPlace)}</dd>`,
+        nd.status && `<dt>${esc(t("fact.status"))}</dt><dd lang="en" dir="ltr">${linkify(nd.status)}</dd>`,
         nd.lastContact && `<dt>${esc(t("fact.lastContact"))}</dt><dd>${esc(day(nd.lastContact))}</dd>`,
         nd.nssdcId && `<dt>${esc(t("fact.nssdc"))}</dt><dd><a href="${esc(nd.nssdcUrl || "https://nssdc.gsfc.nasa.gov/")}" target="_blank" rel="noopener">NSSDCA ${esc(nd.nssdcId)}</a></dd>`,
       ].filter(Boolean).join("");
@@ -2457,22 +2476,82 @@
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     if (pendingLine) { say(pendingLine, 8000); pendingLine = null; }
   });
-  $("#readAloud").addEventListener("click", () => {
-    if (!("speechSynthesis" in window)) return toast(t("toast.noRead"));
-    speechSynthesis.cancel();
-    const read = $("#exBody").cloneNode(true);
-    read.querySelectorAll(".en-note").forEach((n) => n.remove());
-    const u = new SpeechSynthesisUtterance(read.innerText);
-    u.lang = "en-US"; // the stories themselves are English for now
-    u.rate = 0.95;
-    speechSynthesis.speak(u);
+  /* =========================================================
+   * READ TO ME: reads any window aloud. Parts marked lang="en" (the machine
+   * stories) use an English voice; everything else uses the player's language.
+   * ========================================================= */
+  const Reader = (() => {
+    let active = null;
+    const SKIP = "button:not(.term), nav, script, style, audio, kbd, .en-note, .no-read, .cmp-label, .src-line, .read-btn, [hidden]";
+    function chunks(roots) {
+      const out = [];
+      const push = (text, lang) => {
+        const last = out[out.length - 1];
+        if (last && last.lang === lang) last.text += " " + text; else out.push({ text, lang });
+      };
+      const walk = (node, lang) => {
+        if (node.nodeType === 3) { const x = node.textContent.replace(/\s+/g, " ").trim(); if (x) push(x, lang); return; }
+        if (node.nodeType !== 1 || node.matches(SKIP)) return;
+        const l = node.getAttribute("lang") || lang;
+        // a closed "Read more" section: read just its title
+        if (node.tagName === "DETAILS" && !node.open) { const sm = node.querySelector("summary"); if (sm) walk(sm, l); return; }
+        node.childNodes.forEach((c) => walk(c, l));
+        // pause between paragraphs, list items and headings
+        if (/^(P|LI|H\d|DT|DD|BLOCKQUOTE|SECTION|SUMMARY|FIGCAPTION)$/.test(node.tagName)) { const last = out[out.length - 1]; if (last && !/[.!?:。！？]$/.test(last.text)) last.text += "."; }
+      };
+      roots.filter(Boolean).forEach((r) => walk(r, I18N.lang));
+      return out;
+    }
+    const voiceFor = (lang) => speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
+    function stop() {
+      if ("speechSynthesis" in window) speechSynthesis.cancel();
+      if (active) { active.classList.remove("reading"); active.setAttribute("aria-pressed", "false"); const lb = active.querySelector(".rd-label"); if (lb) lb.textContent = t("ex.read"); }
+      active = null;
+    }
+    function read(roots, btn) {
+      if (!("speechSynthesis" in window)) return toast(t("toast.noRead"));
+      if (active && active === btn) return stop(); // second press stops
+      stop();
+      const parts = chunks(roots);
+      if (!parts.length) return;
+      active = btn;
+      if (btn) { btn.classList.add("reading"); btn.setAttribute("aria-pressed", "true"); const lb = btn.querySelector(".rd-label"); if (lb) lb.textContent = t("ex.stop"); }
+      parts.forEach((p, i) => {
+        const u = new SpeechSynthesisUtterance(p.text);
+        const v = voiceFor(p.lang.slice(0, 2));
+        if (v) u.voice = v;
+        u.lang = v ? v.lang : p.lang;
+        u.rate = 0.95;
+        if (i === parts.length - 1) u.onend = () => { if (active === btn) stop(); };
+        speechSynthesis.speak(u);
+      });
+    }
+    return { read, stop };
+  })();
+  const SPEAKER = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  const readBtn = (small) => `<button type="button" class="read-btn${small ? " small" : ""}" aria-pressed="false" aria-label="${esc(t("ex.read"))}">${SPEAKER}${small ? "" : `<span class="rd-label">${esc(t("ex.read"))}</span>`}</button>`;
+  // a Read to me button in the header of every window that shows text
+  const READ_TARGETS = {
+    storyDialog: ["#storyTitle", "#storyBody"], rulesDialog: ["#rulesTitle", "#rulesBody"], learnDialog: ["#learnBody"],
+    riddleDialog: ["#riddleTitle", "#riddleQ", "#riddleFb"], finaleDialog: ["#finTitle", "#finaleBody"], exhibitDialog: ["#exTitle", "#exBody"],
+  };
+  Object.entries(READ_TARGETS).forEach(([id, sels]) => {
+    const dlg = document.getElementById(id), head = dlg && dlg.querySelector(".ex-head");
+    if (!head) return;
+    head.insertAdjacentHTML("beforeend", readBtn());
+    const b = head.querySelector(".read-btn");
+    b.addEventListener("click", () => Reader.read(sels.map((x) => $(x)), b));
+    dlg.addEventListener("close", () => Reader.stop());
   });
+  // the old footer button on cards does the same thing
+  $("#readAloud").addEventListener("click", () => Reader.read([$("#exTitle"), $("#exBody")], $("#exhibitDialog .ex-head .read-btn")));
 
   /* ---------------- chat: ask one machine, or ask the robot about the whole museum ---------------- */
   let chatHistory = [], chatEx = null, chatSession = 0;
   function openChat(e, docked) {
     chatEx = e || null;
     chatSession++;
+    ExhibitGuide.warmup(); // load the small AI model in the background (first time only)
     const dlg = $("#chatDialog");
     if (dlg.open) dlg.close();
     dlg.classList.toggle("docked", !!docked);
@@ -2550,6 +2629,7 @@
       const gloss = glossaryAnswer(q);
       if (gloss) res = { text: gloss, mode: "offline" };
       else if (chatEx) res = res || (await ExhibitGuide.ask(chatEx, canon || q, chatHistory)); // reuse the offline answer step 1 already got
+      else if ((res = await ExhibitGuide.smartAnswer(q, null))) res = { text: res, mode: "smart" };
       else {
         const m = museumAnswer(q);
         res = m.ex ? await ExhibitGuide.ask(m.ex, q, chatHistory) : { text: m.text, mode: "offline" };
@@ -2559,7 +2639,9 @@
     wait.remove();
     if (session !== chatSession) return; // the chat was closed or restarted while this answer was loading
     const msg = addMsg("bot", res.text);
-    msg.innerHTML = linkify(res.text);
+    msg.innerHTML = `<span class="msg-text">${linkify(res.text)}</span>` + readBtn(true);
+    const rb = msg.querySelector(".read-btn");
+    rb.addEventListener("click", () => Reader.read([msg.querySelector(".msg-text")], rb));
     if (res.sources && res.sources.length) {
       // the NASA pages the answer came from
       const src = document.createElement("div");
@@ -2568,7 +2650,7 @@
       msg.appendChild(src);
       $("#chatLog").scrollTop = $("#chatLog").scrollHeight;
     }
-    $("#chatMode").textContent = res.mode === "ai" ? t("chat.ai") : t("chat.offline");
+    $("#chatMode").textContent = res.mode === "ai" ? t("chat.ai") : res.mode === "smart" ? t("chat.smart") : t("chat.offline");
     chatHistory.push({ role: "user", content: q }, { role: "assistant", content: res.text });
     const key = chatEx ? chatEx.id : "museum";
     const v = visit(key);
@@ -2740,7 +2822,7 @@
       renderTab();
     }
     if ($("#workshopDialog").open) renderWorkshop();
-    if ($("#storyDialog").open) fillStory();
+    if ($("#storyDialog").open) { fillStory(); clampText($("#storyBody")); }
     if ($("#learnDialog").open) openLearn();
     if ($("#journalDialog").open) { $("#journalDialog").close(); $("#journalBtn").click(); }
     if ($("#riddleDialog").open && riddleDoor) openRiddle(riddleDoor);

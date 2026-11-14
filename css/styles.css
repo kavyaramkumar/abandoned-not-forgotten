@@ -780,3 +780,29 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
   .hud-right .btn.small { padding: 5px 9px; font-size: 13px; }
   .hud-lang .lang-select { max-width: 100px; }
 }
+
+/* ---------- Read to me ---------- */
+.ex-head .read-btn { position: absolute; top: 14px; right: 60px; }
+[dir="rtl"] .ex-head .read-btn { right: auto; left: 60px; }
+.read-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font: 700 13px var(--sans); cursor: pointer; }
+.read-btn svg { width: 18px; height: 18px; }
+.read-btn:hover { background: #e3fbff; }
+.read-btn.reading { background: #1fa3a3; color: #fff; border-color: #1fa3a3; animation: readPulse 1.4s ease-in-out infinite; }
+@keyframes readPulse { 50% { box-shadow: 0 0 0 6px #1fa3a333; } }
+.read-btn.small { padding: 3px; border-width: 1.5px; margin-inline-start: 6px; vertical-align: middle; }
+.read-btn.small svg { width: 15px; height: 15px; }
+.chat-sheet .msg.bot .read-btn.small { float: right; margin: -2px -4px 0 6px; }
+@media (max-width: 560px) { .ex-head .read-btn .rd-label { display: none; } .ex-head .read-btn { padding: 6px; } }
+
+/* ---------- shorter text: folds and Read more ---------- */
+.fold { border: 2px solid #e1d8c5; border-radius: 10px; padding: 0 14px; margin: 10px 0; background: #fff; }
+.fold > summary { cursor: pointer; font: 800 17px var(--serif); padding: 10px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::before { content: "▸"; color: #1fa3a3; transition: transform .2s; }
+.fold[open] > summary::before { transform: rotate(90deg); }
+.fold[open] { padding-bottom: 8px; }
+.clamp { max-height: 11.5em; overflow: hidden; position: relative; }
+.clamp::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3em; background: linear-gradient(transparent, var(--paper, #f6f0e3)); pointer-events: none; }
+.clamp.open { max-height: none; }
+.clamp.open::after { display: none; }
+.more-btn { margin: 4px 24px 8px; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; font: 700 14px var(--sans); cursor: pointer; }
