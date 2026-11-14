@@ -857,7 +857,9 @@ window.MUSEUM = {
       "Field trip day! Your class has just stepped into the Reach for the Stars Museum when... BZZZT. The lights flicker, the floor rumbles, and every door in the building swaps places.",
       "\"It happened again,\" beeps ROBOT. \"The museum rearranged itself! And the Homecoming Signal broke into PIECES pieces.\"",
       "Every year the museum beams the Homecoming Signal into space, to remember the machines NASA left behind on the Moon, on Mars, and beyond. Now each piece is hiding with one of those machines.",
-      "Find the machines, hear their stories, and carry every piece to Mission Control. But careful: you never know what's behind a door until you open it.",
+      "\"Why remember machines that don't work anymore?\" you ask. ROBOT blinks. \"Because their work didn't disappear when they went quiet. One took the pictures that helped us land. Another found clues about water on Mars. Each one helped us ask a better question.\"",
+      "\"You don't have to dream of becoming an astronaut to be an explorer,\" says ROBOT. \"You just have to be curious. Find out what each machine was trying to learn, and what its discoveries made possible.\"",
+      "Find the machines, hear their stories, and carry every piece to Mission Control to restore the Homecoming Signal. But careful: you never know what's behind a door until you open it.",
     ],
   },
 
