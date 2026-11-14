@@ -2425,14 +2425,17 @@
       updateHUD();
       const n = R().collected.length, k = G().pieces.length;
       toast(t("toast.piece", { n, k }));
+      // The collected piece now represents the discovery the player just learned.
+      if (e.discovery) pendingLine = `${esc(e.name)}: ${esc(e.discovery)}`;
       if (n === k) {
         const px = P.x, pz = P.z, ph = P.heading;
         buildRoom(R().cur);
         P.x = px; P.z = pz; P.heading = ph;
       }
-      pendingLine = n === k
+      const discoveryLine = e.discovery ? `${esc(e.name)}: ${esc(e.discovery)} ` : "";
+      pendingLine = discoveryLine + (n === k
         ? `${t("echo.allPieces")} ${t(R().sawMC ? "echo.sawMC" : "echo.notMC")}`
-        : t("echo.gotPiece", { name: esc(e.name), n, k });
+        : t("echo.gotPiece", { name: esc(e.name), n, k }));
       updateHint();
     }
     save();
@@ -2698,6 +2701,18 @@
     $("#sendSignal").onclick = () => v.ok && sendSignal(v);
   }
 
+  // Build a mission-by-mission recap from the exhibits the player actually encountered.
+  // Keep the recap tied to real mission content rather than generic inspirational text.
+  function discoveryRecap(run, g) {
+    const ids = [...new Set(g.rooms.filter((r) => r.exhibit && run.visits[r.exhibit] && run.visits[r.exhibit].story).map((r) => r.exhibit))];
+    const cards = ids.map((id) => {
+      const e = exById(id);
+      if (!e || !e.discovery) return "";
+      return `<li><strong>${esc(e.name)}</strong><p>${esc(e.discovery)}</p>${e.next ? `<p><b>${esc(t("fin.legacyNext"))}:</b> ${esc(e.next)}</p>` : ""}</li>`;
+    }).filter(Boolean);
+    return `<section class="legacy-recap" aria-label="${esc(t("fin.legacyTitle"))}"><h3>${esc(t("fin.legacyTitle"))}</h3><p>${esc(t("fin.legacyQuestion"))}</p>${cards.length ? `<ul>${cards.join("")}</ul>` : `<p>${esc(t("fin.legacyEmpty"))}</p>`}</section>`;
+  }
+
   function sendSignal(v) {
     const g = G(), run = R(), k = g.pieces.length;
     const firstTime = !run.done;
@@ -2716,6 +2731,7 @@
       <p class="fin-lead">${t("fin.pbd1", { k })}</p>
       <p>${t("fin.pbd2")}</p>
       <p>${t("fin.pbd3")}</p>
+      ${discoveryRecap(run, g)}
       <p class="story-level">${esc(t("fin.summary", { level: levelLabel(run.level), seed: run.seed, n: run.route.length }))}${g.par ? " · " + esc(run.route.length <= g.par ? t("fin.goldYes") : t("fin.goldWas", { n: g.par })) : ""}</p>`;
     finaleButtons(run.level);
   }
@@ -2745,6 +2761,7 @@
       <div class="pbd" style="--k:${k}">${slices}<div class="pbd-dot"></div></div>
       <p>${t("fin.pbd2")}</p>
       <p>${t("fin.pbd3")}</p>
+      ${discoveryRecap(run, g)}
       <p class="story-level">${esc(t("fin.learnGame"))}</p>`;
     finaleButtons("learn");
     if (!$("#finaleDialog").open) $("#finaleDialog").showModal();
