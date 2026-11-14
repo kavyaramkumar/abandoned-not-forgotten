@@ -74,7 +74,41 @@
     } catch (e) {}
     return fresh();
   }
-  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+      if (typeof saveCloudProgress === "function") saveCloudProgress(S);
+    } catch (e) {}
+  }
+
+  window.applyCloudState = function (cloudData) {
+    if (!cloudData) return;
+    S.player = cloudData.player ?? "";
+    S.robotName = cloudData.robot_name ?? "Echo";
+    if (cloudData.kid && Object.keys(cloudData.kid).length) S.kid = Object.assign(fresh().kid, cloudData.kid);
+    if (cloudData.level) S.level = cloudData.level;
+    if (cloudData.mode) S.mode = cloudData.mode;
+    if (cloudData.place) S.place = cloudData.place;
+    if (cloudData.lang) S.lang = cloudData.lang;
+    if (cloudData.a11y && Object.keys(cloudData.a11y).length) S.a11y = Object.assign(fresh().a11y, cloudData.a11y);
+    S.stars = cloudData.stars ?? 0;
+    S.owned = cloudData.owned ?? ["c-silver", "e-cyan", "h-none", "g-none"];
+    if (cloudData.look) S.look = cloudData.look;
+    S.met = cloudData.met ?? {};
+    S.best = cloudData.best ?? {};
+    if (cloudData.run !== undefined) S.run = cloudData.run;
+
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
+
+    $("#playerName").value = S.player;
+    $("#robotName").value = S.robotName;
+    drawMaker();
+    drawPicks();
+    drawIntroText();
+    applyA11y();
+    if (S.lang && S.lang !== I18N.lang) I18N.set(S.lang);
+    updateHUD();
+  };
 
   const R = () => S.run;
   const G = () => S.run.graph;
@@ -2834,7 +2868,44 @@
   buildIntro();
   applyA11y();
   I18N.set(S.lang || "en");
-  window.resetMuseum = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
+window.resetMuseum = async () => {
+    localStorage.removeItem(SAVE_KEY);
+    if (typeof supabaseClient !== "undefined" && supabaseClient) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const clean = fresh();
+        await supabaseClient
+          .from("player_progress")
+          .update({
+            player: clean.player,
+            robot_name: clean.robotName,
+            kid: clean.kid,
+            level: clean.level,
+            mode: clean.mode,
+            place: clean.place,
+            lang: clean.lang,
+            a11y: clean.a11y,
+            stars: clean.stars,
+            owned: clean.owned,
+            look: clean.look,
+            met: clean.met,
+            best: clean.best,
+            run: clean.run,
+          })
+          .eq("user_id", user.id);
+      }
+    }
+    location.reload();
+  };
+
+  (async function initCloudSession() {
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      const cloudData = await loadCloudProgress(session.user.id);
+      window.applyCloudState(cloudData);
+    }
+  })();
   // for testing: Museum.debug() prints today's hidden network
   window.Museum = {
     debug: () => S.run && S.run.graph,
