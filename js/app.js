@@ -2425,8 +2425,6 @@
       updateHUD();
       const n = R().collected.length, k = G().pieces.length;
       toast(t("toast.piece", { n, k }));
-      // The collected piece now represents the discovery the player just learned.
-      if (e.discovery) pendingLine = `${esc(e.name)}: ${esc(e.discovery)}`;
       if (n === k) {
         const px = P.x, pz = P.z, ph = P.heading;
         buildRoom(R().cur);
