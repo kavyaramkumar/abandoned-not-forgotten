@@ -1106,6 +1106,9 @@
     const ex = exById(r.exhibit);
     const N = sideOf("N");
     photoFrame(N, ex);
+    // Immersive gallery treatment inspired by a real NASA exhibition:
+    // warm landscape, dramatic edge lighting, and a lit artifact plinth.
+    buildExhibitEnvironment(ex);
     const g = buildCase(ex, 0, Z0 + WALL_T + 1.45, 1.2);
     // the machine's name on a stand
     const label = Models.board({ w: 1.3, h: 0.6, ppm: 380, draw: (x, W, H) => drawLabel(x, W, H, ex) });
@@ -1129,6 +1132,46 @@
     obstacles.push({ x: 0, z: Z0 + WALL_T + 1.45, r: 1.15 });
   }
 
+  function buildExhibitEnvironment(ex) {
+    const mars = ex.wing.id === "mars";
+    const moon = ex.wing.id === "moon";
+    const earth = mars ? "#a94b2d" : moon ? "#807b75" : "#243958";
+    const ridge = mars ? "#77331f" : moon ? "#56545a" : "#17263d";
+    const accent = mars ? "#ff8349" : moon ? "#e8c8a0" : "#67b8ff";
+    const terrain = new T.MeshStandardMaterial({ color: earth, roughness: 1, flatShading: true });
+    const rocks = new T.MeshStandardMaterial({ color: ridge, roughness: 1, flatShading: true });
+    // Raised sculptural landscape stays against the side walls to preserve walking space.
+    [[-3.75, -2.7, 1.25], [3.75, -2.9, 1.1], [-3.8, 1.0, 0.9], [3.85, 1.3, 0.85]].forEach(([x, z, scale], i) => {
+      const rock = add(new T.Mesh(new T.DodecahedronGeometry(scale, 1), i % 2 ? rocks : terrain));
+      rock.scale.set(1.2, 0.52, 1.05);
+      rock.position.set(x, 0.12, z);
+      rock.rotation.y = i * 1.15;
+      rock.castShadow = rock.receiveShadow = true;
+    });
+    // Museum floor pools of colored light, rather than uniform neon everywhere.
+    const glowTex = canvasTex(128, 128, (c) => {
+      const g = c.createRadialGradient(64, 64, 2, 64, 64, 64);
+      g.addColorStop(0, mars ? "rgba(255,119,64,.43)" : moon ? "rgba(232,200,160,.3)" : "rgba(85,160,255,.34)");
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, 128, 128);
+    });
+    [[-2.8, -2.0], [2.8, -2.0]].forEach(([x,z]) => {
+      const pool = add(new T.Mesh(new T.PlaneGeometry(4.5, 4), new T.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending })));
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(x, 0.025, z);
+    });
+    // Small warm museum spotlights pick out the actual artifact.
+    [[-2.5, 3.35, -3.0], [2.5, 3.35, -3.0]].forEach(([x,y,z]) => {
+      const lamp = new T.SpotLight(accent, 1.25, 9, Math.PI / 4, 0.65, 1.5);
+      lamp.position.set(x, y, z);
+      lamp.target.position.set(0, 1.4, Z0 + WALL_T + 1.45);
+      add(lamp); add(lamp.target);
+      const housing = add(new T.Mesh(new T.CylinderGeometry(0.12, 0.17, 0.28, 12), new T.MeshStandardMaterial({ color: "#20232b", metalness: 0.65, roughness: 0.35 })));
+      housing.position.set(x,y,z);
+      housing.rotation.z = x < 0 ? -0.3 : 0.3;
+    });
+  }
+
   /*
    * The picture on the north wall: a real NASA photo of the mission when we
    * have one (js/photos.js), otherwise the drawn diorama. Sized to the photo.
@@ -1146,12 +1189,16 @@
       map.anisotropy = 4;
     } else map = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
     const frame = new T.Group();
-    const fr = new T.Mesh(new T.BoxGeometry(w + 0.24, h + 0.24, 0.08), new T.MeshStandardMaterial({ color: "#1b2030", metalness: 0.6, roughness: 0.3 }));
-    const edge = new T.Mesh(new T.BoxGeometry(w + 0.3, h + 0.3, 0.04), new T.MeshBasicMaterial({ color: ex.wing.color, toneMapped: false }));
+    const fr = new T.Mesh(new T.BoxGeometry(w + 0.3, h + 0.3, 0.08), new T.MeshStandardMaterial({ color: "#211d23", metalness: 0.45, roughness: 0.4 }));
+    const edge = new T.Mesh(new T.BoxGeometry(w + 0.4, h + 0.4, 0.04), new T.MeshBasicMaterial({ color: ex.wing.id === "mars" ? "#ff9255" : ex.wing.id === "moon" ? "#e5c9a3" : "#6ebeff", toneMapped: false }));
     edge.position.z = -0.03;
     const pic = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map, toneMapped: false }));
     pic.position.z = 0.045;
     frame.add(edge, fr, pic);
+    // A restrained luminous border makes the image read like a museum installation.
+    const halo = new T.Mesh(new T.PlaneGeometry(w + 0.85, h + 0.85), new T.MeshBasicMaterial({ color: ex.wing.id === "mars" ? "#e96537" : ex.wing.id === "moon" ? "#d9b98e" : "#438bd4", transparent: true, opacity: 0.12, depthWrite: false }));
+    halo.position.z = -0.085;
+    frame.add(halo);
     if (ph) {
       // a small credit plate under the photo
       const plate = Models.board({ w: Math.min(w, 2.6), h: 0.2, ppm: 300, bg: "#1b2030", draw: (c, W, H) => {
