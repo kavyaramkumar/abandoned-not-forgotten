@@ -80,6 +80,9 @@ window.ExhibitGuide = (function () {
     const machines = (M.wings || []).flatMap((w) => (w.exhibits || []).map((e) => ({ ...e, wingName: w.name }))).concat(M.treasures || []);
     machines.forEach((e) => {
       (e.story || []).forEach((page) => sentences(page).forEach((x) => add(x, e, "story")));
+      // the newer story cards (js/story.js), so the guide knows them too
+      const sb = window.STORY && STORY.machines[e.id];
+      if (sb) [sb.hook].concat(sb.beats.map((b) => b.text)).forEach((page) => sentences(page).forEach((x) => add(x, e, "story")));
       (e.leftBehind || []).forEach((x) => add(`Still out there today: ${x}.`, e, "left"));
       sentences(e.discovery || "").forEach((x) => add(x, e, "learned"));
       sentences(e.next || "").forEach((x) => add(x, e, "next"));

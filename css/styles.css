@@ -806,3 +806,551 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .clamp.open { max-height: none; }
 .clamp.open::after { display: none; }
 .more-btn { margin: 4px 24px 8px; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 8px; background: #fff; font: 700 14px var(--sans); cursor: pointer; }
+
+/* =========================================================
+ * MUSEUM SYSTEM UI
+ * A restrained aerospace interface inspired by integrated exhibit controls:
+ * smoked glass, composite panels, thin luminous status lines and data type.
+ * ========================================================= */
+:root {
+  --paper: #0f1825;
+  --paper-2: #152333;
+  --ink: #ecf8ff;
+  --ink-2: #9fb3c5;
+  --brass: #ffc85a;
+  --brick: #63ddff;
+  --night: #050910;
+  --plaster: #162333;
+  --serif: "Lexend", "Atkinson Hyperlegible", system-ui, sans-serif;
+  color-scheme: dark;
+}
+body {
+  background: #03070d;
+  color: var(--ink);
+  font-family: var(--sans);
+}
+h1, h2, h3 {
+  font-family: var(--serif);
+  letter-spacing: -.025em;
+}
+:focus-visible {
+  outline: 2px solid #72e6ff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #0b2435cc;
+}
+.btn {
+  border: 1px solid #6aa7bc88;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #1c2b3bdd, #101925ee);
+  color: #dff7ff;
+  box-shadow: inset 0 1px 0 #ffffff14, 0 8px 22px #0007;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: #71e4ff;
+  background: linear-gradient(180deg, #243c50, #142331);
+  box-shadow: inset 0 1px 0 #ffffff1c, 0 0 0 1px #4bdcff25, 0 10px 24px #0008;
+}
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 8px #0008;
+}
+.btn.primary {
+  border-color: #a6f0ff;
+  background: linear-gradient(135deg, #9cf1ff, #4fcbe9);
+  color: #07131b;
+  box-shadow: inset 0 1px 0 #fff9, 0 0 22px #4cdcff2b;
+}
+.btn.ghost { color: #b9d4df; background: transparent; border-color: #496170; }
+.btn.small { border-color: #56798a; box-shadow: inset 0 1px 0 #fff1; }
+
+/* Intro card becomes a mission-preparation terminal while preserving the
+ * friendly outdoor arrival scene and every existing form control. */
+.intro-card {
+  background: linear-gradient(145deg, #101b28f5, #08101bf2);
+  border: 1px solid #7edff3a8;
+  color: #edf9ff;
+  box-shadow: 0 26px 70px #000a, inset 0 1px 0 #ffffff17;
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+.intro-card::before {
+  content: ""; display: block; height: 2px; margin: -12px 0 18px;
+  background: linear-gradient(90deg, #67e5ff, #67e5ff22 55%, transparent);
+}
+.intro-card > p, .intro-credit, .place-pick button span:not(.pp-orb),
+.mode-pick button span, .level-pick button span { color: #a9bfcc; }
+.intro-card :is(input, .lang-select, .place-pick button, .mode-pick button,
+  .level-pick button, .chips button, .seg button) {
+  background: #101c29e8; color: #eaf8ff; border-color: #45677a;
+  box-shadow: inset 0 1px 0 #fff0c;
+}
+.intro-card :is(.place-pick button, .mode-pick button, .level-pick button,
+  .chips button, .seg button)[aria-pressed="true"] {
+  background: #143247;
+  border-color: #70def6;
+  box-shadow: inset 3px 0 0 #70def6, 0 0 18px #54dfff18;
+}
+.maker-preview { background: radial-gradient(circle at 50% 35%, #263d50, #07101a 72%); border-color: #4c788e; }
+.kicker { color: #71e4ff; }
+
+/* One continuous flight-deck HUD rather than a row of paper buttons. */
+.hud {
+  position: relative;
+  gap: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #09111bf5, #050a11f0);
+  color: #d9edf6;
+  border: 0;
+  border-bottom: 1px solid #4fdcf066;
+  box-shadow: 0 8px 28px #0008, inset 0 -1px 0 #ffffff08;
+  backdrop-filter: blur(16px);
+}
+.hud::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, #62e5ff, transparent 24%, transparent 76%, #62e5ff);
+  pointer-events: none;
+}
+.ticket {
+  min-width: 210px;
+  padding: 6px 12px 6px 14px;
+  border: 1px solid #456b7c;
+  border-left: 3px solid #64e0fa;
+  border-radius: 4px;
+  background: linear-gradient(110deg, #152534e8, #0d1722dd);
+  color: #effaff;
+  -webkit-mask: none; mask: none;
+  box-shadow: inset 0 1px 0 #fff0d;
+}
+.ticket-title { font: 700 13px/1.15 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.ticket-sub { color: #88a7b7; font-size: 10px; }
+.pieces {
+  flex: 0 1 auto;
+  min-width: 92px;
+  padding: 0 12px;
+  border-inline: 1px solid #314958;
+}
+.pieces i {
+  width: 12px; height: 12px;
+  border: 1px solid #66818e;
+  background: #152531;
+  box-shadow: inset 0 0 7px #000;
+}
+.pieces i.got { background: #ffe07a; border-color: #fff2bd; box-shadow: 0 0 12px #ffca4d9c; }
+.doors-count { padding: 0 6px; color: #91aab7; }
+.doors-count b { color: #eafaff; }
+.hud-right { gap: 6px; margin-left: auto; }
+.hud-right .btn.small { padding: 6px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .055em; }
+.hud-lang { color: #8fdff0; }
+.hud-lang .lang-select {
+  padding: 5px 24px 5px 8px;
+  border: 1px solid #4c778b;
+  border-radius: 7px;
+  background: #0e1925;
+  color: #dff8ff;
+  font: 600 11px var(--mono);
+}
+
+/* Scene overlays share the same composite/glass construction. */
+.room-banner {
+  background: linear-gradient(145deg, #101c29ee, #08111cee);
+  color: #eaf8ff;
+  border: 1px solid #5ea0b8;
+  border-radius: 6px;
+  padding: 7px 22px 9px;
+  box-shadow: 0 14px 35px #0009, inset 0 1px 0 #fff12;
+  backdrop-filter: blur(12px);
+}
+.room-banner::after {
+  content: ""; position: absolute; left: 18%; right: 18%; bottom: -1px; height: 2px;
+  background: #62e5ff; box-shadow: 0 0 12px #62e5ff;
+}
+.rb-kind { color: #72e6ff; }
+.room-banner b { font: 700 17px/1.2 var(--serif); letter-spacing: -.02em; }
+.say {
+  background: linear-gradient(145deg, #122131f5, #09131df5);
+  color: #e9f8ff;
+  border: 1px solid #61aec7;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px #000b, inset 0 1px 0 #fff12;
+  backdrop-filter: blur(12px);
+}
+.say::after { background: #0d1925; border-color: #61aec7; }
+.say .who { color: #67e3ff; }
+.prompt {
+  background: linear-gradient(110deg, #172b3aee, #0a1722f5);
+  color: #eafaff;
+  border: 1px solid #6de4ff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  box-shadow: inset 3px 0 0 #6de4ff, 0 0 24px #45dcff25, 0 12px 28px #0008;
+  font: 700 14px var(--mono);
+  animation: none;
+}
+.prompt::before { content: "●"; color: #6de4ff; margin-right: 9px; text-shadow: 0 0 8px #6de4ff; }
+.cam-controls .btn { background: #0b1520e8; border-color: #5d8b9e; backdrop-filter: blur(10px); }
+.hint {
+  background: #071019d9;
+  color: #9eb9c7;
+  border: 1px solid #345465;
+  border-radius: 6px;
+  font: 500 12px var(--mono);
+  backdrop-filter: blur(8px);
+}
+.chat-fab {
+  padding: 11px 17px 11px 13px;
+  border: 1px solid #7ce9ff;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #17364aee, #0a1a27f5);
+  color: #dffaff;
+  font: 700 14px var(--mono);
+  box-shadow: inset 3px 0 0 #67e4ff, 0 0 24px #46ddff26, 0 12px 30px #0009;
+  backdrop-filter: blur(12px);
+}
+.chat-fab:hover { transform: translateY(-2px); background: linear-gradient(135deg, #20536b, #0d2636); }
+.chat-fab svg { color: #6ce5ff; }
+@keyframes fabPulse {
+  0%, 100% { box-shadow: inset 3px 0 0 #67e4ff, 0 0 0 0 #5ee7ff55, 0 12px 30px #0009; }
+  50% { box-shadow: inset 3px 0 0 #67e4ff, 0 0 0 10px #5ee7ff00, 0 12px 30px #0009; }
+}
+
+/* Information surfaces now feel like integrated museum terminals. */
+dialog.sheet {
+  background: linear-gradient(145deg, #101b28f8, #08111cfb);
+  color: #eaf7ff;
+  border: 1px solid #629bb1;
+  border-radius: 12px;
+  box-shadow: 0 30px 90px #000d, inset 0 1px 0 #ffffff16;
+  overflow: hidden;
+}
+dialog::backdrop { background: #02060bdc; backdrop-filter: blur(8px); }
+.close {
+  border: 1px solid #6b9bad;
+  background: #101d29;
+  color: #dff8ff;
+  box-shadow: inset 0 1px 0 #fff12;
+}
+.ex-head {
+  background: linear-gradient(90deg, #142332, #0b1622);
+  border-bottom: 1px solid #345364;
+}
+.ex-head h2 { color: #f1fbff; }
+.catalog { color: #69e2fb; }
+.ex-meta, .voice-by, .learn-lead, .cmp-hint { color: #9fb5c2; }
+.status { color: #dff7ff; }
+.tabs {
+  padding-top: 8px;
+  background: #0b141f;
+  border-bottom: 1px solid #3c5a68;
+}
+.tabs button {
+  border-radius: 5px 5px 0 0;
+  color: #8ea7b5;
+  font: 600 12px var(--mono);
+}
+.tabs button[aria-selected="true"] {
+  background: #142636;
+  border-color: #51859a;
+  color: #71e5ff;
+  box-shadow: inset 0 2px 0 #71e5ff;
+}
+.ex-body, .chat-log, .chat-suggest, .chat-form, .ws-grid, .learn-body {
+  background: #09131e;
+  color: #dcecf3;
+  border-color: #345363;
+}
+.ex-foot { background: #0b151f; border-color: #345363; }
+.ex-visual { background: #02060b; border-right: 1px solid #3c5c6b; }
+.ex-visual::after { height: 2px; box-shadow: 0 0 14px var(--wc); }
+.voice {
+  font-family: var(--sans);
+  font-weight: 500;
+  border-left: 2px solid #64e2fb;
+  background: linear-gradient(90deg, #17304788, transparent);
+  padding: 14px 16px;
+}
+.fold, ul.left li, .opts button, .msg.bot, .chat-suggest button,
+.part, .wing-card, .rules-chat, .term-pop {
+  background: #101e2b;
+  color: #dceef6;
+  border-color: #3d6172;
+  box-shadow: inset 0 1px 0 #ffffff09;
+}
+.opts button:hover:not(:disabled), .term:hover, .term:focus-visible { background: #183146; }
+.msg.me { background: #1b5066; color: #f1fcff; }
+.chat-form input { background: #07111a; color: #e6f8ff; border-color: #4a7183; }
+.read-btn {
+  background: #0d1a26;
+  color: #dff8ff;
+  border-color: #4d788b;
+}
+.read-btn:hover { background: #173145; }
+.ask-cta { background: linear-gradient(135deg, #17465d, #0d2939); border-color: #63dcf5; color: #e7fbff; }
+.note-panel {
+  background: #0c1824ef;
+  color: #dff5ff;
+  border: 1px solid #5d899a;
+  border-radius: 7px;
+  box-shadow: 0 14px 32px #0009;
+  transform: none;
+}
+.np-kick { color: #70e4fb; }
+.more-btn { background: #102130; color: #dff7ff; border-color: #4e7586; }
+
+/* Keep the explicit accessibility high-contrast mode authoritative. */
+.a11y-contrast { color-scheme: light; }
+.a11y-contrast .hud { background: #000 !important; color: #fff; border-bottom: 3px solid #fff; }
+.a11y-contrast .ticket { background: #fff !important; color: #000; }
+.a11y-contrast .ex-body, .a11y-contrast .chat-log,
+.a11y-contrast .chat-suggest, .a11y-contrast .chat-form,
+.a11y-contrast .ws-grid, .a11y-contrast .learn-body { background: #fff !important; color: #000; }
+
+@media (max-width: 760px) {
+  .hud { padding: 6px 8px; }
+  .hud-right .btn.small { padding: 5px 8px; font-size: 10px; }
+  .chat-fab { padding: 10px 13px; }
+  .prompt { max-width: calc(100% - 20px); }
+}
+
+/* =========================================================
+   ACCESSIBLE DAYLIGHT INTERFACE
+   The museum can retain a dark ceiling without forcing every reading surface
+   into low-contrast night mode. These rules deliberately keep text, disabled
+   answers and keyboard focus visible in every learning flow.
+   ========================================================= */
+:focus-visible { outline: 4px solid #00718c; outline-offset: 3px; }
+
+.hud {
+  --paper: #f6f9fa;
+  --paper-2: #e4edf0;
+  --ink: #14242d;
+  --ink-2: #40545f;
+  --brass: #00718c;
+  --brick: #006982;
+  background: #edf3f5;
+  color: #14242d;
+  border-bottom: 2px solid #8297a1;
+  box-shadow: 0 4px 18px #07111a26;
+}
+.ticket { background: #fff; color: #14242d; border: 1px solid #a9b8be; }
+.ticket-sub, .doors-count, .minimap button { color: #40545f; }
+.doors-count b, .minimap button.here { color: #10212a; }
+.minimap button { background: #dce7eb; }
+.minimap button.here { background: #fff; box-shadow: inset 0 -3px 0 #00718c; }
+.hud-right .btn, .cam-controls .btn {
+  background: #fff;
+  color: #13242d;
+  border-color: #536d79;
+  box-shadow: none;
+}
+.hud .lang-pick { background: #fff; color: #13242d; border-color: #536d79; }
+
+.prompt {
+  background: #f7fbfc;
+  color: #10242e;
+  border: 2px solid #00718c;
+  box-shadow: inset 5px 0 0 #00a2c4, 0 10px 24px #07111a38;
+}
+.prompt::before { color: #00718c; text-shadow: none; }
+.hint { background: #f7fbfceb; color: #273d48; border-color: #687f8a; }
+.chat-fab {
+  background: #f7fbfcf5;
+  color: #10242e;
+  border: 2px solid #00718c;
+  box-shadow: inset 5px 0 0 #00a2c4, 0 10px 24px #07111a3d;
+}
+.chat-fab svg { color: #00718c; }
+.chat-fab:hover { background: #e5f7fb; }
+
+dialog.sheet {
+  --paper: #f6f9fa;
+  --paper-2: #e4edf0;
+  --ink: #14242d;
+  --ink-2: #40545f;
+  --brass: #00718c;
+  --brick: #006982;
+  background: #f6f9fa;
+  color: #14242d;
+  border: 2px solid #526b77;
+  box-shadow: 0 28px 80px #07111a80;
+}
+dialog::backdrop { background: #15222c9c; backdrop-filter: blur(5px); }
+.close, .read-btn {
+  background: #fff;
+  color: #14242d;
+  border: 2px solid #526b77;
+}
+.close:hover, .read-btn:hover { background: #e5f7fb; }
+.ex-head { background: #edf4f6; border-bottom: 2px solid #9aabb3; }
+.ex-head h2, .status { color: #10212a; }
+.catalog { color: #14242d; }
+.ex-meta, .voice-by, .learn-lead, .cmp-hint { color: #243944; }
+.tabs { background: #e4edf0; border-bottom: 2px solid #9aabb3; }
+.tabs button { color: #3b515c; }
+.tabs button[aria-selected="true"] {
+  background: #fff;
+  border-color: #607985;
+  color: #005f76;
+  box-shadow: inset 0 3px 0 #007f9c;
+}
+.ex-body, .chat-log, .chat-suggest, .chat-form, .ws-grid, .learn-body {
+  background: #fff;
+  color: #14242d;
+  border-color: #9aabb3;
+}
+.ex-foot { background: #edf4f6; border-color: #9aabb3; }
+.ex-visual { background: #0d1720; border-color: #6d838e; }
+.voice {
+  color: #14242d;
+  border-left: 4px solid #0086a3;
+  background: #e9f6f9;
+}
+.fold, ul.left li, .opts button, .msg.bot, .chat-suggest button,
+.part, .wing-card, .rules-chat, .term-pop {
+  background: #f2f6f7;
+  color: #14242d;
+  border-color: #8297a1;
+  box-shadow: none;
+}
+.opts button:hover:not(:disabled), .term:hover, .term:focus-visible { background: #dff3f7; }
+.msg.me { background: #075f74; color: #fff; }
+.chat-form input { background: #fff; color: #14242d; border-color: #526b77; }
+.note-panel { background: #f8fbfcee; color: #14242d; border: 2px solid #526b77; }
+.np-kick { color: #14242d; }
+.more-btn { background: #fff; color: #14242d; border-color: #526b77; }
+
+.riddle-q { color: #14242d; background: #e9f6f9; border-left-color: #0086a3; }
+.riddle-opts button,
+.riddle-opts button:disabled {
+  background: #fff;
+  color: #14242d !important;
+  border-color: #899ba4;
+  opacity: 1;
+}
+.riddle-opts button:hover:not(:disabled) { background: #e6f6f9; border-color: #16333f; }
+.riddle-opts button.no,
+.riddle-opts button.no:disabled {
+  opacity: 1;
+  background: #e6ebed;
+  color: #273b45 !important;
+  border-color: #6e7d84;
+  text-decoration: line-through;
+}
+.riddle-opts button.yes,
+.riddle-opts button.yes:disabled {
+  background: #d8f0df;
+  color: #123b24 !important;
+  border-color: #287348;
+}
+.ro-name { color: inherit !important; font-weight: 800; text-shadow: none; }
+.riddle-fb { color: #14242d; }
+
+/* Text stays dark on every light reading surface. Color is reserved for
+   borders, icons and exhibit markers so important wording never fades. */
+dialog.sheet :is(.catalog, .rules-level, .wing-list, .story-level, .ex-meta,
+  .voice-by, .learn-lead, .cmp-hint, .np-kick, figcaption span, small) {
+  color: #243944 !important;
+  opacity: 1;
+}
+dialog.sheet :is(h1, h2, h3, h4, p, li, summary, label, .ro-name, .fb) {
+  color: #14242d;
+}
+
+.intro-card {
+  --paper: #f6f9fa;
+  --paper-2: #e4edf0;
+  --ink: #14242d;
+  --ink-2: #40545f;
+  --brass: #00718c;
+  --brick: #006982;
+  background: #f7fafb;
+  color: #14242d;
+  border: 2px solid #526b77;
+  box-shadow: 0 26px 70px #07111a70;
+  backdrop-filter: blur(14px);
+}
+.intro-card::before { background: linear-gradient(90deg, #007f9c, #8ac8d6 55%, transparent); }
+.intro-card > p, .intro-credit, .place-pick button span:not(.pp-orb),
+.mode-pick button span, .level-pick button span { color: #40545f; }
+.intro-card :is(input, .lang-select, .place-pick button, .mode-pick button,
+  .level-pick button, .chips button, .seg button) {
+  background: #fff;
+  color: #14242d;
+  border-color: #6b808a;
+  box-shadow: none;
+}
+.intro-card :is(.place-pick button, .mode-pick button, .level-pick button,
+  .chips button, .seg button)[aria-pressed="true"] {
+  background: #dff3f7;
+  color: #10242e;
+  border-color: #00718c;
+  box-shadow: inset 4px 0 0 #00718c;
+}
+.intro-card .maker-preview { background: radial-gradient(circle at 50% 35%, #fff, #dce8ec 72%); border-color: #6b808a; }
+.intro-card .kicker { color: #006982; }
+
+/* Keep every HUD control reachable at laptop/tablet widths: the control
+ * group wraps to a second row instead of pushing Journal and Robot Bay
+ * past the right edge of the screen. */
+.hud { flex-wrap: wrap; row-gap: 6px; }
+.hud-right { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+
+/* =========================================================
+ * STORY LAYER: hook line, numbered story beats, chapter cards
+ * Large, high-contrast type and one idea per card for ages 8 to 17.
+ * ========================================================= */
+.ex-body .story-hook, .story-hook {
+  margin: 0 0 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #10212a;
+  color: #ffffff;
+  font: 800 clamp(20px, 2.3vw, 26px)/1.3 var(--serif);
+  letter-spacing: -0.01em;
+}
+.ex-body .beat-label, .beat-label {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 10px;
+  color: #005f76;
+  font: 800 15px/1.2 var(--sans);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.beat-num {
+  display: inline-grid; place-items: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #007f9c; color: #fff;
+  font: 800 14px var(--mono);
+}
+.voice.beat.challenge { border-left-color: #b4471b; background: #fdf1ea; }
+.voice.beat.found { border-left-color: #2f7d32; background: #edf7ee; }
+.voice.beat.legacy { border-left-color: #6b4fb3; background: #f3effb; }
+.beat-progress { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.beat-progress .voice-by { margin: 0; }
+.beat-dots { display: inline-flex; gap: 6px; }
+.beat-dot { width: 10px; height: 10px; border-radius: 50%; background: #c3d0d5; }
+.beat-dot.done { background: #5b8796; }
+.beat-dot.on { background: #007f9c; box-shadow: 0 0 0 3px #b9e6f0; }
+.ex-more { margin-top: 20px; padding-top: 14px; border-top: 2px dashed #b7c5cb; }
+.ex-more h3 { margin: 0 0 6px; font-size: 17px; color: #10212a; }
+.ex-more .fold-body { padding-bottom: 10px; }
+
+.chapter-sheet .ex-head { background: linear-gradient(120deg, #0b1a2a, #12324a); border-bottom: 3px solid #4fd2ef; }
+.chapter-sheet .ex-head .catalog { color: #9fe6f6; font: 700 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.chapter-sheet .ex-head h2 { color: #ffffff; font-size: clamp(28px, 4vw, 40px); }
+.chapter-sheet .read-btn { background: #ffffff; }
+.ch-body { font-size: 19px; line-height: 1.55; }
+.story-body .ch-lines p, .ch-lines p { margin: 0 0 12px; color: #14242d; }
+.ch-lines p:first-child { font-weight: 700; }
+.ch-back { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: #f2f6f7; color: #243944; font-size: 16px; }
+.ch-guide { margin: 6px 0 0; color: #243944; font: 600 13px var(--mono); }
+.ch-final { margin: 0 0 18px; padding: 16px 18px; border-radius: 12px; background: #f2f6f7; border-left: 4px solid #6b4fb3; }
+.ch-final h3 { margin: 2px 0 8px; font-size: 22px; color: #10212a; }
+.ch-final .ch-lines p { font-size: 17px; }
+/* The global readable-dialog rule forces dark text with !important; these
+ * light-on-dark surfaces need the same weight to stay high contrast. */
+dialog.sheet .story-hook { color: #ffffff !important; }
+dialog.sheet.chapter-sheet .ex-head .catalog { color: #9fe6f6 !important; }
+dialog.sheet.chapter-sheet .ex-head h2 { color: #ffffff !important; }
+dialog.sheet .beat-label { color: #005f76 !important; }

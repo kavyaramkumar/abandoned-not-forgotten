@@ -282,7 +282,7 @@
   /* =========================================================
    * THREE.JS SETUP
    * ========================================================= */
-  const WALL_H = 4.2, CUT_H = 0.45, WALL_T = 0.3, R_PLAYER = 0.35;
+  const WALL_H = 4.2, WALL_T = 0.3, R_PLAYER = 0.35;
   const X0 = -8, X1 = 8, Z0 = -6, Z1 = 6;
   const DOOR_W = 2.4;
   const SLOT_POS = {
@@ -292,6 +292,7 @@
 
   let renderer, scene, camera, sun, kid, robot, roomGroup, ground, skyPlace = null, userZoomed = false;
   let sides = [], wallMeshes = [], pickables = [], obstacles = [], spots = [], doorObjs = [], spin = [];
+  let signOccluders = [];
   const boards = [];
   const ray = new T.Raycaster();
   const V = (x, y, z) => new T.Vector3(x, y, z);
@@ -305,10 +306,12 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     scene = new T.Scene();
-    scene.background = skyFor(PLACE());
-    camera = new T.PerspectiveCamera(45, 1, 0.1, 300);
-    scene.add(new T.HemisphereLight("#fff4e0", "#4a3a2c", 1.25));
-    scene.add(new T.AmbientLight("#ffffff", 0.25));
+    // The playable museum is an interior. A dark architectural background is a
+    // final safety net behind the sealed room geometry, never an outdoor world.
+    scene.background = new T.Color("#070b14");
+    camera = new T.PerspectiveCamera(55, 1, 0.08, 120);
+    scene.add(new T.HemisphereLight("#eaf3ff", "#171b26", 1.05));
+    scene.add(new T.AmbientLight("#ffffff", 0.18));
     sun = new T.DirectionalLight("#fff1d6", 1.3);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -316,9 +319,10 @@
     sun.shadow.bias = -0.0008;
     sun.position.set(7, 18, 9);
     scene.add(sun, sun.target);
-    ground = new T.Mesh(new T.PlaneGeometry(200, 200), new T.MeshBasicMaterial({ color: "#14120f" }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.02;
+    // Retained for compatibility with older saved sessions; room floors now
+    // completely cover it and the outdoor world is no longer constructed.
+    ground = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ color: "#070b14" }));
+    ground.visible = false;
     scene.add(ground);
     resize();
     addEventListener("resize", resize);
@@ -328,13 +332,8 @@
     const st = $("#stage");
     renderer.setSize(st.clientWidth, st.clientHeight, false);
     camera.aspect = st.clientWidth / st.clientHeight;
-    camera.fov = camera.aspect < 1 ? 60 : 45;
+    camera.fov = camera.aspect < 1 ? 62 : 55;
     camera.updateProjectionMatrix();
-    // pull the camera back far enough to fit the room's width (tall phone screens need more)
-    if (!userZoomed) {
-      const hf = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
-      want.dist = Math.max(12.5, Math.min(21, 8.6 / Math.tan(hf / 2)));
-    }
   }
   // what you see past the cut-away walls: an evening sky on Earth, black space on
   // the Moon (with Earth hanging in it), a dusty butterscotch sky on Mars
@@ -496,10 +495,10 @@
     if (!scene || skyPlace === pl) return;
     skyPlace = pl;
     if (scene.background && scene.background.dispose) scene.background.dispose();
-    scene.background = skyFor(pl);
-    scene.fog = new T.Fog(SKY[pl].fog, 32, 95);
+    scene.background = new T.Color(pl === "mars" ? "#120b09" : pl === "moon" ? "#06070b" : "#070b14");
+    scene.fog = null;
     ground.visible = false;
-    buildWorld(pl);
+    if (world) world.visible = false;
     // daylight on Earth, harsh white sun on the Moon, warm hazy light on Mars
     sun.color.set(pl === "moon" ? "#ffffff" : pl === "mars" ? "#ffd9b0" : "#fff1d6");
   }
@@ -516,14 +515,14 @@
     const tx = texCache[key];
     const map = tx.map.clone(), em = tx.emissive.clone();
     [map, em].forEach((x) => { x.needsUpdate = true; x.repeat.set((X1 - X0) / 4, (Z1 - Z0) / 4); });
-    return new T.MeshStandardMaterial({ map, emissiveMap: em, emissive: "#ffffff", emissiveIntensity: 0.9, roughness: 0.22, metalness: 0.2 });
+    return new T.MeshStandardMaterial({ map, emissiveMap: em, emissive: "#ffffff", emissiveIntensity: 0.2, roughness: 0.36, metalness: 0.12 });
   }
   function wallMats(color, glow) {
     glow = glow || "#5ef2ff";
     const key = "w" + color + glow;
-    if (!texCache[key]) texCache[key] = Models.techWallTex(color, glow);
-    const face = new T.MeshStandardMaterial({ map: texCache[key].map, emissiveMap: texCache[key].emissive, emissive: "#ffffff", emissiveIntensity: 0.85, roughness: 0.45, metalness: 0.15 });
-    const top = new T.MeshStandardMaterial({ color: "#20242e", roughness: 0.6, metalness: 0.3 });
+    if (!texCache[key]) texCache[key] = color === "#3a3e42" ? atriumWallSurfaceTex(color, glow) : Models.techWallTex(color, glow);
+    const face = new T.MeshStandardMaterial({ map: texCache[key].map, emissiveMap: texCache[key].emissive, emissive: "#ffffff", emissiveIntensity: color === "#3a3e42" ? 0.52 : 0.23, roughness: 0.58, metalness: 0.08 });
+    const top = new T.MeshStandardMaterial({ color: "#20242e", roughness: 0.68, metalness: 0.18 });
     return [face, face, top, face, face, face];
   }
   const add = (o) => { roomGroup.add(o); return o; };
@@ -537,11 +536,238 @@
     return t;
   }
 
+  function atriumWallSurfaceTex(base, glow) {
+    const map = canvasTex(512, 512, (c, W, H) => {
+      const g = c.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, "#20272d"); g.addColorStop(0.48, base); g.addColorStop(1, "#171d22");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      // Layered graphite panels and brushed structural ribs.
+      c.fillStyle = "rgba(255,255,255,.035)"; c.fillRect(20, 22, W - 40, H - 44);
+      c.strokeStyle = "rgba(255,255,255,.16)"; c.lineWidth = 3; c.strokeRect(20, 22, W - 40, H - 44);
+      [0, .25, .5, .75, 1].forEach((f) => {
+        const x = f * W;
+        c.fillStyle = "rgba(8,12,16,.34)"; c.fillRect(x - 7, 0, 14, H);
+        c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(x + 6, 0, 2, H);
+      });
+      [0.14, 0.52, 0.88].forEach((f) => {
+        c.fillStyle = "rgba(4,8,12,.42)"; c.fillRect(0, f * H, W, 7);
+        c.fillStyle = "rgba(255,255,255,.16)"; c.fillRect(0, f * H + 7, W, 2);
+      });
+      // Overscale orbital diagram gives otherwise blank spans a focal gesture.
+      c.save(); c.translate(W * .68, H * .43); c.rotate(-.22);
+      c.strokeStyle = "rgba(182,225,236,.58)"; c.lineWidth = 3;
+      for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(0, 0, 70 + i * 44, 28 + i * 18, 0, 0, Math.PI * 2); c.stroke(); }
+      c.fillStyle = "rgba(230,246,250,.92)"; c.beginPath(); c.arc(0, 0, 20, 0, Math.PI * 2); c.fill();
+      c.restore();
+      // Constellation path and labeled data ticks are decorative, not required text.
+      const pts = [[54,330],[108,286],[165,350],[228,304],[292,372],[348,324],[430,356]];
+      c.strokeStyle = "rgba(116,214,235,.82)"; c.lineWidth = 2; c.beginPath();
+      pts.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke();
+      pts.forEach(([x,y],i) => { c.fillStyle = i % 2 ? "#f0c47a" : "#82dff0"; c.beginPath(); c.arc(x,y,5,0,Math.PI*2); c.fill(); });
+    });
+    const emissive = canvasTex(512, 512, (c, W, H) => {
+      c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+      c.strokeStyle = glow; c.globalAlpha = .45; c.lineWidth = 4;
+      c.beginPath(); c.moveTo(0, H * .14); c.lineTo(W, H * .14); c.moveTo(0, H * .88); c.lineTo(W, H * .88); c.stroke();
+      [[54,330],[108,286],[165,350],[228,304],[292,372],[348,324],[430,356]].forEach(([x,y]) => { c.beginPath(); c.arc(x,y,4,0,Math.PI*2); c.fillStyle=glow; c.fill(); });
+    });
+    [map, emissive].forEach((tx) => { tx.wrapS = T.RepeatWrapping; });
+    return { map, emissive };
+  }
+
+  // Beveled architectural panels replace the hard-edged box language that made
+  // the museum feel assembled from toy bricks.
+  function roundedPanelGeometry(w, h, d, radius, tile) {
+    const r = Math.min(radius || 0.16, w / 2, h / 2);
+    const s = new T.Shape();
+    s.moveTo(-w / 2 + r, -h / 2);
+    s.lineTo(w / 2 - r, -h / 2); s.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    s.lineTo(w / 2, h / 2 - r); s.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+    s.lineTo(-w / 2 + r, h / 2); s.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+    s.lineTo(-w / 2, -h / 2 + r); s.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    const g = new T.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: Math.min(0.045, d * 0.22), bevelThickness: Math.min(0.045, d * 0.22), curveSegments: 6 });
+    g.center();
+    // ExtrudeGeometry's default UVs are raw shape coordinates in meters, so a
+    // 0..1 canvas texture clamps into streaks and the back cap reads mirrored.
+    // Remap both caps to the panel: v spans the full height, and u either spans
+    // the width (signs, screens) or repeats every `tile` meters (long walls).
+    const pos = g.attributes.position, nrm = g.attributes.normal, uv = g.attributes.uv;
+    for (let i = 0; i < pos.count; i++) {
+      const nz = nrm.getZ(i);
+      if (Math.abs(nz) < 0.5) continue;
+      const x = nz > 0 ? pos.getX(i) + w / 2 : w / 2 - pos.getX(i);
+      uv.setXY(i, tile ? x / tile : x / w, (pos.getY(i) + h / 2) / h);
+    }
+    uv.needsUpdate = true;
+    return g;
+  }
+
+  // A gently bowed UV surface turns mission imagery into part of the room,
+  // closer to a panoramic museum wall than a framed television.
+  function curvedPanelGeometry(w, h, bow, segments) {
+    const n = segments || 36, p = [], uv = [], ix = [];
+    for (let y = 0; y <= 1; y++) for (let i = 0; i <= n; i++) {
+      const u = i / n, x = (u - 0.5) * w;
+      p.push(x, (y - 0.5) * h, bow * (1 - Math.pow(x / (w / 2), 2)));
+      uv.push(u, y);
+    }
+    for (let i = 0; i < n; i++) {
+      const a = i, b = i + 1, c = n + 1 + i, d = c + 1;
+      ix.push(a, b, d, a, d, c);
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(p, 3));
+    g.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    g.setIndex(ix); g.computeVertexNormals();
+    return g;
+  }
+
+  // Deterministic value noise so every visit to a gallery looks the same.
+  function hash2(x, y, seed) {
+    const n = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+  function vnoise(x, y, seed) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash2(xi, yi, seed), b = hash2(xi + 1, yi, seed), c = hash2(xi, yi + 1, seed), d = hash2(xi + 1, yi + 1, seed);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function fbm(x, y, seed, oct) {
+    let sum = 0, amp = 0.5, f = 1;
+    for (let i = 0; i < (oct || 5); i++) { sum += amp * vnoise(x * f, y * f, seed + i * 7); amp *= 0.5; f *= 2.03; }
+    return sum;
+  }
+  const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+
+  /* A landscaped diorama bank along one side wall. It rises from the visitor
+   * aisle toward the wall, and is cut down to the floor wherever a door (or a
+   * secret panel) sits on that wall so it never blocks a route. */
+  function terrainPatchGeometry(w, d, seed, moon, wallSide, cuts) {
+    const nx = 64, nz = 96, p = [], uv = [], ix = [];
+    for (let z = 0; z <= nz; z++) for (let x = 0; x <= nx; x++) {
+      const u = x / nx, v = z / nz, px = (u - 0.5) * w, pz = (v - 0.5) * d;
+      const t = (px * wallSide / (w / 2) + 1) / 2; // 0 at aisle edge, 1 at wall
+      let y = 0.62 * Math.pow(t, 1.5) + (fbm(px * 0.55, pz * 0.55, seed, 5) - 0.5) * 0.42 * smooth(0.12, 0.6, t);
+      y += (fbm(px * 3.1, pz * 3.1, seed + 11, 3) - 0.5) * 0.05 * smooth(0.05, 0.3, t);
+      y = Math.max(0, y);
+      if (moon) {
+        [[-0.6, -2.6, 0.62], [0.5, 1.9, 0.45], [-0.2, 3.9, 0.3]].forEach(([cx, cz, r]) => {
+          const q = Math.hypot(px - cx, pz - cz);
+          if (q < r) y -= (1 - (q / r) * (q / r)) * 0.2;
+          else if (q < r * 1.35) y += (1 - Math.abs(q - r * 1.15) / (r * 0.2)) * 0.06;
+        });
+      } else {
+        // wind-carved ripples across Martian sand
+        y += Math.sin(pz * 5.2 + fbm(px, pz, seed + 3, 2) * 4) * 0.018 * smooth(0.15, 0.6, t);
+      }
+      y *= smooth(0.0, 0.12, t);
+      cuts.forEach((cz) => { y *= smooth(1.5, 2.3, Math.abs(pz - cz)); });
+      p.push(px, y - 0.03, pz); uv.push(u, v);
+    }
+    for (let z = 0; z < nz; z++) for (let x = 0; x < nx; x++) {
+      const a = z * (nx + 1) + x, b = a + 1, c = a + nx + 1, e = c + 1;
+      ix.push(a, c, b, b, c, e);
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute("position", new T.Float32BufferAttribute(p, 3));
+    g.setAttribute("uv", new T.Float32BufferAttribute(uv, 2));
+    g.setIndex(ix); g.computeVertexNormals();
+    return g;
+  }
+
+  /* Photographic-style regolith: layered grain, dust patches, scattered
+   * pebbles with lit tops and cast shadows, and (Moon) small impact pits.
+   * The same canvas drives a bump map so the grain catches the spotlights. */
+  function regolithTex(kind) {
+    const key = "regolith-" + kind;
+    if (texCache[key]) return texCache[key];
+    const N = 1024, seed = kind === "moon" ? 3 : 9;
+    const pal = kind === "moon"
+      ? { lo: [52, 51, 50], hi: [128, 125, 121], dust: [148, 145, 140], peb: [40, 39, 38] }
+      : { lo: [96, 42, 24], hi: [196, 104, 62], dust: [214, 150, 104], peb: [58, 34, 26] };
+    const color = document.createElement("canvas"), bump = document.createElement("canvas");
+    color.width = color.height = bump.width = bump.height = N;
+    const c = color.getContext("2d"), b = bump.getContext("2d");
+    const img = c.createImageData(N, N), bim = b.createImageData(N, N);
+    const S = 1 / 64;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      // tileable: sample noise on a torus by blending wrapped coordinates
+      const fx = x * S, fy = y * S, P = N * S;
+      const n = (fbm(fx, fy, seed, 6) * (P - fx) * (P - fy) + fbm(fx - P, fy, seed, 6) * fx * (P - fy)
+        + fbm(fx, fy - P, seed, 6) * (P - fx) * fy + fbm(fx - P, fy - P, seed, 6) * fx * fy) / (P * P);
+      const grain = hash2(x, y, seed) - 0.5;
+      const patch = smooth(0.48, 0.7, n);
+      const k = Math.min(1, Math.max(0, 0.18 + n * 0.95 + grain * 0.16));
+      const i = (y * N + x) * 4;
+      for (let ch = 0; ch < 3; ch++) {
+        let v = pal.lo[ch] + (pal.hi[ch] - pal.lo[ch]) * k;
+        v = v + (pal.dust[ch] - v) * patch * 0.35;
+        img.data[i + ch] = v;
+      }
+      img.data[i + 3] = 255;
+      const h = 128 + (n - 0.5) * 120 + grain * 60;
+      bim.data[i] = bim.data[i + 1] = bim.data[i + 2] = h; bim.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0); b.putImageData(bim, 0, 0);
+    // scattered pebbles and gravel (drawn wrapped so the tile stays seamless)
+    let r = seed * 999;
+    const rnd = () => { r = (r * 16807) % 2147483647; return r / 2147483647; };
+    const wrapDraw = (x, y, rad, fn) => [[0, 0], [N, 0], [-N, 0], [0, N], [0, -N]].forEach(([ox, oy]) => {
+      if (x + ox > -rad && x + ox < N + rad && y + oy > -rad && y + oy < N + rad) fn(x + ox, y + oy);
+    });
+    if (kind === "moon") {
+      for (let i = 0; i < 46; i++) {
+        const x = rnd() * N, y = rnd() * N, rad = 4 + Math.pow(rnd(), 3) * 38;
+        wrapDraw(x, y, rad * 1.4, (px, py) => {
+          const g = c.createRadialGradient(px - rad * 0.25, py - rad * 0.25, rad * 0.1, px, py, rad);
+          g.addColorStop(0, "rgba(40,40,40,.42)"); g.addColorStop(0.8, "rgba(60,60,60,.16)"); g.addColorStop(1, "rgba(0,0,0,0)");
+          c.fillStyle = g; c.beginPath(); c.arc(px, py, rad, 0, Math.PI * 2); c.fill();
+          c.strokeStyle = "rgba(225,222,215,.35)"; c.lineWidth = Math.max(1, rad * 0.12);
+          c.beginPath(); c.arc(px, py, rad * 1.05, Math.PI * 0.15, Math.PI * 1.1); c.stroke();
+          b.fillStyle = "rgba(0,0,0,.5)"; b.beginPath(); b.arc(px, py, rad, 0, Math.PI * 2); b.fill();
+          b.strokeStyle = "rgba(255,255,255,.55)"; b.lineWidth = Math.max(1, rad * 0.18); b.beginPath(); b.arc(px, py, rad * 1.05, 0, Math.PI * 2); b.stroke();
+        });
+      }
+    }
+    for (let i = 0; i < 2600; i++) {
+      const x = rnd() * N, y = rnd() * N, rad = 0.7 + Math.pow(rnd(), 4) * 9;
+      const shade = 0.55 + rnd() * 0.6;
+      wrapDraw(x, y, rad * 2, (px, py) => {
+        c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(px + rad * 0.35, py + rad * 0.35, rad, rad * 0.8, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = `rgb(${pal.peb.map((v) => Math.min(255, v * shade * 1.6)).join(",")})`;
+        c.beginPath(); c.ellipse(px, py, rad, rad * (0.65 + rnd() * 0.3), rnd() * 3, 0, Math.PI * 2); c.fill();
+        if (rad > 2.5) { c.fillStyle = "rgba(255,255,255,.18)"; c.beginPath(); c.arc(px - rad * 0.3, py - rad * 0.3, rad * 0.4, 0, Math.PI * 2); c.fill(); }
+        b.fillStyle = "rgba(255,255,255,.6)"; b.beginPath(); b.arc(px, py, rad, 0, Math.PI * 2); b.fill();
+      });
+    }
+    const map = new T.CanvasTexture(color), bmp = new T.CanvasTexture(bump);
+    map.encoding = T.sRGBEncoding;
+    [map, bmp].forEach((tx) => { tx.wrapS = tx.wrapT = T.RepeatWrapping; tx.anisotropy = 8; });
+    return (texCache[key] = { map, emissive: bmp });
+  }
+
+  /* An irregular boulder: a subdivided sphere pushed around by 3D noise, then
+   * flattened so it sits into the ground rather than balancing on a point. */
+  function boulderGeometry(size, seed) {
+    const g = new T.IcosahedronGeometry(size, 4);
+    const pos = g.attributes.position, v = new T.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).normalize();
+      const n = fbm(v.x * 1.6 + seed, v.y * 1.6 + v.z * 1.3, seed, 4);
+      const facet = Math.abs(Math.sin(v.x * 3.1 + seed) * Math.cos(v.z * 2.7 - seed)) * 0.12;
+      const r = size * (0.72 + n * 0.62 - facet);
+      pos.setXYZ(i, v.x * r * 1.25, Math.max(v.y * r * 0.7, -size * 0.22), v.z * r);
+    }
+    g.computeVertexNormals();
+    return g;
+  }
+
   /* =========================================================
    * BUILD ONE ROOM
    * ========================================================= */
   function theme(r) {
-    if (r.type === "atrium") return { wall: "#cfd8e2", floor: "tech-light", glow: "#5ef2ff", kind: t("kind.start") };
+    if (r.type === "atrium") return { wall: "#3a3e42", floor: "tech-light", glow: "#f4fbff", kind: t("kind.start") };
     if (r.type === "mc") return { wall: "#1c2846", floor: "tech-dark", glow: "#5ef2ff", kind: t("kind.final") };
     if (r.type === "hidden") return { wall: "#24212e", floor: "tech-violet", glow: "#e8b53a", kind: t("kind.secret") };
     if (r.type === "hall") return { wall: M.halls[r.hall].wall, floor: "tech-mid", glow: "#5ef2ff", kind: t("kind.hall") };
@@ -565,6 +791,7 @@
     roomGroup = new T.Group();
     scene.add(roomGroup);
     sides = []; wallMeshes = []; pickables = []; obstacles = []; spots = []; doorObjs = []; spin = [];
+    signOccluders = [];
     boards.length = 0;
     nearSpot = null;
     $("#prompt").hidden = true;
@@ -589,10 +816,14 @@
     spin.push({ o: stars, twinkle: true });
     visibleDoors.forEach((d) => buildDoor(id, d));
     r.doors.filter((d) => d.hidden && !R().revealed[`${id}:${d.i}`]).forEach((d) => buildSecretPanel(id, d));
-    // windows on the side walls wherever there's no door (and no secret door), and a skylight frame overhead
+    // Framed environmental displays fill otherwise blank bays. They are
+    // unmistakably wall-mounted screens, not openings to an outdoor world.
     const used = new Set(r.doors.map((d) => d.slot));
-    ["W1", "W2", "E1", "E2"].concat(r.type === "hall" || r.type === "mc" ? ["N1", "N2"] : []).filter((sl) => !used.has(sl)).forEach((sl) => buildWindow(SLOT_POS[sl]));
-    buildSkylight();
+    const mediaSlots = r.type === "atrium" ? [] : ["W1", "W2", "E1", "E2"].concat(r.type === "hall" || r.type === "mc" ? ["N1", "N2"] : []);
+    const imgs = galleryImages(r);
+    mediaSlots.filter((sl) => !used.has(sl)).forEach((sl, i) => buildWindow(SLOT_POS[sl], imgs[i]));
+    buildSkylight(th, r);
+    buildArchitecture(th);
 
     if (r.type === "atrium") buildAtrium();
     else if (r.type === "exhibit") buildExhibit(r);
@@ -605,8 +836,7 @@
 
   function buildWalls(color, doors, glow) {
     const mats = wallMats(color, glow);
-    // a glowing trim line where the wall meets the floor
-    const base = new T.MeshBasicMaterial({ color: glow || "#5ef2ff", toneMapped: false });
+    const base = new T.MeshStandardMaterial({ color: "#4d5662", emissive: glow || "#5ef2ff", emissiveIntensity: 0.16, metalness: 0.42, roughness: 0.46 });
     const defs = [
       { side: "N", n: [0, 1], line: Z0, from: X0, to: X1 },
       { side: "S", n: [0, -1], line: Z1, from: X0, to: X1 },
@@ -628,18 +858,42 @@
       const s = { side: dfn.side, n: V(dfn.n[0], 0, dfn.n[1]), group, decor, h: WALL_H, inner, mid, alongX };
       segs.forEach(([a, b]) => {
         const len = b - a, c = (a + b) / 2;
-        const box = new T.Mesh(new T.BoxGeometry(alongX ? len : WALL_T, WALL_H, alongX ? WALL_T : len), mats);
-        box.position.set(alongX ? c : mid, WALL_H / 2, alongX ? mid : c);
-        box.castShadow = box.receiveShadow = true;
-        box.userData.side = s;
-        group.add(box);
-        wallMeshes.push(box);
-        const bb = new T.Mesh(new T.BoxGeometry(alongX ? len : 0.04, 0.05, alongX ? 0.04 : len), base);
+        const panel = new T.Mesh(roundedPanelGeometry(len, WALL_H - 0.08, WALL_T, 0.22, mats[0].map && mats[0].map.wrapS === T.RepeatWrapping ? WALL_H : 0), mats[0]);
+        panel.position.set(alongX ? c : mid, WALL_H / 2, alongX ? mid : c);
+        panel.rotation.y = alongX ? 0 : Math.PI / 2;
+        panel.castShadow = panel.receiveShadow = true;
+        panel.userData.side = s;
+        group.add(panel);
+        wallMeshes.push(panel);
+        const bb = new T.Mesh(new T.CylinderGeometry(0.035, 0.035, len - 0.12, 10), base);
+        if (alongX) bb.rotation.z = Math.PI / 2;
+        else bb.rotation.x = Math.PI / 2;
         const bi = inner + sgn * 0.02;
-        bb.position.set(alongX ? c : bi, 0.03, alongX ? bi : c);
+        bb.position.set(alongX ? c : bi, 0.12, alongX ? bi : c);
         group.add(bb);
       });
       sides.push(s);
+    });
+  }
+
+  /* Museum-wide architectural language: one large elliptical ceiling gesture
+   * and smooth ribs integrate the room instead of stacking repeated boxes. */
+  function buildArchitecture(th) {
+    const shellMat = new T.MeshStandardMaterial({ color: "#303744", metalness: 0.34, roughness: 0.48 });
+    const accentMat = new T.MeshStandardMaterial({ color: "#8995a3", emissive: th.glow, emissiveIntensity: 0.18, metalness: 0.52, roughness: 0.32 });
+    [0, Math.PI / 2].forEach((rot, i) => {
+      const halo = add(new T.Mesh(new T.TorusGeometry(i ? 3.55 : 4.7, 0.085, 10, 72), i ? accentMat : shellMat));
+      halo.rotation.x = Math.PI / 2;
+      halo.rotation.z = rot;
+      halo.scale.set(i ? 1.34 : 1.42, i ? 0.88 : 0.92, 1);
+      halo.position.y = WALL_H - 0.2 - i * 0.06;
+    });
+    // Tapered oval corner ribs soften the transition between wall and canopy.
+    [[X0 + 0.42, Z0 + 0.42], [X1 - 0.42, Z0 + 0.42], [X0 + 0.42, Z1 - 0.42], [X1 - 0.42, Z1 - 0.42]].forEach(([x, z]) => {
+      const rib = add(new T.Mesh(new T.CylinderGeometry(0.17, 0.28, WALL_H - 0.35, 18), shellMat));
+      rib.position.set(x, (WALL_H - 0.35) / 2, z);
+      rib.scale.set(1.35, 1, 0.72);
+      rib.castShadow = true;
     });
   }
   const sideOf = (name) => sides.find((s) => s.side === name);
@@ -720,10 +974,10 @@
     const sym = SYM[d.sym];
     const rot = Math.atan2(s.n.x, s.n.z);
     const state = doorState(roomId, d);
-    const frameMat = new T.MeshStandardMaterial({ color: sym.color, roughness: 0.5, metalness: 0.2 });
-    // pillars
+    const frameMat = new T.MeshStandardMaterial({ color: "#59626d", emissive: sym.color, emissiveIntensity: 0.12, roughness: 0.38, metalness: 0.58 });
+    // slim rounded jambs keep the wayfinding color without a toy-like frame
     [-1, 1].forEach((k) => {
-      const p = new T.Mesh(new T.BoxGeometry(0.32, WALL_H, 0.32), frameMat);
+      const p = new T.Mesh(new T.CylinderGeometry(0.13, 0.18, WALL_H - 0.2, 16), frameMat);
       const [x, z] = wallPoint(s, slot.along + k * (DOOR_W / 2 + 0.06), -0.1);
       p.position.set(x, WALL_H / 2, z);
       p.castShadow = true;
@@ -732,7 +986,7 @@
     // the door itself: a panel that slides up when it opens
     const panelTex = canvasTex(256, 340, (x, W, H) => drawDoorPanel(x, W, H, d, state));
     const dark = new T.MeshStandardMaterial({ color: "#1f2330", roughness: 0.4 });
-    const panel = new T.Mesh(new T.BoxGeometry(DOOR_W - 0.1, 3.1, 0.12), [dark, dark, dark, dark, new T.MeshBasicMaterial({ map: panelTex, toneMapped: false }), dark]);
+    const panel = new T.Mesh(roundedPanelGeometry(DOOR_W - 0.1, 3.1, 0.12, 0.18), new T.MeshBasicMaterial({ map: panelTex, toneMapped: false }));
     const [px, pz] = wallPoint(s, slot.along, -WALL_T / 2);
     panel.position.set(px, 1.55, pz);
     panel.rotation.y = rot;
@@ -760,24 +1014,28 @@
     strip.position.set(hx, HALL_H + 0.01, hz);
     s.group.add(strip);
     // lintel + sign above the door: "?" until you've been through it
-    const lintel = new T.Mesh(new T.BoxGeometry(DOOR_W + 0.3, WALL_H - 3.1, WALL_T), wallMats(theme(room(roomId)).wall, theme(room(roomId)).glow));
+    const lintel = new T.Mesh(roundedPanelGeometry(DOOR_W + 0.3, WALL_H - 3.1, WALL_T, 0.14), wallMats(theme(room(roomId)).wall, theme(room(roomId)).glow)[0]);
     const [lx, lz] = wallPoint(s, slot.along, -WALL_T / 2);
     lintel.position.set(lx, 3.1 + (WALL_H - 3.1) / 2, lz);
     lintel.rotation.y = rot;
     s.decor.add(lintel);
     const known = R().known[`${roomId}:${d.i}`];
     const signText = d.sealed ? t("door.mc") : LV().learn ? roomName(d.to) : !known ? "?" : LV().signs === "names" ? roomName(d.to) : t("door.been");
-    const sign = Models.board({ w: DOOR_W + 0.1, h: 0.66, ppm: 260, bg: "#1f2330", draw: (x, W, H) => {
-      x.fillStyle = sym.color; x.fillRect(0, H - 10, W, 10);
-      x.fillStyle = signText === "?" ? sym.color : "#f6f0e3";
+    const sign = Models.board({ w: DOOR_W + 0.3, h: 0.78, ppm: 300, bg: "#f6f9fa", draw: (x, W, H) => {
+      x.fillStyle = "#f6f9fa"; x.fillRect(0, 0, W, H);
+      x.strokeStyle = sym.color; x.lineWidth = 12; x.strokeRect(8, 8, W - 16, H - 16);
+      x.fillStyle = sym.color; x.fillRect(0, H - 14, W, 14);
+      x.fillStyle = signText === "?" ? sym.color : "#101820";
       let fs = signText === "?" ? H * 0.7 : H * 0.36;
-      x.font = `800 ${fs}px Fraunces, Georgia, serif`;
-      while (x.measureText(signText).width > W - 24 && fs > 10) { fs -= 2; x.font = `800 ${fs}px Fraunces, Georgia, serif`; }
+      x.font = `800 ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+      while (x.measureText(signText).width > W - 38 && fs > 12) { fs -= 2; x.font = `800 ${fs}px "Atkinson Hyperlegible", system-ui, sans-serif`; }
       x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillText(signText, W / 2, H * 0.47);
+      x.fillText(signText, W / 2, H * 0.45);
     } });
     boards.push(sign);
-    onWall(s, sign.mesh, slot.along, 3.65, 0.04);
+    // Pull signs forward and above the door lintel. This protected sightline
+    // prevents nearby planets, cases and door geometry from slicing the text.
+    onWall(s, sign.mesh, slot.along, 3.66, 0.24);
     // floor mat with the symbol (always visible, even when the wall is lowered)
     const matTex = canvasTex(256, 140, (x, W, H) => {
       x.fillStyle = sym.color; x.globalAlpha = 0.85; x.fillRect(0, 0, W, H); x.globalAlpha = 1;
@@ -791,10 +1049,12 @@
     mat.receiveShadow = true;
     const [sx, sz] = wallPoint(s, slot.along, 1.55);
     const spot = addSpot({ kind: "door", door: d, pos: [sx, sz], face: rot + Math.PI, meshes: [panel, mat] });
-    doorObjs.push({ door: d, panel, mat, spot, side: s, slot, rot });
+    doorObjs.push({ door: d, panel, mat, spot, side: s, slot, rot, sign: sign.mesh });
   }
 
-  /* a window onto the world outside: Earth's park, the Moon's craters and Earth in the sky, or Mars's dunes */
+  /* Environmental imagery shown on a museum display. The deep housing,
+   * indicator lights and luminous glass make this read as an exhibit screen,
+   * never as a hole in the building envelope. */
   function windowTex(place) {
     const key = "window-" + place;
     if (texCache[key]) return texCache[key].map;
@@ -842,37 +1102,89 @@
     texCache[key] = { map: tex, emissive: tex };
     return tex;
   }
-  function buildWindow(slot) {
+  /* A real NASA image cropped to fill a display (like CSS object-fit: cover). */
+  function coverPhotoTex(src, aspect) {
+    const tex = photoLoader.load(src, (t) => {
+      const ia = t.image.width / t.image.height;
+      if (ia > aspect) { t.repeat.set(aspect / ia, 1); t.offset.set((1 - aspect / ia) / 2, 0); }
+      else { t.repeat.set(1, ia / aspect); t.offset.set(0, (1 - ia / aspect) / 2); }
+      t.needsUpdate = true;
+    });
+    tex.encoding = T.sRGBEncoding;
+    tex.anisotropy = 4;
+    return tex;
+  }
+  /* Gallery displays show real imagery in the exhibit's own context: the
+   * orbital view of where this machine rests today, then photos of its
+   * neighbors in the same wing. Other rooms keep the museum-place view. */
+  function galleryImages(r) {
+    if (!r || (r.type !== "exhibit" && r.type !== "hall")) return [];
+    const ex = r.type === "exhibit" && exById(r.exhibit), out = [];
+    // Halls borrow imagery from the wing their centerpiece is about.
+    const wing = ex ? ex.wing.id : ({ moon: "moon", mars: "mars" })[M.halls[r.hall].deco] || "deep";
+    if (ex && window.ORBIT && ORBIT[ex.id]) out.push(ORBIT[ex.id].src);
+    const pool = window.PHOTOS ? Object.keys(PHOTOS) : [];
+    // Start at a room-dependent point so neighboring rooms don't repeat images.
+    const start = r.id % Math.max(1, pool.length);
+    pool.slice(start).concat(pool.slice(0, start)).forEach((id) => {
+      const other = exById(id);
+      if ((!ex || id !== ex.id) && other && other.wing && other.wing.id === wing) out.push(PHOTOS[id].src);
+    });
+    return out;
+  }
+  function buildWindow(slot, img) {
     const s = sideOf(slot.side);
     const w = new T.Group();
-    const frame = new T.Mesh(new T.BoxGeometry(2.1, 1.75, 0.08), new T.MeshStandardMaterial({ color: "#2a3040", metalness: 0.6, roughness: 0.3 }));
-    const view = new T.Mesh(new T.PlaneGeometry(1.9, 1.55), new T.MeshBasicMaterial({ map: windowTex(PLACE()), toneMapped: false }));
-    view.position.z = 0.045;
-    const bar = new T.Mesh(new T.BoxGeometry(0.06, 1.55, 0.03), frame.material);
-    bar.position.z = 0.06;
-    const sill = new T.Mesh(new T.BoxGeometry(2.3, 0.08, 0.22), frame.material);
-    sill.position.set(0, -0.9, 0.08);
-    w.add(frame, view, bar, sill);
+    const frameMat = new T.MeshStandardMaterial({ color: "#202633", metalness: 0.7, roughness: 0.28 });
+    const housing = new T.Mesh(roundedPanelGeometry(2.35, 2.0, 0.22, 0.25), frameMat);
+    const bezel = new T.Mesh(roundedPanelGeometry(2.08, 1.72, 0.08, 0.2), new T.MeshStandardMaterial({ color: "#090d16", metalness: 0.4, roughness: 0.35 }));
+    bezel.position.z = 0.13;
+    const view = new T.Mesh(curvedPanelGeometry(1.9, 1.54, 0.08, 24), new T.MeshBasicMaterial({ map: img ? coverPhotoTex(img, 1.9 / 1.54) : windowTex(PLACE()), toneMapped: false, side: T.DoubleSide }));
+    view.position.z = 0.18;
+    const glass = new T.Mesh(new T.PlaneGeometry(1.9, 1.54), new T.MeshStandardMaterial({ color: "#bfe4ff", transparent: true, opacity: 0.08, roughness: 0.05, metalness: 0.15, depthWrite: false }));
+    glass.position.z = 0.19;
+    const bar = new T.Mesh(new T.BoxGeometry(0.045, 1.54, 0.025), frameMat);
+    bar.position.z = 0.2;
+    const statusMat = new T.MeshBasicMaterial({ color: theme(room(R().cur)).glow, toneMapped: false });
+    const status = new T.Mesh(new T.BoxGeometry(0.65, 0.035, 0.025), statusMat);
+    status.position.set(0.55, -0.91, 0.19);
+    const led = new T.Mesh(new T.SphereGeometry(0.035, 10, 8), statusMat);
+    led.position.set(-0.8, -0.91, 0.19);
+    w.add(housing, bezel, view, glass, bar, status, led);
     onWall(s, w, slot.along, 2.25, 0.05);
   }
-  /* a glass skylight frame across the top of the room */
-  function buildSkylight() {
-    // light and see-through, so it frames the room without blocking the view
-    const mat = new T.MeshBasicMaterial({ color: "#dfe9f7", transparent: true, opacity: 0.35, depthWrite: false });
+  /* A complete opaque roof hidden behind a continuous sculptural canopy. */
+  function buildSkylight(th, r) {
     const g = add(new T.Group());
-    const y = WALL_H + 0.02;
-    const beam = (len, x, z, alongX) => {
-      const b = new T.Mesh(new T.BoxGeometry(alongX ? len : 0.05, 0.05, alongX ? 0.05 : len), mat);
-      b.position.set(x, y, z);
-      g.add(b);
-    };
-    [-4, 4].forEach((x) => beam(Z1 - Z0 - 0.6, x, 0, false));
-    beam(X1 - X0 - 0.6, 0, 0, true);
-    // very faint glass so the skylight reads as a roof without hiding the room
-    const glass = new T.Mesh(new T.PlaneGeometry(X1 - X0 - 0.6, Z1 - Z0 - 0.6), new T.MeshBasicMaterial({ color: "#cfe8ff", transparent: true, opacity: 0.05, depthWrite: false }));
-    glass.rotation.x = -Math.PI / 2;
-    glass.position.y = y;
-    g.add(glass);
+    const ceilingColor = r.type === "mc" ? "#0c1428" : r.type === "atrium" ? "#06090e" : "#171d29";
+    const roof = new T.Mesh(new T.BoxGeometry(X1 - X0 + 0.4, 0.28, Z1 - Z0 + 0.4), new T.MeshStandardMaterial({ color: ceilingColor, roughness: 0.72, metalness: 0.16 }));
+    roof.position.y = WALL_H + 0.12;
+    roof.receiveShadow = true;
+    g.add(roof);
+    const panelMat = new T.MeshStandardMaterial({ color: r.type === "atrium" ? "#090d14" : r.type === "mc" ? "#10192b" : "#232a36", roughness: 0.66, metalness: r.type === "atrium" ? 0.32 : 0.12, side: T.DoubleSide });
+    const canopy = new T.Mesh(new T.SphereGeometry(1, 56, 16, 0, Math.PI * 2, 0, Math.PI / 2), panelMat);
+    canopy.scale.set(6.7, r.type === "atrium" ? 0.46 : 0.82, 4.65);
+    canopy.rotation.z = Math.PI;
+    canopy.position.y = WALL_H - 0.02;
+    canopy.receiveShadow = true;
+    g.add(canopy);
+    const lightMat = new T.MeshStandardMaterial({ color: "#ede8d9", emissive: r.type === "mc" ? th.glow : "#fff0d4", emissiveIntensity: r.type === "mc" ? 0.55 : 0.28, metalness: 0.18, roughness: 0.32 });
+    const oculus = new T.Mesh(new T.TorusGeometry(2.1, 0.09, 10, 72), lightMat);
+    oculus.rotation.x = Math.PI / 2;
+    oculus.scale.x = 1.55;
+    oculus.position.y = WALL_H - 0.66;
+    g.add(oculus);
+    const inner = new T.Mesh(new T.CircleGeometry(1.94, 64), new T.MeshStandardMaterial({ color: r.type === "mc" ? "#070d1a" : "#111722", roughness: 0.52, metalness: 0.34, side: T.DoubleSide }));
+    inner.rotation.x = Math.PI / 2;
+    inner.scale.x = 1.55;
+    inner.position.y = WALL_H - 0.64;
+    g.add(inner);
+    // Only two low-cost fill lights per room; artifact spotlights remain the focus.
+    [-3.8, 3.8].forEach((x) => {
+      const light = new T.PointLight(r.type === "mc" ? th.glow : r.type === "atrium" ? "#ffffff" : "#fff0d8", r.type === "mc" ? 0.52 : r.type === "atrium" ? 1.05 : 0.38, 10, 2);
+      light.position.set(x, WALL_H - 0.62, 0.3);
+      g.add(light);
+    });
   }
 
   const portalCache = {};
@@ -919,18 +1231,15 @@
 
   /* ---------------- room contents ---------------- */
   function buildAtrium() {
-    const N = sideOf("N");
     const k = G().pieces.length;
-    addBoard(N, isLearn() ? {
-      w: 5.6, h: 2.6, accent: "#b8892f", kicker: t("atrium.kicker"), title: t("atrium.learnTitle"), titleSize: 6.6,
-      body: [t("atrium.learnBody")], bodySize: 3.6, footer: `${t("atrium.learnFooter")} · ${t("place." + PLACE()).toUpperCase()}`,
-    } : {
-      w: 5.6, h: 2.6, accent: "#b8892f", kicker: t("atrium.kicker"), title: t("atrium.title"), titleSize: 6.6,
-      body: [t("atrium.body", { k })],
-      bodySize: 3.6, footer: `${t("atrium.footer", { seed: R().seed })} · ${t("place." + PLACE()).toUpperCase()}`,
-    }, 0, 2.3);
-    buildOrrery(0, -1.2);
-    buildKiosk(-4.2, -2.4, null);
+    // The full welcome copy lives in the responsive story/rules surfaces.
+    // A large physical text panel could always be walked under or occluded by
+    // the central installation, so the atrium keeps only protected wayfinding
+    // signs and the persistent "Learn about the museum's wings" action.
+    buildAtriumArchitecture();
+    buildOrrery(0, -0.45);
+    // Ask Echo remains available as a persistent screen-space control. A
+    // physical kiosk could always be hidden by a planet from some viewpoint.
     // Robot Bay pad
     const bx = -4.2, bz = 3.2;
     const pad = add(new T.Mesh(new T.CylinderGeometry(1.2, 1.3, 0.12, 40), new T.MeshStandardMaterial({ color: "#1f2330", roughness: 0.4, metalness: 0.4 })));
@@ -941,7 +1250,7 @@
     spin.push({ o: ring, pulse: true });
     addSpot({ kind: "bay", pos: [bx, bz], face: 0, meshes: [pad] });
     // Signal console: one light per piece (not on the learning tour)
-    if (isLearn()) { [[-7, -5], [7, -5]].forEach(([x, z]) => plant(x, z)); return; }
+    if (isLearn()) return;
     const cx = 4.2, cz = 3.2;
     const base = add(new T.Mesh(new T.CylinderGeometry(0.7, 0.8, 1.0, 24), new T.MeshStandardMaterial({ color: "#2b2520" })));
     base.position.set(cx, 0.5, cz);
@@ -957,99 +1266,283 @@
     });
     obstacles.push({ x: cx, z: cz, r: 0.95 });
     addSpot({ kind: "console", pos: [cx - 0.2, cz - 1.6], face: Math.PI, meshes: [base, dish] });
-    [[-7, -5], [7, -5]].forEach(([x, z]) => plant(x, z));
   }
 
-  /*
-   * The lobby centerpiece: the whole solar system, turning slowly above a
-   * glowing pedestal. Click it to learn about the museum's wings.
-   */
-  const PLANETS = [
-    // [name, color, size, orbit, speed]
-    ["mercury", "#a7a29a", 0.07, 0.75, 1.6],
-    ["venus", "#e3b56a", 0.11, 1.0, 1.2],
-    ["earth", null, 0.12, 1.28, 1.0],
-    ["mars", "#c4572d", 0.09, 1.55, 0.8],
-    ["jupiter", "bands:#d7b48a:#b07d52", 0.26, 1.95, 0.45],
-    ["saturn", "bands:#e6cf9a:#c8a868", 0.2, 2.4, 0.33],
-    ["uranus", "#9fd8e0", 0.14, 2.75, 0.24],
-    ["neptune", "#4f6fd9", 0.14, 3.05, 0.18],
-  ];
-  function bandTex(a, b) {
-    return canvasTex(64, 128, (x, W, H) => {
-      for (let i = 0; i < 16; i++) { x.fillStyle = i % 2 ? a : b; x.fillRect(0, (i * H) / 16, W, H / 16 + 1); }
-      x.fillStyle = "rgba(255,255,255,.15)"; x.fillRect(0, H * 0.55, W, 4);
+  function atriumMediaTex(kind) {
+    return canvasTex(768, 384, (c, W, H) => {
+      const bg = c.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, "#030712"); bg.addColorStop(0.55, kind === "warm" ? "#171020" : "#071b2b"); bg.addColorStop(1, "#020409");
+      c.fillStyle = bg; c.fillRect(0, 0, W, H);
+      let s = kind === "warm" ? 19 : 31;
+      const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+      for (let i = 0; i < 250; i++) {
+        const a = 0.25 + rnd() * 0.7, r = rnd() < 0.08 ? 1.8 : 0.8;
+        c.fillStyle = "rgba(225,244,255," + a + ")";
+        c.beginPath(); c.arc(rnd() * W, rnd() * H, r, 0, Math.PI * 2); c.fill();
+      }
+      c.strokeStyle = kind === "warm" ? "rgba(255,168,92,.36)" : "rgba(95,224,255,.36)";
+      c.lineWidth = 2;
+      for (let i = 0; i < 5; i++) {
+        c.beginPath();
+        c.ellipse(W * (kind === "warm" ? 0.38 : 0.62), H * 0.52, W * (0.17 + i * 0.07), H * (0.07 + i * 0.035), -0.22, 0, Math.PI * 2);
+        c.stroke();
+      }
+      const px = W * (kind === "warm" ? 0.38 : 0.62), py = H * 0.52, pr = H * 0.19;
+      const planet = c.createRadialGradient(px - pr * 0.35, py - pr * 0.35, 2, px, py, pr);
+      planet.addColorStop(0, kind === "warm" ? "#ffd08c" : "#7be5ff");
+      planet.addColorStop(0.55, kind === "warm" ? "#b35b38" : "#2857a5");
+      planet.addColorStop(1, "#080b1a");
+      c.fillStyle = planet; c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.fill();
     });
   }
+
+  function atriumWallTex(kind, label) {
+    return canvasTex(640, 480, (c, W, H) => {
+      const warm = kind === "warm";
+      const bg = c.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, "#11171d"); bg.addColorStop(1, warm ? "#282018" : "#102632");
+      c.fillStyle = bg; c.fillRect(0, 0, W, H);
+      c.strokeStyle = "rgba(255,255,255,.12)"; c.lineWidth = 2;
+      for (let x = 32; x < W; x += 64) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+      for (let y = 32; y < H; y += 64) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+      let seed = warm ? 73 : 109;
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+      c.strokeStyle = warm ? "#f1b66d" : "#70d9ee"; c.lineWidth = 3;
+      const cx = W * 0.52, cy = H * 0.48;
+      for (let i = 0; i < 5; i++) { c.beginPath(); c.ellipse(cx, cy, 72 + i * 42, 28 + i * 18, -0.22, 0, Math.PI * 2); c.stroke(); }
+      const orb = c.createRadialGradient(cx - 32, cy - 36, 4, cx, cy, 74);
+      orb.addColorStop(0, warm ? "#ffe3a6" : "#c3f4ff"); orb.addColorStop(0.55, warm ? "#bd6a34" : "#327f9d"); orb.addColorStop(1, "#071019");
+      c.fillStyle = orb; c.beginPath(); c.arc(cx, cy, 74, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "rgba(255,255,255,.72)";
+      for (let i = 0; i < 90; i++) { c.beginPath(); c.arc(rnd() * W, rnd() * H, rnd() * 1.8 + .4, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = "#f5f8fa"; c.textAlign = "left"; c.textBaseline = "alphabetic";
+      c.font = '800 34px "Atkinson Hyperlegible", system-ui, sans-serif'; c.fillText(label, 34, 54);
+      c.fillStyle = warm ? "#f1b66d" : "#70d9ee"; c.fillRect(34, 70, 150, 6);
+      c.font = '700 18px "IBM Plex Mono", monospace'; c.fillText(warm ? "PLANETARY STUDIES" : "ORBITAL SCIENCE", 34, H - 32);
+    });
+  }
+
+  function buildAtriumArchitecture() {
+    const current = room(R().cur);
+    const occupied = new Set(current.doors.map((d) => d.slot));
+    const shellMat = new T.MeshStandardMaterial({ color: "#20252a", metalness: 0.36, roughness: 0.42, side: T.DoubleSide });
+    [["W", ["W1", "W2"], "warm"], ["E", ["E1", "E2"], "cool"]].forEach(([sideName, slots, kind]) => {
+      const s = sideOf(sideName), free = slots.filter((slot) => !occupied.has(slot));
+      if (!free.length) return;
+      const centers = free.length === 2 ? [0] : [SLOT_POS[free[0]].along];
+      centers.forEach((along) => {
+        const width = free.length === 2 ? 6.0 : 2.35;
+        const shell = new T.Mesh(curvedPanelGeometry(width + 0.34, 2.65, 0.32, 44), shellMat);
+        onWall(s, shell, along, 2.15, 0.07);
+        const media = new T.Mesh(curvedPanelGeometry(width, 2.3, 0.37, 44), new T.MeshBasicMaterial({ map: atriumMediaTex(kind), toneMapped: false, side: T.DoubleSide }));
+        onWall(s, media, along, 2.15, 0.115);
+      });
+    });
+    // Fill every unused wall bay with a layered astronomical mural. These are
+    // integrated architectural panels, not additional signs competing for
+    // attention, and they make random room layouts feel intentionally designed.
+    const wallLabels = ["EARTH SYSTEM", "DISTANT WORLDS", "MOON LAB", "DEEP SPACE"];
+    let muralIndex = 0;
+    [["S", [-4.6, 4.6]], ["W", ["W1", "W2"]], ["E", ["E1", "E2"]]].forEach(([sideName, slots]) => {
+      const s = sideOf(sideName);
+      slots.forEach((slotNameOrAlong) => {
+        if (typeof slotNameOrAlong === "string" && occupied.has(slotNameOrAlong)) return;
+        const along = typeof slotNameOrAlong === "number" ? slotNameOrAlong : SLOT_POS[slotNameOrAlong].along;
+        const kind = muralIndex % 2 ? "warm" : "cool";
+        const shell = new T.Mesh(roundedPanelGeometry(2.34, 2.18, 0.16, 0.22), new T.MeshStandardMaterial({ color: "#d5dadd", metalness: 0.35, roughness: 0.4 }));
+        onWall(s, shell, along, 2.05, 0.08);
+        const art = new T.Mesh(new T.PlaneGeometry(2.12, 1.92), new T.MeshBasicMaterial({ map: atriumWallTex(kind, wallLabels[muralIndex % wallLabels.length]), toneMapped: false }));
+        onWall(s, art, along, 2.05, 0.18);
+        muralIndex++;
+      });
+    });
+    const floorMetal = new T.MeshStandardMaterial({ color: "#3d444a", metalness: 0.5, roughness: 0.38 });
+    [1.7, 2.65, 3.6].forEach((rad, i) => {
+      const orbit = add(new T.Mesh(new T.TorusGeometry(rad, i === 1 ? 0.022 : 0.014, 6, 96), floorMetal));
+      orbit.rotation.x = Math.PI / 2;
+      orbit.scale.z = 0.68 + i * 0.05;
+      orbit.position.set(0, 0.025, -0.45);
+    });
+    const ringMat = new T.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 1.25, metalness: 0.18, roughness: 0.2, toneMapped: false });
+    [[4.75, 0.76, 3.76], [3.65, 0.72, 3.52], [2.65, 0.68, 3.3]].forEach(([radius, depth, y]) => {
+      const track = add(new T.Mesh(new T.TorusGeometry(radius, 0.07, 10, 128), ringMat));
+      track.rotation.x = Math.PI / 2;
+      track.scale.z = depth;
+      track.position.set(0, y, -0.45);
+    });
+
+    // Columns, study cases and floor-level props were removed: they sat on
+    // door approach paths, hid door signs, and could be walked through.
+  }
+
+  function planetTex(kind) {
+    if (kind === "earth") {
+      const key = "planet-earth-hyperreal-v1";
+      if (!texCache[key]) {
+        const map = new T.TextureLoader().load("assets/textures/earth-hyperreal-v1.png");
+        map.encoding = T.sRGBEncoding;
+        map.wrapS = T.RepeatWrapping;
+        map.wrapT = T.ClampToEdgeWrapping;
+        map.anisotropy = 8;
+        texCache[key] = { map, emissive: null };
+      }
+      return texCache[key].map;
+    }
+    return canvasTex(768, 384, (c, W, H) => {
+      const palettes = {
+        sun: ["#ffec96", "#f89b2d", "#8d2c12"],
+        jupiter: ["#eee0bd", "#c88954", "#8d4e35"],
+        saturn: ["#f1dca0", "#c6a56d", "#765f49"],
+        earth: ["#86d5ff", "#246db0", "#17345f"],
+        mars: ["#e9905e", "#a7462c", "#55221c"],
+        uranus: ["#9ce8e6", "#4da7ad", "#28566a"],
+        neptune: ["#5f8fff", "#284aaa", "#141d66"],
+      };
+      const p = palettes[kind] || palettes.neptune;
+      const g = c.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, p[2]); g.addColorStop(0.18, p[1]); g.addColorStop(0.5, p[0]); g.addColorStop(0.82, p[1]); g.addColorStop(1, p[2]);
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      let seed = kind.length * 71;
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+      if (kind === "jupiter" || kind === "saturn" || kind === "uranus" || kind === "neptune") {
+        for (let y = 0; y < H; y += 7 + Math.floor(rnd() * 10)) {
+          c.fillStyle = (rnd() > 0.52 ? p[0] : p[2]) + (kind === "jupiter" ? "42" : "28");
+          c.fillRect(0, y, W, 3 + rnd() * 11);
+        }
+        if (kind === "jupiter") {
+          c.fillStyle = "#ad543dbb"; c.beginPath(); c.ellipse(W * 0.68, H * 0.62, 70, 26, -0.08, 0, Math.PI * 2); c.fill();
+          c.strokeStyle = "#f2b18488"; c.lineWidth = 6; c.stroke();
+        }
+      } else if (kind === "earth") {
+        // Irregular coastlines, ocean depth, land variation and very fine
+        // cloud wisps replace the broad white bands used by the old globe.
+        const ocean = c.createLinearGradient(0, 0, 0, H);
+        ocean.addColorStop(0, "#071b3c"); ocean.addColorStop(.25, "#125987"); ocean.addColorStop(.5, "#1f79a7"); ocean.addColorStop(.75, "#125987"); ocean.addColorStop(1, "#061832");
+        c.fillStyle = ocean; c.fillRect(0, 0, W, H);
+        const land = (pts, fill) => {
+          c.fillStyle = fill; c.beginPath();
+          pts.forEach(([x,y], i) => i ? c.lineTo(x * W, y * H) : c.moveTo(x * W, y * H));
+          c.closePath(); c.fill();
+        };
+        land([[.05,.2],[.12,.12],[.24,.14],[.32,.25],[.3,.39],[.22,.48],[.18,.6],[.1,.54],[.07,.4]], "#367649");
+        land([[.23,.49],[.31,.52],[.35,.65],[.31,.83],[.25,.94],[.21,.75],[.18,.6]], "#47804b");
+        land([[.44,.22],[.54,.13],[.69,.15],[.8,.25],[.92,.26],[.96,.39],[.85,.46],[.75,.42],[.68,.53],[.59,.46],[.52,.37],[.43,.34]], "#4a814d");
+        land([[.5,.38],[.62,.42],[.66,.58],[.61,.79],[.54,.75],[.49,.56]], "#56834c");
+        land([[.81,.69],[.9,.66],[.96,.73],[.91,.83],[.82,.8]], "#62824f");
+        land([[.35,.08],[.4,.05],[.43,.13],[.38,.19],[.33,.15]], "#bdcfc4");
+        c.fillStyle = "rgba(190,139,68,.58)";
+        [[.57,.5,.08,.07],[.72,.29,.12,.045],[.88,.75,.05,.04],[.18,.29,.07,.045]].forEach(([x,y,rx,ry]) => { c.beginPath(); c.ellipse(x*W,y*H,rx*W,ry*H,0,0,Math.PI*2); c.fill(); });
+        for (let i = 0; i < 900; i++) {
+          c.fillStyle = rnd() > .55 ? "rgba(255,255,255,.025)" : "rgba(2,18,38,.035)";
+          c.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 3, 1 + rnd() * 2);
+        }
+        c.fillStyle = "rgba(235,247,249,.88)"; c.fillRect(0, 0, W, H * .045); c.fillRect(0, H * .955, W, H * .045);
+        c.strokeStyle = "rgba(255,255,255,.2)"; c.lineWidth = 1.2;
+        for (let i = 0; i < 28; i++) {
+          const x = rnd() * W, y = H * (.12 + rnd() * .76), len = 14 + rnd() * 42;
+          c.beginPath(); c.moveTo(x, y); c.bezierCurveTo(x + len * .25, y - 3 - rnd() * 7, x + len * .72, y + 3 + rnd() * 7, x + len, y); c.stroke();
+        }
+      } else {
+        for (let i = 0; i < 750; i++) {
+          c.fillStyle = kind === "mars" ? "rgba(70,25,14," + (0.03 + rnd() * 0.13) + ")" : "rgba(255,224,130," + (0.03 + rnd() * 0.13) + ")";
+          c.beginPath(); c.arc(rnd() * W, rnd() * H, 1 + rnd() * 8, 0, Math.PI * 2); c.fill();
+        }
+      }
+      c.fillStyle = "rgba(255,255,255,.08)";
+      for (let i = 0; i < 120; i++) c.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 3, 1);
+    });
+  }
+
+  /* The lobby centerpiece follows the latest reference: a large, readable
+   * Earth at visitor height, surrounded by luminous orbital architecture and
+   * a smaller suspended solar model above it. */
   function buildOrrery(cx, cz) {
     const g = add(new T.Group());
     g.position.set(cx, 0, cz);
-    const Y = 2.45;
-    // pedestal with a glowing ring, and a slim pole up to the Sun
-    const ped = new T.Mesh(new T.CylinderGeometry(0.75, 0.95, 0.5, 40), new T.MeshStandardMaterial({ color: "#20263a", roughness: 0.3, metalness: 0.5 }));
-    ped.position.y = 0.25;
-    const glowRing = new T.Mesh(new T.TorusGeometry(0.8, 0.03, 8, 48), new T.MeshBasicMaterial({ color: "#5ef2ff", toneMapped: false }));
-    glowRing.rotation.x = Math.PI / 2;
-    glowRing.position.y = 0.48;
-    const pole = new T.Mesh(new T.CylinderGeometry(0.04, 0.06, Y - 0.5, 12), new T.MeshStandardMaterial({ color: "#b8c2d6", metalness: 0.7, roughness: 0.3 }));
-    pole.position.y = 0.5 + (Y - 0.5) / 2;
-    g.add(ped, glowRing, pole);
-    // the Sun, with a soft glow
-    const sunM = new T.Mesh(new T.SphereGeometry(0.4, 32, 24), new T.MeshBasicMaterial({ color: "#ffd05a", toneMapped: false }));
-    sunM.position.y = Y;
-    const halo = new T.Sprite(new T.SpriteMaterial({ map: canvasTex(128, 128, (x) => {
-      const gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
-      gr.addColorStop(0, "rgba(255,210,90,.9)"); gr.addColorStop(0.35, "rgba(255,170,60,.35)"); gr.addColorStop(1, "rgba(255,150,50,0)");
-      x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
-    }), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    halo.scale.set(2.2, 2.2, 1);
-    halo.position.y = Y;
-    const light = new T.PointLight("#ffd27a", 1.2, 7, 1.5);
-    light.position.y = Y;
-    g.add(sunM, halo, light);
-    spin.push({ o: sunM, s: 0.2 });
-    // planets on their orbits
-    const pick = [ped, pole, sunM];
-    PLANETS.forEach(([name, col, size, orbit, speed], i) => {
-      const ringLine = new T.Mesh(new T.RingGeometry(orbit - 0.006, orbit + 0.006, 96), new T.MeshBasicMaterial({ color: "#9fc4ff", transparent: true, opacity: 0.28, side: T.DoubleSide, depthWrite: false }));
-      ringLine.rotation.x = -Math.PI / 2;
-      ringLine.position.y = Y;
-      g.add(ringLine);
-      const arm = new T.Group();
-      arm.position.y = Y;
-      arm.rotation.y = i * 2.1;
-      const mat = name === "earth"
-        ? new T.MeshStandardMaterial({ map: Models.globeTex(), roughness: 0.6 })
-        : col.startsWith("bands")
-          ? new T.MeshStandardMaterial({ map: bandTex(col.split(":")[1], col.split(":")[2]), roughness: 0.7 })
-          : new T.MeshStandardMaterial({ color: col, roughness: 0.75 });
-      const p = new T.Mesh(new T.SphereGeometry(size, 28, 20), mat);
-      p.position.x = orbit;
-      arm.add(p);
-      if (name === "saturn") {
-        const ring = new T.Mesh(new T.RingGeometry(size * 1.35, size * 2.2, 48), new T.MeshBasicMaterial({ color: "#e8d4a0", transparent: true, opacity: 0.75, side: T.DoubleSide }));
-        ring.position.x = orbit;
-        ring.rotation.x = -Math.PI / 2 + 0.45;
-        arm.add(ring);
+    const planets = [
+      ["earth", 0, 1.58, 0, 1.02, 0.045],
+      // Large planets hang high in the four corners, outside the ceiling
+      // rings, like the suspended models in the reference galleries. They sit
+      // above head height, off every door axis, and fade out whenever one
+      // comes between the camera and a door sign (see guardSignSightlines).
+      ["jupiter", -6.15, 3.12, -4.15, 0.78, 0.03],
+      ["saturn", 6.15, 3.18, -4.15, 0.62, 0.025],
+      ["mars", 6.25, 3.05, 4.75, 0.44, 0.06],
+      ["neptune", -6.25, 3.05, 4.75, 0.48, 0.05],
+    ];
+    const wireMat = new T.LineBasicMaterial({ color: "#d7e0e4", transparent: true, opacity: 0.55 });
+    const pick = [];
+    planets.forEach(([kind, x, y, z, radius, speed], i) => {
+      const tex = planetTex(kind);
+      const matOpts = {
+        map: tex, bumpMap: tex, bumpScale: kind === "earth" ? 0.012 : 0.025,
+        roughness: kind === "earth" ? 0.46 : kind === "sun" ? 0.62 : 0.78, metalness: 0.02,
+        emissive: kind === "sun" ? "#a54d16" : "#000000", emissiveIntensity: kind === "sun" ? 0.42 : 0,
+      };
+      const mat = kind === "earth"
+        ? new T.MeshPhysicalMaterial({ ...matOpts, clearcoat: 0.34, clearcoatRoughness: 0.22 })
+        : new T.MeshStandardMaterial(matOpts);
+      const planet = new T.Mesh(new T.SphereGeometry(radius, 52, 36), mat);
+      planet.position.set(x, y, z);
+      planet.rotation.z = (i - 2) * 0.09;
+      planet.castShadow = planet.receiveShadow = true;
+      g.add(planet);
+      if (kind === "earth" && radius > 0.5) {
+        const atmosphere = new T.Mesh(new T.SphereGeometry(radius * 1.025, 52, 36), new T.MeshPhysicalMaterial({ color: "#83cfff", transparent: true, opacity: 0.08, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false }));
+        atmosphere.position.copy(planet.position);
+        g.add(atmosphere);
       }
-      if (name === "earth") {
-        // the Moon circles the Earth
-        const mArm = new T.Group();
-        mArm.position.x = orbit;
-        const moon = new T.Mesh(new T.SphereGeometry(0.035, 16, 12), new T.MeshStandardMaterial({ color: "#d8d4cc" }));
-        moon.position.x = 0.22;
-        mArm.add(moon);
-        arm.add(mArm);
-        spin.push({ o: mArm, s: 2.4 });
+      spin.push({ o: planet, s: speed });
+      pick.push(planet);
+      if (kind !== "earth") { mat.transparent = true; signOccluders.push(planet); }
+      if (kind !== "earth") {
+        const wire = new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(x, 4.12, z), new T.Vector3(x, y + radius * 0.82, z)]), wireMat);
+        g.add(wire);
       }
-      spin.push({ o: p, s: 1.2 });
-      spin.push({ o: arm, s: speed * 0.35 });
-      g.add(arm);
-      pick.push(p);
+      if (kind === "saturn") {
+        const ringMat = new T.MeshStandardMaterial({ map: planetTex("saturn"), color: "#e7d39b", transparent: true, opacity: 0.9, roughness: 0.78, side: T.DoubleSide });
+        const ring = new T.Mesh(new T.RingGeometry(radius * 1.28, radius * 2.02, 96), ringMat);
+        ring.position.copy(planet.position);
+        ring.rotation.set(Math.PI / 2 - 0.34, 0.1, -0.12);
+        g.add(ring); pick.push(ring);
+        ring.userData.fadeWith = planet; signOccluders.push(ring);
+      }
+      if (kind === "earth") {
+        const moonWire = new T.Mesh(new T.TorusGeometry(radius * 1.65, 0.008, 5, 56), new T.MeshBasicMaterial({ color: "#9fb4c2", transparent: true, opacity: 0.45 }));
+        moonWire.position.copy(planet.position);
+        moonWire.rotation.set(Math.PI / 2.4, 0.25, 0.15);
+        g.add(moonWire);
+        const moon = new T.Mesh(new T.SphereGeometry(0.13, 24, 16), new T.MeshStandardMaterial({ color: "#aaa79f", roughness: 1 }));
+        moon.position.set(x + radius * 1.55, y + 0.08, z);
+        g.add(moon);
+      }
     });
-    Models.shadowAll(ped);
-    obstacles.push({ x: cx, z: cz, r: 1.15 });
-    addSpot({ kind: "orrery", pos: [cx, cz + 1.9], face: Math.PI, meshes: pick });
+    // Central illuminated plinth and interpretive halo.
+    const plinthMat = new T.MeshStandardMaterial({ color: "#25292d", roughness: 0.38, metalness: 0.24 });
+    const plinth = new T.Mesh(new T.CylinderGeometry(1.38, 1.58, 0.34, 64), plinthMat);
+    plinth.position.y = 0.17; g.add(plinth); pick.push(plinth);
+    const litLip = new T.Mesh(new T.TorusGeometry(1.37, 0.055, 10, 96), new T.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 1.4, toneMapped: false }));
+    litLip.rotation.x = Math.PI / 2; litLip.position.y = 0.36; g.add(litLip);
+    obstacles.push({ x: cx, z: cz, r: 1.5 });
+
+    // A compact solar model hangs within the ceiling rings, echoing the
+    // reference without turning the floor display into a pole-mounted toy.
+    const orbitMat = new T.MeshBasicMaterial({ color: "#f1c96d", transparent: true, opacity: 0.75, side: T.DoubleSide, depthWrite: false });
+    const sunBall = new T.Mesh(new T.SphereGeometry(0.28, 36, 24), new T.MeshStandardMaterial({ map: planetTex("sun"), emissive: "#ef861f", emissiveIntensity: 0.55, roughness: 0.7 }));
+    sunBall.position.set(0, 3.14, -0.15); g.add(sunBall); spin.push({ o: sunBall, s: 0.04 }); pick.push(sunBall);
+    [[0.68, "mars", 0.07], [1.02, "earth", 0.09], [1.38, "jupiter", 0.12]].forEach(([rad, kind, size], i) => {
+      const orbit = new T.Mesh(new T.TorusGeometry(rad, 0.012, 6, 72), orbitMat);
+      orbit.rotation.x = Math.PI / 2; orbit.position.set(0, 3.14, -0.15); g.add(orbit);
+      const body = new T.Mesh(new T.SphereGeometry(size, 24, 16), new T.MeshStandardMaterial({ map: planetTex(kind), roughness: 0.78 }));
+      body.position.set(rad, 3.14 + i * 0.035, -0.15); g.add(body); pick.push(body); spin.push({ o: body, s: 0.05 + i * 0.01 });
+    });
+    [[0, 3.92, 0.2, "#ffffff"], [-4.8, 3.75, -1.7, "#fff0d2"], [4.8, 3.75, -1.7, "#fff0d2"]].forEach(([x, y, z, color]) => {
+      const spot = new T.SpotLight(color, 1.1, 7, Math.PI / 6, 0.72, 1.6);
+      spot.position.set(x, y, z);
+      spot.target.position.set(x, x === 0 ? 1.3 : 1.2, z);
+      g.add(spot, spot.target);
+    });
+    addSpot({ kind: "orrery", pos: [0, cz + 2.75], face: Math.PI, meshes: pick });
   }
 
   /* A glowing chat kiosk: "Ask me anything! Click here to chat" */
@@ -1090,17 +1583,6 @@
     addSpot({ kind: "kiosk", ex, pos: [x, z + 1.1], face: Math.PI, meshes: [post, screen.mesh] });
   }
 
-  function plant(x, z) {
-    const pot = add(new T.Mesh(new T.CylinderGeometry(0.32, 0.26, 0.55, 16), new T.MeshStandardMaterial({ color: "#c4472d", roughness: 0.8 })));
-    pot.position.set(x, 0.28, z);
-    [[0, 0.95, 0, 0.45], [0.22, 1.2, 0.1, 0.34], [-0.18, 1.25, -0.1, 0.32], [0, 1.5, 0, 0.27]].forEach(([dx, y, dz, r]) => {
-      const b = add(new T.Mesh(new T.IcosahedronGeometry(r, 1), new T.MeshStandardMaterial({ color: "#3f7a4a", roughness: 0.9, flatShading: true })));
-      b.position.set(x + dx, y, z + dz);
-      b.castShadow = true;
-    });
-    obstacles.push({ x, z, r: 0.45 });
-  }
-
   let pieceMesh = null, pieceHalo = null;
   function buildExhibit(r) {
     const ex = exById(r.exhibit);
@@ -1108,13 +1590,23 @@
     photoFrame(N, ex);
     // Immersive gallery treatment inspired by a real NASA exhibition:
     // warm landscape, dramatic edge lighting, and a lit artifact plinth.
-    buildExhibitEnvironment(ex);
+    buildExhibitEnvironment(ex, r);
     const g = buildCase(ex, 0, Z0 + WALL_T + 1.45, 1.2);
-    // the machine's name on a stand
-    const label = Models.board({ w: 1.3, h: 0.6, ppm: 380, draw: (x, W, H) => drawLabel(x, W, H, ex) });
+    // The placard is its own angled data lectern in front of the case. Keeping
+    // it clear of the tapered plinth prevents the label from being sliced by
+    // the pedestal geometry at oblique camera angles.
+    const label = Models.board({ w: 1.62, h: 0.62, ppm: 380, draw: (x, W, H) => drawLabel(x, W, H, ex) });
     boards.push(label);
-    label.mesh.position.set(0, 0.5, 0.605);
+    label.mesh.position.set(0, 0.58, 1.18);
+    label.mesh.rotation.x = -0.28;
+    const lecternMat = new T.MeshStandardMaterial({ color: "#323b45", metalness: 0.58, roughness: 0.34 });
+    const lecternPost = new T.Mesh(new T.CylinderGeometry(0.035, 0.055, 0.42, 12), lecternMat);
+    lecternPost.position.set(0, 0.25, 1.12);
+    const lecternFoot = new T.Mesh(new T.CylinderGeometry(0.2, 0.25, 0.055, 28), lecternMat);
+    lecternFoot.scale.z = 0.58;
+    lecternFoot.position.set(0, 0.03, 1.12);
     g.add(label.mesh);
+    g.add(lecternPost, lecternFoot);
     pickables.push(label.mesh);
     // the signal piece it's holding
     pieceMesh = null; pieceHalo = null;
@@ -1132,22 +1624,61 @@
     obstacles.push({ x: 0, z: Z0 + WALL_T + 1.45, r: 1.15 });
   }
 
-  function buildExhibitEnvironment(ex) {
+  function buildExhibitEnvironment(ex, r) {
     const mars = ex.wing.id === "mars";
     const moon = ex.wing.id === "moon";
-    const earth = mars ? "#a94b2d" : moon ? "#807b75" : "#243958";
-    const ridge = mars ? "#77331f" : moon ? "#56545a" : "#17263d";
     const accent = mars ? "#ff8349" : moon ? "#e8c8a0" : "#67b8ff";
-    const terrain = new T.MeshStandardMaterial({ color: earth, roughness: 1, flatShading: true });
-    const rocks = new T.MeshStandardMaterial({ color: ridge, roughness: 1, flatShading: true });
-    // Raised sculptural landscape stays against the side walls to preserve walking space.
-    [[-3.75, -2.7, 1.25], [3.75, -2.9, 1.1], [-3.8, 1.0, 0.9], [3.85, 1.3, 0.85]].forEach(([x, z, scale], i) => {
-      const rock = add(new T.Mesh(new T.DodecahedronGeometry(scale, 1), i % 2 ? rocks : terrain));
-      rock.scale.set(1.2, 0.52, 1.05);
-      rock.position.set(x, 0.12, z);
-      rock.rotation.y = i * 1.15;
-      rock.castShadow = rock.receiveShadow = true;
-    });
+    if (mars || moon) {
+      const rego = regolithTex(moon ? "moon" : "mars");
+      const doorZ = (side) => r.doors.filter((d) => SLOT_POS[d.slot].side === side).map((d) => SLOT_POS[d.slot].along);
+      [["W", -1, X0 + 2.6, 1], ["E", 1, X1 - 2.6, 4]].forEach(([side, wallSide, x, seed]) => {
+        const cuts = doorZ(side);
+        const map = rego.map.clone(), bump = rego.emissive.clone();
+        [map, bump].forEach((tx) => { tx.needsUpdate = true; tx.repeat.set(1.6, 3.2); tx.offset.set(seed * 0.37, seed * 0.21); });
+        const mat = new T.MeshStandardMaterial({ map, bumpMap: bump, bumpScale: 0.035, roughness: 0.97, metalness: 0 });
+        const land = add(new T.Mesh(terrainPatchGeometry(5.2, Z1 - Z0 - 0.4, seed, moon, wallSide, cuts), mat));
+        land.position.set(x, 0, 0);
+        land.receiveShadow = true;
+        // Boulders sit only in bays between doors, never on a door line.
+        const bays = [-4.6, 0, 4.6].filter((z) => cuts.every((c) => Math.abs(z - c) > 2.2));
+        bays.forEach((z, i) => {
+          const size = 0.32 + hash2(i, seed, 5) * 0.3;
+          const rock = add(new T.Mesh(boulderGeometry(size, seed * 3 + i), mat));
+          rock.position.set(x + wallSide * (1.2 + hash2(i, seed, 2) * 0.5), size * 0.38, z + (hash2(i, seed, 8) - 0.5) * 0.9);
+          rock.rotation.y = hash2(i, seed, 4) * 6.28;
+          rock.castShadow = rock.receiveShadow = true;
+          [[0.45, 0.6], [-0.55, 0.38]].forEach(([dz, k], j) => {
+            const pebble = add(new T.Mesh(boulderGeometry(size * k * 0.45, seed * 7 + i * 3 + j), mat));
+            pebble.position.set(rock.position.x - wallSide * 0.5, size * k * 0.12, rock.position.z + dz);
+            pebble.castShadow = true;
+          });
+        });
+        // Keep the explorer off the raised bank, except in the door corridors.
+        for (let z = Z0 + 0.8; z <= Z1 - 0.8; z += 0.9) {
+          if (cuts.some((c) => Math.abs(z - c) < 1.9)) continue;
+          obstacles.push({ x: x + wallSide * 1.1, z, r: 1.15 });
+        }
+      });
+    }
+    // A dark, flush oval inlay grounds the artifact without a glowing outline.
+    const zone = add(new T.Mesh(new T.CircleGeometry(2.18, 64), new T.MeshStandardMaterial({ color: mars ? "#3a211c" : moon ? "#353638" : "#0d1524", roughness: 0.62, metalness: 0.18, side: T.DoubleSide })));
+    zone.scale.z = 0.72;
+    zone.rotation.x = -Math.PI / 2;
+    zone.position.set(0, 0.019, Z0 + WALL_T + 1.45);
+    if (!mars && !moon) {
+      // Deep-space galleries use a restrained orbital sculpture rather than terrain.
+      const orbitMat = new T.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.36, side: T.DoubleSide, toneMapped: false });
+      const orbits = add(new T.Group());
+      orbits.position.set(-4.8, 2.05, 1.1);
+      [0.65, 0.95, 1.25].forEach((r, i) => {
+        const ring = new T.Mesh(new T.TorusGeometry(r, 0.018, 6, 56), orbitMat);
+        ring.rotation.set(i * 0.42, i * 0.55, 0.2 + i * 0.3);
+        orbits.add(ring);
+      });
+      const planet = new T.Mesh(new T.SphereGeometry(0.28, 20, 14), new T.MeshStandardMaterial({ color: "#6b86a8", roughness: 0.8 }));
+      orbits.add(planet);
+      spin.push({ o: orbits, s: 0.08 });
+    }
     // Museum floor pools of colored light, rather than uniform neon everywhere.
     const glowTex = canvasTex(128, 128, (c) => {
       const g = c.createRadialGradient(64, 64, 2, 64, 64, 64);
@@ -1156,13 +1687,14 @@
       c.fillStyle = g; c.fillRect(0, 0, 128, 128);
     });
     [[-2.8, -2.0], [2.8, -2.0]].forEach(([x,z]) => {
-      const pool = add(new T.Mesh(new T.PlaneGeometry(4.5, 4), new T.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending })));
+      const pool = add(new T.Mesh(new T.CircleGeometry(2.25, 48), new T.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.62, depthWrite: false, blending: T.AdditiveBlending })));
+      pool.scale.z = 0.84;
       pool.rotation.x = -Math.PI / 2;
       pool.position.set(x, 0.025, z);
     });
     // Small warm museum spotlights pick out the actual artifact.
-    [[-2.5, 3.35, -3.0], [2.5, 3.35, -3.0]].forEach(([x,y,z]) => {
-      const lamp = new T.SpotLight(accent, 1.25, 9, Math.PI / 4, 0.65, 1.5);
+    [[-2.5, 3.45, -3.0], [2.5, 3.45, -3.0]].forEach(([x,y,z]) => {
+      const lamp = new T.SpotLight(accent, 1.05, 9, Math.PI / 5.2, 0.72, 1.65);
       lamp.position.set(x, y, z);
       lamp.target.position.set(0, 1.4, Z0 + WALL_T + 1.45);
       add(lamp); add(lamp.target);
@@ -1179,26 +1711,21 @@
   const photoLoader = new T.TextureLoader();
   function photoFrame(wall, ex) {
     const ph = window.PHOTOS && PHOTOS[ex.id];
-    const maxW = 3.6, maxH = 2.3;
-    let w = 3.3, h = 2.2, map;
+    const maxW = 7.7, maxH = 2.45;
+    let w = 7.2, h = 2.35, map;
     if (ph) {
-      const a = ph.w / ph.h;
-      w = Math.min(maxW, maxH * a); h = w / a;
+      w = 7.2; h = 2.4;
       map = photoLoader.load(ph.src);
       map.encoding = T.sRGBEncoding;
       map.anisotropy = 4;
     } else map = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
     const frame = new T.Group();
-    const fr = new T.Mesh(new T.BoxGeometry(w + 0.3, h + 0.3, 0.08), new T.MeshStandardMaterial({ color: "#211d23", metalness: 0.45, roughness: 0.4 }));
-    const edge = new T.Mesh(new T.BoxGeometry(w + 0.4, h + 0.4, 0.04), new T.MeshBasicMaterial({ color: ex.wing.id === "mars" ? "#ff9255" : ex.wing.id === "moon" ? "#e5c9a3" : "#6ebeff", toneMapped: false }));
-    edge.position.z = -0.03;
-    const pic = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map, toneMapped: false }));
-    pic.position.z = 0.045;
-    frame.add(edge, fr, pic);
-    // A restrained luminous border makes the image read like a museum installation.
-    const halo = new T.Mesh(new T.PlaneGeometry(w + 0.85, h + 0.85), new T.MeshBasicMaterial({ color: ex.wing.id === "mars" ? "#e96537" : ex.wing.id === "moon" ? "#d9b98e" : "#438bd4", transparent: true, opacity: 0.12, depthWrite: false }));
-    halo.position.z = -0.085;
-    frame.add(halo);
+    const shell = new T.Mesh(curvedPanelGeometry(w + 0.38, h + 0.32, 0.31, 44), new T.MeshStandardMaterial({ color: "#161b24", metalness: 0.42, roughness: 0.34, side: T.DoubleSide }));
+    const pic = new T.Mesh(curvedPanelGeometry(w, h, 0.36, 44), new T.MeshBasicMaterial({ map, toneMapped: false, side: T.DoubleSide }));
+    pic.position.z = 0.035;
+    const glass = new T.Mesh(curvedPanelGeometry(w, h, 0.37, 44), new T.MeshStandardMaterial({ color: "#d9efff", transparent: true, opacity: 0.055, roughness: 0.08, metalness: 0.08, depthWrite: false, side: T.DoubleSide }));
+    glass.position.z = 0.045;
+    frame.add(shell, pic, glass);
     if (ph) {
       // a small credit plate under the photo
       const plate = Models.board({ w: Math.min(w, 2.6), h: 0.2, ppm: 300, bg: "#1b2030", draw: (c, W, H) => {
@@ -1208,30 +1735,30 @@
         c.fillText(`${t("photo.credit")}: ${ph.credit}`, W / 2, H / 2);
       } });
       boards.push(plate);
-      plate.mesh.position.set(0, -h / 2 - 0.26, 0.05);
+      plate.mesh.position.set(0, -h / 2 - 0.26, 0.12);
       frame.add(plate.mesh);
     }
-    onWall(wall, frame, 0, 2.6 + (maxH - h) / 4, 0.05);
+    onWall(wall, frame, 0, 2.55 + (maxH - h) / 4, 0.05);
     return frame;
   }
 
   function buildCase(ex, x, z, h) {
     const g = add(new T.Group());
     g.position.set(x, 0, z);
-    const ped = new T.Mesh(new T.BoxGeometry(1.7, 0.95, 1.2), new T.MeshStandardMaterial({ color: "#2b2520", roughness: 0.6 }));
-    ped.position.y = 0.475;
-    const trim = new T.Mesh(new T.BoxGeometry(1.76, 0.06, 1.26), new T.MeshStandardMaterial({ color: "#b8892f", metalness: 0.6, roughness: 0.3 }));
-    trim.position.y = 0.95;
-    const glass = new T.Mesh(new T.BoxGeometry(1.6, 1.35, 1.1), new T.MeshStandardMaterial({ color: "#dff2ff", transparent: true, opacity: 0.12, roughness: 0.05, metalness: 0.2, depthWrite: false }));
-    glass.position.y = 1.655;
-    const edges = new T.LineSegments(new T.EdgesGeometry(glass.geometry), new T.LineBasicMaterial({ color: "#f3e6c4", transparent: true, opacity: 0.7 }));
-    edges.position.copy(glass.position);
+    const ped = new T.Mesh(new T.CylinderGeometry(0.88, 1.03, 0.84, 48), new T.MeshStandardMaterial({ color: "#24272b", roughness: 0.48, metalness: 0.24 }));
+    ped.scale.z = 0.72; ped.position.y = 0.42;
+    const trim = new T.Mesh(new T.TorusGeometry(0.89, 0.035, 8, 48), new T.MeshStandardMaterial({ color: "#9c8a65", metalness: 0.58, roughness: 0.34 }));
+    trim.scale.z = 0.72; trim.rotation.x = Math.PI / 2; trim.position.y = 0.84;
+    const glass = new T.Mesh(new T.CylinderGeometry(0.8, 0.8, 1.32, 48, 1, true), new T.MeshPhysicalMaterial({ color: "#dff2ff", transparent: true, opacity: 0.1, roughness: 0.08, metalness: 0.02, depthWrite: false, side: T.DoubleSide }));
+    glass.scale.z = 0.7; glass.position.y = 1.5;
+    const crown = new T.Mesh(new T.TorusGeometry(0.8, 0.018, 6, 48), new T.MeshStandardMaterial({ color: "#b7c1c8", metalness: 0.65, roughness: 0.28 }));
+    crown.scale.z = 0.7; crown.rotation.x = Math.PI / 2; crown.position.y = 2.16;
     const hw = Models.svgTexture(Art.hardware(ex.art), 512);
     const sprite = new T.Sprite(new T.SpriteMaterial({ map: hw, toneMapped: false, alphaTest: 0.05 }));
     sprite.center.set(0.5, 0);
     sprite.scale.set(h * hw.userData.aspect, h, 1);
     sprite.position.y = 1.0;
-    g.add(ped, trim, glass, edges, sprite, lightPool(3.6));
+    g.add(ped, trim, glass, crown, sprite, lightPool(3.6));
     Models.shadowAll(ped);
     g.userData.pick = [ped, glass, sprite];
     return g;
@@ -1316,24 +1843,14 @@
     } else if (h.deco === "moon" || h.deco === "mars") {
       const ped = new T.Mesh(new T.CylinderGeometry(0.8, 1.0, 0.8, 28), new T.MeshStandardMaterial({ color: "#2b2520" }));
       ped.position.y = 0.4; g.add(ped);
-      const ball = new T.Mesh(new T.IcosahedronGeometry(1.0, 3), new T.MeshStandardMaterial({ color: h.deco === "moon" ? "#bdb8ae" : "#c0643c", roughness: 0.95, flatShading: true }));
-      ball.position.y = 1.85; g.add(ball);
+      // A smooth, textured globe at a size that no longer hides the doors
+      // behind it. Loose floor rocks and bootprint decals were removed: they
+      // sat on the side-door approach lines.
+      const moonTex = h.deco === "moon" && regolithTex("moon");
+      const tex = moonTex ? moonTex.map : planetTex("mars");
+      const ball = new T.Mesh(new T.SphereGeometry(0.72, 64, 40), new T.MeshStandardMaterial({ map: tex, bumpMap: moonTex ? moonTex.emissive : tex, bumpScale: 0.02, roughness: 0.96, metalness: 0 }));
+      ball.position.y = 1.55; g.add(ball);
       spin.push({ o: ball, s: 0.2 });
-      if (h.deco === "moon") {
-        // bootprints on the floor
-        for (let i = 0; i < 6; i++) {
-          const fp = add(new T.Mesh(new T.CircleGeometry(0.16, 12), new T.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.2 })));
-          fp.scale.set(0.7, 1.4, 1);
-          fp.rotation.x = -Math.PI / 2;
-          fp.position.set(-3 + i * 1.2, 0.013, 3.2 + (i % 2) * 0.35);
-        }
-      } else {
-        [[-3.5, 3], [3.2, 2.6], [-2.4, -3.6]].forEach(([x, z], i) => {
-          const rock = add(new T.Mesh(new T.DodecahedronGeometry(0.35 + i * 0.1, 0), new T.MeshStandardMaterial({ color: "#8a4127", roughness: 1, flatShading: true })));
-          rock.position.set(x, 0.25, z); rock.castShadow = true;
-          obstacles.push({ x, z, r: 0.5 });
-        });
-      }
     } else {
       // a radio dish, like the Deep Space Network
       const mount = new T.Mesh(new T.CylinderGeometry(0.3, 0.5, 1.4, 16), new T.MeshStandardMaterial({ color: "#8a8d93" }));
@@ -1394,20 +1911,60 @@
         x.beginPath(); x.moveTo(cx, cy - 5 * u); x.lineTo(cx + 4 * u, cy); x.lineTo(cx, cy + 5 * u); x.lineTo(cx - 4 * u, cy); x.closePath(); x.fill();
       }
     } }, 0, 2.4);
-    // consoles
+    // Auxiliary data walls frame the main signal display with animated-looking
+    // telemetry graphics (static textures keep the browser workload low).
+    const dataTex = canvasTex(384, 224, (c, W, H) => {
+      c.fillStyle = "#071120"; c.fillRect(0, 0, W, H);
+      c.strokeStyle = "rgba(94,242,255,.16)"; c.lineWidth = 1;
+      for (let x = 0; x < W; x += 32) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+      for (let y = 0; y < H; y += 28) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+      c.strokeStyle = "#5ef2ff"; c.lineWidth = 4; c.beginPath();
+      for (let x = 0; x <= W; x += 12) c.lineTo(x, H * 0.58 + Math.sin(x * 0.055) * 32 + Math.sin(x * 0.17) * 9);
+      c.stroke();
+      c.fillStyle = "#ffd34d";
+      for (let i = 0; i < k; i++) c.fillRect(22 + i * 34, H - 34, 18, i < have ? 18 : 5);
+    });
+    [-4.65, 4.65].forEach((x) => {
+      const frame = add(new T.Mesh(curvedPanelGeometry(3.1, 2.05, 0.2, 28), new T.MeshStandardMaterial({ color: "#242d42", metalness: 0.55, roughness: 0.32, side: T.DoubleSide })));
+      frame.position.set(x, 2.35, Z0 + WALL_T + 0.13);
+      const screen = add(new T.Mesh(curvedPanelGeometry(2.82, 1.75, 0.24, 28), new T.MeshBasicMaterial({ map: dataTex, toneMapped: false, side: T.DoubleSide })));
+      screen.position.set(x, 2.35, Z0 + WALL_T + 0.215);
+    });
+    // Elliptical command islands replace box desks and wrap the operators in data.
     [[-4.5, -3.6, 0.5], [4.5, -3.6, -0.5]].forEach(([x, z, ry]) => {
-      const desk = add(new T.Mesh(new T.BoxGeometry(2.4, 0.9, 0.9), new T.MeshStandardMaterial({ color: "#2b3350", roughness: 0.5 })));
-      desk.position.set(x, 0.45, z); desk.rotation.y = ry;
-      const scr = add(new T.Mesh(new T.PlaneGeometry(2.0, 0.6), new T.MeshBasicMaterial({ color: "#3fd6ff" })));
-      scr.position.set(x, 0.92, z + 0.05); scr.rotation.set(-Math.PI / 2 + 0.4, ry, 0, "YXZ");
+      const desk = add(new T.Mesh(new T.CylinderGeometry(0.8, 0.98, 0.82, 40), new T.MeshStandardMaterial({ color: "#262d3d", metalness: 0.34, roughness: 0.46 })));
+      desk.scale.x = 1.5; desk.position.set(x, 0.41, z); desk.rotation.y = ry;
+      const rim = add(new T.Mesh(new T.TorusGeometry(0.83, 0.045, 8, 48), new T.MeshStandardMaterial({ color: "#8896a5", emissive: "#5ef2ff", emissiveIntensity: 0.16, metalness: 0.6, roughness: 0.3 })));
+      rim.scale.x = 1.5; rim.rotation.x = Math.PI / 2; rim.rotation.z = ry; rim.position.set(x, 0.84, z);
+      const scr = add(new T.Mesh(curvedPanelGeometry(1.8, 0.52, 0.13, 24), new T.MeshBasicMaterial({ map: dataTex, toneMapped: false, side: T.DoubleSide })));
+      scr.position.set(x, 1.08, z + 0.12); scr.rotation.set(-0.42, ry, 0, "YXZ");
       Models.shadowAll(desk);
       obstacles.push({ x, z, r: 1.2 });
     });
-    const launch = add(new T.Mesh(new T.CylinderGeometry(0.5, 0.6, 1.0, 24), new T.MeshStandardMaterial({ color: "#2b3350" })));
+    const launch = add(new T.Mesh(new T.CylinderGeometry(0.52, 0.72, 1.0, 40), new T.MeshStandardMaterial({ color: "#252d3d", metalness: 0.32, roughness: 0.4 })));
     launch.position.set(0, 0.5, -1.2);
     const btn = add(new T.Mesh(new T.CylinderGeometry(0.28, 0.28, 0.12, 24), new T.MeshBasicMaterial({ color: "#e0533b" })));
     btn.position.set(0, 1.06, -1.2);
     spin.push({ o: btn, pulseScale: true });
+    // The restored Homecoming Signal is the room's visual and narrative focus.
+    const signal = add(new T.Group());
+    signal.position.set(0, 1.82, -1.2);
+    const signalMat = new T.MeshBasicMaterial({ color: "#5ef2ff", transparent: true, opacity: 0.78, side: T.DoubleSide, toneMapped: false });
+    [0.62, 0.9, 1.18].forEach((rad, i) => {
+      const ring = new T.Mesh(new T.TorusGeometry(rad, 0.026, 8, 64), signalMat);
+      ring.rotation.set(i * 0.68, i * 0.52, i * 0.43);
+      signal.add(ring);
+    });
+    const core = new T.Mesh(new T.OctahedronGeometry(0.3), new T.MeshStandardMaterial({ color: have === k ? "#ffd34d" : "#40516b", emissive: have === k ? "#ffb100" : "#132238", emissiveIntensity: 1.15, metalness: 0.45, roughness: 0.25 }));
+    signal.add(core);
+    const beam = new T.Mesh(new T.CylinderGeometry(0.06, 0.42, 2.05, 28, 1, true), new T.MeshBasicMaterial({ color: "#5ef2ff", transparent: true, opacity: 0.1, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending }));
+    beam.position.y = 1.02;
+    signal.add(beam);
+    spin.push({ o: signal, s: 0.18 });
+    const focus = add(new T.SpotLight("#7be8ff", 1.15, 8, Math.PI / 5, 0.65, 1.4));
+    focus.position.set(0, WALL_H - 0.3, -1.2);
+    focus.target.position.set(0, 1.4, -1.2);
+    add(focus.target);
     Models.shadowAll(launch);
     obstacles.push({ x: 0, z: -1.2, r: 0.8 });
     addSpot({ kind: "launch", pos: [0, 0.4], face: Math.PI, meshes: [launch, btn] });
@@ -1504,39 +2061,55 @@
   function goToSpot(s) { walkTo(s.pos, () => activate(s), s.face); }
 
   /* =========================================================
-   * CAMERA + CUTAWAY WALLS
+   * EYE-LEVEL MUSEUM CAMERA
+   * A close trailing view preserves the visible child avatar and click-to-walk
+   * controls while putting the viewer physically inside the gallery.
    * ========================================================= */
-  const cam = { yaw: 0, pitch: 0.95, dist: 13, tx: 0, tz: 1 };
-  const want = { yaw: 0, pitch: 0.95, dist: 13 };
+  const cam = { yaw: 0, pitch: 0, dist: 3.2, tx: 0, tz: 5.2 };
+  const want = { yaw: 0, pitch: 0, dist: 3.2 };
   function updateCamera(dt) {
-    const k = Math.min(1, dt * 5);
+    const k = Math.min(1, dt * 7);
     let dy = want.yaw - cam.yaw;
     dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     cam.yaw += dy * k;
     cam.pitch += (want.pitch - cam.pitch) * k;
     cam.dist += (want.dist - cam.dist) * k;
-    // aim between you and the middle of the room, so the whole room stays in view
-    cam.tx += (P.x * 0.55 - cam.tx) * k;
-    cam.tz += (P.z * 0.55 + 0.6 - cam.tz) * k;
-    const cp = Math.cos(cam.pitch);
-    camera.position.set(cam.tx + Math.sin(cam.yaw) * cp * cam.dist, 0.9 + Math.sin(cam.pitch) * cam.dist, cam.tz + Math.cos(cam.yaw) * cp * cam.dist);
-    camera.lookAt(cam.tx, 0.9, cam.tz);
+    const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
+    // Keep the lens inside the finished wall faces. Near a wall the view
+    // naturally becomes first-person instead of clipping outside the room.
+    const currentRoom = R() ? room(R().cur) : null;
+    const exhibitView = currentRoom && currentRoom.type === "exhibit";
+    // Exhibit landscapes live along the room edges. Keep the trailing lens in
+    // the clear visitor aisle and farther from the panoramic north wall so a
+    // camera turn can never pass through terrain, glass or the media surface.
+    const margin = exhibitView ? 0.95 : WALL_T + 0.18;
+    let followDist = cam.dist, dx = P.x - fx * followDist, dz = P.z - fz * followDist;
+    for (let i = 0; i < 7; i++) {
+      dx = P.x - fx * followDist;
+      dz = P.z - fz * followDist;
+      if (exhibitView) dx = Math.max(-2.05, Math.min(2.05, dx));
+      dx = Math.max(X0 + margin, Math.min(X1 - margin, dx));
+      dz = Math.max(Z0 + margin, Math.min(Z1 - margin, dz));
+      const blocked = obstacles.some((o) => (dx - o.x) ** 2 + (dz - o.z) ** 2 < (o.r + 0.34) ** 2);
+      if (!blocked) break;
+      followDist = Math.max(0.75, followDist - 0.42);
+    }
+    cam.tx += (dx - cam.tx) * k;
+    cam.tz += (dz - cam.tz) * k;
+    camera.position.set(cam.tx, 1.62, cam.tz);
+    const focusDistance = 2.4;
+    camera.lookAt(P.x + fx * focusDistance, 1.35 + cam.pitch * 1.8, P.z + fz * focusDistance);
+    // Do not let the avatar block the lens when the trailing distance collapses.
+    if (kid) kid.visible = Math.hypot(cam.tx - P.x, cam.tz - P.z) > 2.35;
   }
-  const tmpDir = V(0, 0, 0);
   function updateWalls(dt) {
-    const f = V(-Math.sin(cam.yaw), 0, -Math.cos(cam.yaw));
-    sides.forEach((s) => (s.blocking = false));
-    tmpDir.set(P.x, 1.2, P.z).sub(camera.position);
-    const dist = tmpDir.length();
-    ray.set(camera.position, tmpDir.normalize());
-    ray.far = dist;
-    ray.intersectObjects(wallMeshes, false).forEach((h) => (h.object.userData.side.blocking = true));
-    ray.far = Infinity;
+    // The old orbit view lowered whichever walls crossed the camera ray. That
+    // exposed grass and sky and made the museum feel like a dollhouse. Interior
+    // walls now remain full height at all times.
     sides.forEach((s) => {
-      const target = s.n.dot(f) > 0.35 || s.blocking ? CUT_H : WALL_H;
-      s.h += (target - s.h) * Math.min(1, dt * 7);
+      s.h += (WALL_H - s.h) * Math.min(1, dt * 10);
       s.group.scale.y = s.h / WALL_H;
-      s.decor.visible = s.h > WALL_H * 0.9;
+      s.decor.visible = true;
     });
   }
   $("#rotL").addEventListener("click", (e) => { e.stopPropagation(); want.yaw -= Math.PI / 4; });
@@ -1568,9 +2141,43 @@
       if (LV().scanner !== "always" && performance.now() > hintUntil) updateHint();
     }
     spots.forEach((s) => (s.ring.material.opacity += ((s === nearSpot ? 0.95 : 0) - s.ring.material.opacity) * Math.min(1, dt * 8)));
+    guardSignSightlines(dt);
     renderer.render(scene, camera);
     placeSay();
     requestAnimationFrame(tick);
+  }
+
+  /* Accessibility guard: a door sign must never be hidden behind decor.
+   * Any suspended planet on the line from the camera to a sign fades to a
+   * faint ghost until the sightline is clear again. */
+  const sightRay = new T.Raycaster(), signPos = new T.Vector3();
+  function guardSignSightlines(dt) {
+    if (!signOccluders.length) return;
+    const blocked = new Set();
+    doorObjs.forEach((o) => {
+      if (!o.sign) return;
+      const g = o.sign.geometry;
+      if (!g.boundingBox) g.computeBoundingBox();
+      const bb = g.boundingBox, cy = (bb.min.y + bb.max.y) / 2;
+      // check the center and both ends so a sign can't be half-covered
+      [(bb.min.x + bb.max.x) / 2, bb.min.x * 0.95, bb.max.x * 0.95].forEach((lx) => {
+        signPos.set(lx, cy, 0);
+        o.sign.localToWorld(signPos);
+        const dir = signPos.clone().sub(camera.position);
+        const dist = dir.length();
+        sightRay.set(camera.position, dir.normalize());
+        sightRay.far = dist;
+        sightRay.intersectObjects(signOccluders, false).forEach((h) => blocked.add(h.object.userData.fadeWith || h.object));
+      });
+    });
+    const k = Math.min(1, dt * 6);
+    signOccluders.forEach((m) => {
+      const owner = m.userData.fadeWith || m;
+      const target = blocked.has(owner) ? 0.12 : 1;
+      const mat = m.material;
+      mat.opacity += (target - mat.opacity) * k;
+      mat.depthWrite = mat.opacity > 0.95;
+    });
   }
 
   function step(dt) {
@@ -1723,7 +2330,7 @@
     P.path = []; P.onArrive = null; P.faceTo = null;
     Rb.x = P.x + Math.sin(P.heading + 2.4) * 1.1; Rb.z = P.z + Math.cos(P.heading + 2.4) * 1.1;
     crumbs.length = 0;
-    cam.tx = P.x * 0.55; cam.tz = P.z * 0.55 + 0.6;
+    cam.tx = P.x; cam.tz = Math.min(Z1 - WALL_T - 0.18, P.z + cam.dist);
     updateHUD();
     setTimeout(() => arrived(d.to, first, !back), 350);
   }
@@ -1739,9 +2346,51 @@
   }
 
   let noteChecked = false;
+  /* ---------------- story chapters, narrated by the robot guide ---------------- */
+  const CH = () => (window.STORY && STORY.chapters) || {};
+  function chapterHTML(key, opts) {
+    const c = CH()[key];
+    if (!c) return "";
+    const robot = esc(S.robotName);
+    return `${opts && opts.back ? `<p class="ch-back"><b>${esc(t("ch.lookBack"))}</b> ${esc(opts.back)}</p>` : ""}
+      <div class="ch-lines" lang="en" dir="ltr">${c.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>
+      <p class="ch-guide">${esc(t("ch.guide", { robot: S.robotName }))}</p>`;
+  }
+  function chapterKicker(key) {
+    const c = CH()[key], total = Object.values(CH()).filter((x) => x.n > 0).length;
+    return c.n ? t("ch.kicker", { n: c.n, m: total }) : t("ch.prologue");
+  }
+  // opens a chapter card the first time the explorer enters a wing; then runs `after`
+  function maybeChapter(r, after) {
+    const ex = r.type === "exhibit" && exById(r.exhibit);
+    const key = ex && ex.wing && ex.wing.id;
+    const run = R();
+    run.chapters = run.chapters || [];
+    if (!key || !CH()[key] || run.chapters.includes(key)) return false;
+    const prev = run.chapters[run.chapters.length - 1];
+    run.chapters.push(key);
+    save();
+    const c = CH()[key];
+    $("#chKicker").textContent = chapterKicker(key);
+    $("#chTitle").textContent = c.title;
+    $("#chBody").innerHTML = chapterHTML(key, { back: isLearn() && prev && CH()[prev] && CH()[prev].outro });
+    $("#chapterDialog").dataset.wing = key;
+    chapterAfter = after;
+    setTimeout(() => $("#chapterDialog").showModal(), 650);
+    return true;
+  }
+  let chapterAfter = null;
+  // the last chapter opens both endings
+  function finalChapter() {
+    const c = CH().future;
+    return c ? `<section class="ch-final"><p class="catalog">${esc(chapterKicker("future"))}</p><h3>${esc(c.title)}</h3>${chapterHTML("future")}</section>` : "";
+  }
+  $("#chapterDialog").addEventListener("close", () => { const f = chapterAfter; chapterAfter = null; if (f) f(); });
+
   function arrived(id, first, oneWay) {
     const r = room(id);
     showBanner(id);
+    if (first && r.type === "exhibit" && maybeChapter(r, () => arrived(id, first, oneWay))) return;
     if (r.type === "mc") return setTimeout(() => openFinale(), 900);
     let line = "";
     if (noteChecked) {
@@ -1882,12 +2531,12 @@
       if (!drag.moved && Math.hypot(dx, dy) < 7) return;
       drag.moved = true;
       want.yaw -= dx * 0.008;
-      want.pitch = Math.max(0.45, Math.min(1.35, want.pitch + dy * 0.005));
+      want.pitch = Math.max(-0.28, Math.min(0.34, want.pitch + dy * 0.0035));
       drag.x = e.clientX; drag.y = e.clientY;
     });
     c.addEventListener("pointerup", (e) => { if (!drag) return; const was = drag.moved; drag = null; if (!was) clickAt(e.clientX, e.clientY); });
     c.addEventListener("pointercancel", () => (drag = null));
-    c.addEventListener("wheel", (e) => { e.preventDefault(); userZoomed = true; want.dist = Math.max(6, Math.min(22, want.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: false });
+    c.addEventListener("wheel", (e) => { e.preventDefault(); userZoomed = true; want.dist = Math.max(2.2, Math.min(4.2, want.dist * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
   }
   function clickAt(cx, cy) {
     if (transit) return;
@@ -2042,7 +2691,7 @@
       buildRoom(R().cur);
       P.x = 0; P.z = 3.6; P.heading = Math.PI; Rb.x = 0.9; Rb.z = 4.4; crumbs.length = 0;
       if (R().cur !== 0) { P.z = 1.8; Rb.z = 2.6; }
-      cam.tx = P.x * 0.55; cam.tz = P.z * 0.55 + 0.6;
+      cam.tx = P.x; cam.tz = Math.min(Z1 - WALL_T - 0.18, P.z + cam.dist);
       $("#hudName").textContent = S.player;
       $("#chatFabLabel").textContent = t("chat.fab", { robot: S.robotName });
       $("#chatFab").classList.add("pulse");
@@ -2082,9 +2731,10 @@
     const trip = pl !== "earth" ? `<p class="story-place">${esc(t("story.trip." + pl))}</p>` : "";
     const place = `<p class="story-place">${esc(t("echo.place." + pl))}</p>`;
     if (isLearn()) {
-      $("#storyKicker").textContent = t("story.learnKicker");
+      const dream = CH().dream;
+      $("#storyKicker").textContent = dream ? `${chapterKicker("dream")} · ${dream.title}` : t("story.learnKicker");
       $("#storyTitle").textContent = t("story.learnTitle");
-      $("#storyBody").innerHTML = trip + ["story.learn1", "story.learn2", "story.learn3"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place;
+      $("#storyBody").innerHTML = trip + (dream ? `<div class="ch-lines" lang="en" dir="ltr">${dream.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>` : "") + ["story.learn1", "story.learn2", "story.learn3"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place;
     } else {
       $("#storyKicker").textContent = t("story.kicker");
       $("#storyTitle").textContent = t("story.title");
@@ -2346,16 +2996,26 @@
   /* =========================================================
    * EXHIBIT PLACARD
    * ========================================================= */
+  // Three tabs, simple enough for an 8-year-old: the story (with every
+  // extra detail folded underneath), then-and-now photos, and a quiz.
   const TABS = [
-    { id: "story", has: (e) => e.story },
-    { id: "facts", has: (e) => window.FACTS && FACTS[e.id] },
+    { id: "story", has: (e) => e.story || storyBeats(e) },
     { id: "orbit", has: (e) => window.ORBIT && ORBIT[e.id] },
-    { id: "listen", has: (e) => window.SOUNDS && SOUNDS[e.id] },
-    { id: "left", has: (e) => e.leftBehind },
-    { id: "learned", has: (e) => e.discovery },
-    { id: "next", has: (e) => e.next },
     { id: "quiz", has: (e) => e.quiz },
   ];
+  const MORE_SECTIONS = [
+    { id: "left", has: (e) => e.leftBehind },
+    { id: "learned", has: (e) => e.discovery && !storyBeats(e) },
+    { id: "next", has: (e) => e.next && !storyBeats(e) },
+    { id: "facts", has: (e) => window.FACTS && FACTS[e.id] },
+    { id: "listen", has: (e) => window.SOUNDS && SOUNDS[e.id] },
+  ];
+  const storyBeats = (e) => (window.STORY && STORY.machines[e.id]) || null;
+  // the cards to page through: hook + beats when written, else the old pages
+  const storyPages = (e) => {
+    const sb = storyBeats(e);
+    return sb ? sb.beats : (e.story || []).map((text) => ({ text }));
+  };
   let ex = null, tab = "story", page = 0, tries = 0, tabs = TABS;
   const visit = (id) => (R() ? (R().visits[id] = R().visits[id] || {}) : {});
 
@@ -2383,27 +3043,22 @@
     const body = $("#exBody");
     const v = R().visits[ex.id] || {};
     if (tab === "story") {
-      body.innerHTML = `<blockquote class="voice" lang="en" dir="ltr">${linkify(ex.story[page])}</blockquote>
-        <p class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: ex.story.length }))}</p>${englishNote()}`;
-      if (page === ex.story.length - 1 && !v.story) storyHeard(ex);
-    } else if (tab === "facts") {
-      const f = FACTS[ex.id];
-      const rows = ["builtBy", "launched", "lasted", "size", "mass", "power", "speed", "special"].filter((k) => f[k]);
-      // NASA's official catalog (NSSDCA): where it rests, last contact, catalog ID
-      const nd = (window.NASA_DATA || {})[ex.id] || {};
-      // "2018-10-31 (missed contacts...)" -> a date in the player's language, plus any note
-      const day = (iso) => {
-        const m = String(iso).match(/^(\d{4}-\d{2}-\d{2})(.*)$/);
-        if (!m) return iso;
-        try { return new Intl.DateTimeFormat(I18N.lang, { year: "numeric", month: "long", day: "numeric" }).format(new Date(m[1] + "T12:00:00Z")) + m[2]; } catch (e) { return iso; }
-      };
-      const catalog = [
-        nd.restingPlace && `<dt>${esc(t("fact.resting"))}</dt><dd lang="en" dir="ltr">${linkify(nd.restingPlace)}</dd>`,
-        nd.status && `<dt>${esc(t("fact.status"))}</dt><dd lang="en" dir="ltr">${linkify(nd.status)}</dd>`,
-        nd.lastContact && `<dt>${esc(t("fact.lastContact"))}</dt><dd>${esc(day(nd.lastContact))}</dd>`,
-        nd.nssdcId && `<dt>${esc(t("fact.nssdc"))}</dt><dd><a href="${esc(nd.nssdcUrl || "https://nssdc.gsfc.nasa.gov/")}" target="_blank" rel="noopener">NSSDCA ${esc(nd.nssdcId)}</a></dd>`,
-      ].filter(Boolean).join("");
-      body.innerHTML = `<h3>${esc(t("fact.title"))}</h3><dl class="fact-file" lang="en" dir="ltr">${rows.map((k) => `<dt>${esc(t("fact." + k))}</dt><dd>${linkify(f[k])}</dd>`).join("")}${catalog}</dl>${sourcesLine(ex)}${englishNote()}`;
+      const pages = storyPages(ex), sb = storyBeats(ex), cur = pages[page];
+      const last = page === pages.length - 1;
+      const dots = pages.map((p, i) => `<span class="beat-dot${i === page ? " on" : ""}${i < page ? " done" : ""}" aria-hidden="true"></span>`).join("");
+      const extras = last ? MORE_SECTIONS.filter((x) => x.has(ex)) : [];
+      body.innerHTML = `${sb && page === 0 ? `<p class="story-hook" lang="en" dir="ltr">${linkify(sb.hook)}</p>` : ""}
+        ${cur.k ? `<p class="beat-label"><span class="beat-num">${page + 1}</span>${esc(t("beat." + cur.k))}</p>` : ""}
+        <blockquote class="voice${cur.k ? " beat " + cur.k : ""}" lang="en" dir="ltr">${linkify(cur.text)}</blockquote>
+        <div class="beat-progress"><span class="beat-dots">${dots}</span><span class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: pages.length }))}</span></div>
+        ${extras.length ? `<section class="ex-more"><h3>${esc(t("ex.moreAbout"))}</h3>${extras.map((x) => `<details class="fold" data-more="${x.id}"><summary>${esc(t("tab." + x.id))}</summary><div class="fold-body"></div></details>`).join("")}</section>` : ""}
+        ${englishNote()}`;
+      // fill each fold the first time it opens (keeps audio and long lists lazy)
+      body.querySelectorAll("[data-more]").forEach((d) => d.addEventListener("toggle", () => {
+        const fb = d.querySelector(".fold-body");
+        if (d.open && !fb.innerHTML) fb.innerHTML = extraHTML(d.dataset.more).replace(/^\s*<h3>.*?<\/h3>/, "").replace(englishNote(), "");
+      }));
+      if (last && !v.story) storyHeard(ex);
     } else if (tab === "orbit") {
       // then and now: the mission photo next to a picture taken from orbit years later
       const o = ORBIT[ex.id], ph = window.PHOTOS && PHOTOS[ex.id];
@@ -2422,23 +3077,51 @@
         <p class="src-line">${esc(t("orbit.camera", { camera: o.camera || "" }))}${o.taken ? " · " + esc(o.taken) : ""} · ${esc(t("photo.credit"))}: ${esc(o.credit)}${o.source ? ` · <a href="${esc(o.source)}" target="_blank" rel="noopener">${esc(t("fact.sources"))}</a>` : ""}</p>${englishNote()}`;
       const range = $(".cmp-range", body), cmp = $(".compare", body);
       if (range) range.addEventListener("input", () => cmp.style.setProperty("--pos", range.value + "%"));
-    } else if (tab === "listen") {
+    } else renderQuiz();
+    const lastTab = tabs[tabs.length - 1].id === tab;
+    $("#exNext").textContent = tab === "story" && page < storyPages(ex).length - 1 ? t("ex.keep") : lastTab ? t("ex.back") : t("ex.next");
+  }
+  /* Extra sections folded under the last story card ("Want to know more?").
+   * Kids get the story first; space fans can open every detail. */
+  function extraHTML(id) {
+    if (id === "facts") {
+      const f = FACTS[ex.id];
+      const rows = ["builtBy", "launched", "lasted", "size", "mass", "power", "speed", "special"].filter((k) => f[k]);
+      // NASA's official catalog (NSSDCA): where it rests, last contact, catalog ID
+      const nd = (window.NASA_DATA || {})[ex.id] || {};
+      // "2018-10-31 (missed contacts...)" -> a date in the player's language, plus any note
+      const day = (iso) => {
+        const m = String(iso).match(/^(\d{4}-\d{2}-\d{2})(.*)$/);
+        if (!m) return iso;
+        try { return new Intl.DateTimeFormat(I18N.lang, { year: "numeric", month: "long", day: "numeric" }).format(new Date(m[1] + "T12:00:00Z")) + m[2]; } catch (e) { return iso; }
+      };
+      const catalog = [
+        nd.restingPlace && `<dt>${esc(t("fact.resting"))}</dt><dd lang="en" dir="ltr">${linkify(nd.restingPlace)}</dd>`,
+        nd.status && `<dt>${esc(t("fact.status"))}</dt><dd lang="en" dir="ltr">${linkify(nd.status)}</dd>`,
+        nd.lastContact && `<dt>${esc(t("fact.lastContact"))}</dt><dd>${esc(day(nd.lastContact))}</dd>`,
+        nd.nssdcId && `<dt>${esc(t("fact.nssdc"))}</dt><dd><a href="${esc(nd.nssdcUrl || "https://nssdc.gsfc.nasa.gov/")}" target="_blank" rel="noopener">NSSDCA ${esc(nd.nssdcId)}</a></dd>`,
+      ].filter(Boolean).join("");
+      return `<h3>${esc(t("fact.title"))}</h3><dl class="fact-file" lang="en" dir="ltr">${rows.map((k) => `<dt>${esc(t("fact." + k))}</dt><dd>${linkify(f[k])}</dd>`).join("")}${catalog}</dl>${sourcesLine(ex)}${englishNote()}`;
+    }
+    if (id === "listen") {
       // a real NASA recording (or NASA data turned into sound)
       const a = SOUNDS[ex.id];
-      body.innerHTML = `<h3>${esc(t("listen.title"))}</h3>
+      return `<h3>${esc(t("listen.title"))}</h3>
         <p class="listen-name" lang="en" dir="ltr"><b>${esc(a.title)}</b>${a.seconds ? ` · ${Math.round(a.seconds)} s` : ""}</p>
         <audio class="listen-audio" controls preload="none" src="${esc(a.src)}"></audio>
         <p class="big" lang="en" dir="ltr">${linkify(a.caption)}</p>
         <p class="src-line">${esc(t("listen.credit"))}: ${esc(a.credit)}${a.source ? ` · <a href="${esc(a.source)}" target="_blank" rel="noopener">${esc(t("fact.sources"))}</a>` : ""}</p>${englishNote()}`;
-    } else if (tab === "left") {
-      body.innerHTML = `<h3>${esc(t("ex.leftTitle"))}</h3><ul class="left" lang="en" dir="ltr">${ex.leftBehind.map((l) => `<li>${linkify(l)}</li>`).join("")}</ul>${sourcesLine(ex)}${englishNote()}`;
-    } else if (tab === "learned") {
-      body.innerHTML = `<h3>${esc(t("ex.learnedTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.discovery)}</p>${englishNote()}`;
-    } else if (tab === "next") {
-      body.innerHTML = `<h3>${esc(t("ex.nextTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.next)}</p>${englishNote()}`;
-    } else renderQuiz();
-    const lastTab = tabs[tabs.length - 1].id === tab;
-    $("#exNext").textContent = tab === "story" && page < ex.story.length - 1 ? t("ex.keep") : lastTab ? t("ex.back") : t("ex.next");
+    }
+    if (id === "left") {
+      return `<h3>${esc(t("ex.leftTitle"))}</h3><ul class="left" lang="en" dir="ltr">${ex.leftBehind.map((l) => `<li>${linkify(l)}</li>`).join("")}</ul>${sourcesLine(ex)}${englishNote()}`;
+    }
+    if (id === "learned") {
+      return `<h3>${esc(t("ex.learnedTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.discovery)}</p>${englishNote()}`;
+    }
+    if (id === "next") {
+      return `<h3>${esc(t("ex.nextTitle"))}</h3><p class="big" lang="en" dir="ltr">${linkify(ex.next)}</p>${englishNote()}`;
+    }
+    return "";
   }
   // where the facts come from: NASA's catalog first, then NASA mission pages
   function sourcesLine(e) {
@@ -2514,7 +3197,7 @@
     renderTab();
   });
   $("#exNext").addEventListener("click", () => {
-    if (tab === "story" && page < ex.story.length - 1) { page++; return renderTab(); }
+    if (tab === "story" && page < storyPages(ex).length - 1) { page++; return renderTab(); }
     const i = tabs.findIndex((t) => t.id === tab);
     if (i < tabs.length - 1) { tab = tabs[i + 1].id; page = 0; renderTab(); }
     else $("#exhibitDialog").close();
@@ -2581,7 +3264,7 @@
   // a Read to me button in the header of every window that shows text
   const READ_TARGETS = {
     storyDialog: ["#storyTitle", "#storyBody"], rulesDialog: ["#rulesTitle", "#rulesBody"], learnDialog: ["#learnBody"],
-    riddleDialog: ["#riddleTitle", "#riddleQ", "#riddleFb"], finaleDialog: ["#finTitle", "#finaleBody"], exhibitDialog: ["#exTitle", "#exBody"],
+    riddleDialog: ["#riddleTitle", "#riddleQ", "#riddleFb"], chapterDialog: ["#chKicker", "#chTitle", "#chBody"], finaleDialog: ["#finTitle", "#finaleBody"], exhibitDialog: ["#exTitle", "#exBody"],
   };
   Object.entries(READ_TARGETS).forEach(([id, sels]) => {
     const dlg = document.getElementById(id), head = dlg && dlg.querySelector(".ex-head");
@@ -2771,7 +3454,7 @@
     }
     $("#finTitle").textContent = t("fin.sent");
     const slices = [...Array(k)].map((_, i) => `<div class="pbd-slice" style="--i:${i};--k:${k};background-position:${k > 1 ? (i / (k - 1)) * 100 : 0}% 0"></div>`).join("");
-    $("#finaleBody").innerHTML = `
+    $("#finaleBody").innerHTML = `${finalChapter()}
       <div class="pbd" style="--k:${k}">${slices}<div class="pbd-dot"></div></div>
       <p class="fin-lead">${t("fin.pbd1", { k })}</p>
       <p>${t("fin.pbd2")}</p>
@@ -2801,7 +3484,7 @@
     const k = 5;
     const slices = [...Array(k)].map((_, i) => `<div class="pbd-slice" style="--i:${i};--k:${k};background-position:${(i / (k - 1)) * 100}% 0"></div>`).join("");
     $("#finTitle").textContent = t("fin.learnTitle");
-    $("#finaleBody").innerHTML = `
+    $("#finaleBody").innerHTML = `${finalChapter()}
       <p class="fin-lead">${t("fin.learnLead", { n: run.visited.length, m: g.rooms.length, s: heard })}</p>
       <div class="pbd" style="--k:${k}">${slices}<div class="pbd-dot"></div></div>
       <p>${t("fin.pbd2")}</p>
@@ -2907,5 +3590,12 @@
     story: () => openStory(),
     exhibit: (id) => openExhibit(exById(id)),
     rules: () => openRules(),
+    // Dev only: render any room without changing the saved game (reload to return).
+    preview: (id) => {
+      buildRoom(id);
+      P.x = 0; P.z = 3.6; P.heading = Math.PI; P.path = []; P.onArrive = null; P.faceTo = null;
+      cam.tx = P.x; cam.tz = Math.min(Z1 - WALL_T - 0.18, P.z + cam.dist);
+      return room(id).type;
+    },
   };
 })();
