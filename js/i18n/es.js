@@ -489,4 +489,10 @@ I18N.add("es", {
   "fin.legacyQuestion": "¿Qué nos ayudaron a entender estos exploradores?",
   "fin.legacyNext": "Qué vino después",
   "fin.legacyEmpty": "Explora más exhibiciones para descubrir sus hallazgos.",
+  "autotr.note": "Traducido automáticamente por tu navegador.",
+  "wingQ.moon": "¿Podemos aterrizar en otro mundo, y pueden ir personas allí?",
+  "wingQ.mars": "¿Alguna vez Marte fue un lugar donde podía existir vida?",
+  "wingQ.deep": "¿Qué tan lejos puede viajar una máquina hecha por personas?",
+  "fact.crewTag": "Historia de astronautas",
+  "fact.designTag": "Decisión de diseño",
 });

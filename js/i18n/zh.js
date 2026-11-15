@@ -489,4 +489,10 @@ I18N.add("zh", {
   "fin.legacyQuestion": "这些探索者帮助我们了解了什么？",
   "fin.legacyNext": "后来发生了什么",
   "fin.legacyEmpty": "多探索一些展品，揭开它们的发现。",
+  "autotr.note": "由你的浏览器自动翻译。",
+  "wingQ.moon": "我们能在另一个世界着陆吗？人类能去那里吗？",
+  "wingQ.mars": "火星曾经是可能存在生命的地方吗？",
+  "wingQ.deep": "人类制造的机器能飞多远？",
+  "fact.crewTag": "宇航员的故事",
+  "fact.designTag": "设计上的选择",
 });

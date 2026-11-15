@@ -37,7 +37,7 @@ window.I18N = (function () {
     { code: "vi", name: "Tiếng Việt" },
     { code: "ko", name: "한국어" },
   ];
-  const VER = 99;
+  const VER = 101;
   const dict = {};
   const listeners = [];
   let lang = "en";
@@ -84,6 +84,9 @@ window.I18N = (function () {
   }
   return {
     LANGS, add, t, has, set, apply, load,
+    // used by js/autotranslate.js to fill gaps in a language file
+    missing: (code) => Object.keys(dict.en || {}).filter((k) => !(dict[code] && k in dict[code])),
+    raw: (code, key) => (dict[code] && dict[code][key]) || "",
     onChange: (f) => listeners.push(f),
     get lang() { return lang; },
     get rtl() { return !!(LANGS.find((l) => l.code === lang) || {}).rtl; },

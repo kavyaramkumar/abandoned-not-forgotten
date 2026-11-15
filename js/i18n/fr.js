@@ -489,4 +489,10 @@ I18N.add("fr", {
   "fin.legacyQuestion": "Qu'est-ce que ces explorateurs nous ont aidés à comprendre ?",
   "fin.legacyNext": "Ce qui a suivi",
   "fin.legacyEmpty": "Explore plus d'expositions pour découvrir leurs trouvailles.",
+  "autotr.note": "Traduit automatiquement par ton navigateur.",
+  "wingQ.moon": "Peut-on se poser sur un autre monde, et des humains peuvent-ils y aller ?",
+  "wingQ.mars": "Mars a-t-elle déjà été un endroit où la vie aurait pu exister ?",
+  "wingQ.deep": "Jusqu'où une machine construite par des humains peut-elle voyager ?",
+  "fact.crewTag": "Histoire d'astronautes",
+  "fact.designTag": "Choix de conception",
 });

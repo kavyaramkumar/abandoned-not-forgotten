@@ -1399,8 +1399,11 @@ const speechRate = () => {
       x.fillStyle = "#d9e6ee";
       x.font = '600 30px "Atkinson Hyperlegible", system-ui, sans-serif';
       // wrap the wing's question onto two lines
-      const words = w.question.split(" "); let line = "", y = ph + 136;
-      words.forEach((wd) => { const tryL = line ? line + " " + wd : wd; if (x.measureText(tryL).width > W - 72) { x.fillText(line, 36, y); line = wd; y += 38; } else line = tryL; });
+      // the wing's question in the player's language; languages without spaces wrap by character
+      const q = I18N.has("wingQ." + w.id) ? t("wingQ." + w.id) : w.question;
+      const words = /\s/.test(q) ? q.split(" ") : [...q]; let line = "", y = ph + 136;
+      const sep = /\s/.test(q) ? " " : "";
+      words.forEach((wd) => { const tryL = line ? line + sep + wd : wd; if (x.measureText(tryL).width > W - 72) { x.fillText(line, 36, y); line = wd; y += 38; } else line = tryL; });
       x.fillText(line, 36, y);
       tex.needsUpdate = true;
     };
@@ -2675,21 +2678,29 @@ const speechRate = () => {
       if (h && !h.here) line = t("echo.scannerLikes", { sym: `<b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b>` });
     }
     // Echo's fact for a brand-new machine or treasure room (astronaut story, or a design choice)
-    const fact = first ? roomFact(r) : "";
-    if (line && fact) {
-      say(line, 6000);
-      const stamp = sayStamp, wait = Math.round(6000 * readFactor()) + 400;
-      factTimer = setTimeout(() => { if (stamp === sayStamp && R() && R().cur === id) say(fact, 9500); }, wait);
-    } else if (fact) say(fact, 9500);
-    else if (line) say(line, 7000);
+    // (in another language it is shown only once translated, never as English mid-game)
+    const factP = first ? roomFact(r) : null;
+    if (line) say(line, factP ? 6000 : 7000);
+    if (factP) {
+      const stamp = sayStamp, wait = line ? Math.round(6000 * readFactor()) + 400 : 0;
+      factP.then((fact) => {
+        if (!fact) return;
+        const go = () => { if (stamp === sayStamp && R() && R().cur === id) say(fact, 9500); };
+        if (wait) factTimer = setTimeout(go, wait); else go();
+      });
+    }
   }
   /* a bubble line from js/echo-facts.js for exhibit rooms and secret treasure rooms */
   let factTimer;
   function roomFact(r) {
     const key = r.type === "exhibit" ? r.exhibit : r.type === "hidden" && r.find === "treasure" ? r.treasure : null;
     const f = key && window.ECHO_FACTS && window.ECHO_FACTS[key];
-    if (!f) return "";
-    return `<b class="fact-tag">${f.crew ? "Astronaut story" : "Design choice"}:</b> ${esc(f.text)}`;
+    if (!f) return null;
+    const tag = `<b class="fact-tag">${esc(t(f.crew ? "fact.crewTag" : "fact.designTag"))}:</b> `;
+    if (I18N.lang === "en") return Promise.resolve(tag + esc(f.text));
+    if (!window.AutoTr || !AutoTr.supported()) return Promise.resolve("");
+    const lang = I18N.lang;
+    return AutoTr.translate(f.text, lang).then((out) => (out && I18N.lang === lang ? tag + `<span lang="${lang}">${esc(out)}</span>` : ""));
   }
 
   /* ---------------- explorer's note: checking a route by following it ---------------- */
@@ -3330,7 +3341,15 @@ const speechRate = () => {
   // the cards to page through: hook + beats when written, else the old pages
   const storyPages = (e) => {
     const sb = storyBeats(e);
-    return sb ? sb.beats : (e.story || []).map((text) => ({ text }));
+    if (!sb) return (e.story || []).map((text) => ({ text, lang: "en" }));
+    // hand-translated cards (js/story-beats-<lang>.js) when the player's language has them
+    const tr = storyTr() && storyTr().beats && storyTr().beats[e.id];
+    return sb.beats.map((b, i) => (tr && tr[i] ? { k: b.k, text: tr[i], lang: I18N.lang } : { k: b.k, text: b.text, lang: "en" }));
+  };
+  // the quiz in the player's language when translated, else English
+  const quizFor = (e) => {
+    const tr = storyTr() && storyTr().quiz && storyTr().quiz[e.id];
+    return tr ? Object.assign({}, e.quiz, tr, { lang: I18N.lang }) : Object.assign({}, e.quiz, { lang: "en" });
   };
   let ex = null, tab = "story", page = 0, tries = 0, tabs = TABS;
   const visit = (id) => (R() ? (R().visits[id] = R().visits[id] || {}) : {});
@@ -3366,10 +3385,10 @@ const speechRate = () => {
       const hk = sb && hookText(ex.id, sb.hook);
       body.innerHTML = `${sb && page === 0 ? `<p class="story-hook" lang="${hk.lang}">${hk.lang === "en" ? linkify(hk.text) : esc(hk.text)}</p>` : ""}
         ${cur.k ? `<p class="beat-label"><span class="beat-num">${page + 1}</span>${esc(t("beat." + cur.k))}</p>` : ""}
-        <blockquote class="voice${cur.k ? " beat " + cur.k : ""}" lang="en" dir="ltr">${linkify(cur.text)}</blockquote>
+        <blockquote class="voice${cur.k ? " beat " + cur.k : ""}" lang="${cur.lang || "en"}">${cur.lang && cur.lang !== "en" ? esc(cur.text) : linkify(cur.text)}</blockquote>
         <div class="beat-progress"><span class="beat-dots">${dots}</span><span class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: pages.length }))}</span></div>
         ${extras.length ? `<section class="ex-more"><h3>${esc(t("ex.moreAbout"))}</h3>${extras.map((x) => `<details class="fold" data-more="${x.id}"><summary>${esc(t("tab." + x.id))}</summary><div class="fold-body"></div></details>`).join("")}</section>` : ""}
-        ${englishNote()}`;
+        ${cur.lang === "en" ? englishNote() : ""}`;
       // fill each fold the first time it opens (keeps audio and long lists lazy)
       body.querySelectorAll("[data-more]").forEach((d) => d.addEventListener("toggle", () => {
         const fb = d.querySelector(".fold-body");
@@ -3489,10 +3508,10 @@ const speechRate = () => {
   let pendingLine = null;
   function renderQuiz() {
     const v = R().visits[ex.id] || {};
-    const q = ex.quiz;
-    $("#exBody").innerHTML = `<h3 lang="en" dir="ltr">${esc(q.q)}</h3>
-      <div class="opts" lang="en" dir="ltr">${q.options.map((o, i) => `<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
-      <p class="fb" id="fb" aria-live="polite">${v.quiz != null ? esc(t("quiz.again")) : ""}</p>${englishNote()}`;
+    const q = quizFor(ex);
+    $("#exBody").innerHTML = `<h3 lang="${q.lang}">${esc(q.q)}</h3>
+      <div class="opts" lang="${q.lang}">${q.options.map((o, i) => `<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
+      <p class="fb" id="fb" aria-live="polite">${v.quiz != null ? esc(t("quiz.again")) : ""}</p>${q.lang === "en" ? englishNote() : ""}`;
     $("#exBody").querySelectorAll("[data-opt]").forEach((b) => b.addEventListener("click", () => answer(+b.dataset.opt, b)));
   }
   function answer(i, btn) {
@@ -3504,7 +3523,9 @@ const speechRate = () => {
     }
     btn.classList.add("yes");
     $("#exBody").querySelectorAll("[data-opt]").forEach((b) => (b.disabled = true));
-    $("#fb").innerHTML = linkify(ex.quiz.explain);
+    const qz = quizFor(ex);
+    $("#fb").innerHTML = qz.lang === "en" ? linkify(qz.explain) : esc(qz.explain);
+    $("#fb").setAttribute("lang", qz.lang);
     const v = visit(ex.id);
     if (v.quiz == null) { v.quiz = tries === 1 ? 2 : 1; award(v.quiz, "quiz"); }
   }
@@ -3866,6 +3887,9 @@ const speechRate = () => {
     S.lang = code;
     save();
     I18N.set(code);
+    // fill any English gaps with the browser's built-in translator (Chrome/Edge);
+    // called inside the click so a language pack is allowed to download
+    if (window.AutoTr) AutoTr.prepare(code, true);
   }
   I18N.onChange((lang) => {
     document.querySelectorAll(".lang-select").forEach((sel) => (sel.value = lang));
@@ -3896,7 +3920,7 @@ const speechRate = () => {
   /* ---------- boot ---------- */
   buildIntro();
   applyA11y();
-  I18N.set(S.lang || "en");
+  I18N.set(S.lang || "en").then(() => { if (window.AutoTr) AutoTr.prepare(I18N.lang, false); });
 window.resetMuseum = async () => {
     localStorage.removeItem(SAVE_KEY);
     if (typeof supabaseClient !== "undefined" && supabaseClient) {
