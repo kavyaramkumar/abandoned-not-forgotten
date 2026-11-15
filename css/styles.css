@@ -61,17 +61,21 @@ kbd { font: 600 12px var(--mono); background: #fff2; border: 1px solid #fff4; bo
 .street { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: #5c5f66; border-top: 14px solid #b9b2a3; }
 .street::after { content: ""; position: absolute; left: 0; right: 0; top: 52px; height: 6px; background: repeating-linear-gradient(90deg, #f2d67a 0 50px, transparent 50px 100px); }
 /* Earth trips: the class's plane glides in, touches down on the museum's
- * airstrip, and rolls to a stop (the Moon and Mars get a rocket instead). */
-.bus-wrap { position: absolute; bottom: 64px; left: 6vw; width: clamp(240px, 30vw, 340px); transform-origin: 70% 90%; animation: planeIn 3s cubic-bezier(.25, .6, .3, 1) .2s both; }
-.bus-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
-.bus-wrap .contrail { animation: trailFade 3.2s ease-out forwards; }
-.bus-wrap .wheel { animation: spinW .45s linear 1.9s 3; transform-box: fill-box; transform-origin: center; }
-@keyframes planeIn {
-  0% { transform: translate(-70vw, -42vh) rotate(-7deg); }
-  62% { transform: translate(-14vw, -2px) rotate(-3deg); }
-  70% { transform: translate(-9vw, 0) rotate(0deg); }
-  74% { transform: translate(-7.4vw, -3px) rotate(0deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+ * airstrip, and rolls to a stop (the Moon and Mars get a rocket instead).
+ * Two layers move separately so the motion never stalls mid-flight: the
+ * wrapper carries the forward travel with one long, steady slow-down, and the
+ * plane inside handles the descent, which levels off into a gentle touchdown
+ * (main wheels first, then the nose settles). */
+.bus-wrap { position: absolute; bottom: 64px; left: 6vw; width: clamp(240px, 30vw, 340px); animation: planeAcross 3.6s cubic-bezier(.22, .62, .36, 1) .2s both; }
+.bus-wrap svg { width: 100%; height: auto; display: block; overflow: visible; transform-origin: 28% 90%; animation: planeDescend 3.6s linear .2s both; }
+.bus-wrap .contrail { animation: trailFade 3.4s ease-out forwards; }
+.bus-wrap .wheel { animation: spinW .5s linear 2.5s 3; transform-box: fill-box; transform-origin: center; }
+@keyframes planeAcross { from { transform: translateX(-75vw); } to { transform: translateX(0); } }
+@keyframes planeDescend {
+  0% { transform: translateY(-40vh) rotate(-2deg); animation-timing-function: cubic-bezier(.33, .4, .45, 1); }
+  60% { transform: translateY(0) rotate(-4deg); animation-timing-function: ease-in-out; }
+  76% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(0deg); }
 }
 @keyframes trailFade { 0%, 40% { opacity: .55; } 100% { opacity: 0; } }
 /* on Earth the street out front is the museum's little airstrip */
@@ -88,7 +92,7 @@ kbd { font: 600 12px var(--mono); background: #fff2; border: 1px solid #fff4; bo
   max-height: 92vh; overflow: auto;
 }
 @keyframes cardIn { to { opacity: 1; transform: translateY(-50%); } }
-.intro.skipped .bus-wrap { animation: none; transform: none; }
+.intro.skipped .bus-wrap, .intro.skipped .bus-wrap svg { animation: none; transform: none; }
 .intro.skipped .bus-wrap .contrail { display: none; }
 .intro.skipped .intro-card { animation: none; opacity: 1; transform: translateY(-50%); }
 .intro-card h1 { font-size: clamp(28px, 3.6vw, 40px); }

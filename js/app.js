@@ -87,8 +87,8 @@ function save() {
     S.robotName = cloudData.robot_name ?? "Echo";
     if (cloudData.kid && Object.keys(cloudData.kid).length) S.kid = Object.assign(fresh().kid, cloudData.kid);
     if (cloudData.level) S.level = cloudData.level;
-    if (cloudData.mode) S.mode = cloudData.mode;
-    if (cloudData.place) S.place = cloudData.place;
+    // The intro always opens on the Museum by day, on Earth (see buildIntro);
+    // a saved trip to the Moon or Mars is still there under Continue, in S.run.
     if (cloudData.lang) S.lang = cloudData.lang;
     if (cloudData.a11y && Object.keys(cloudData.a11y).length) S.a11y = Object.assign(fresh().a11y, cloudData.a11y);
     S.stars = cloudData.stars ?? 0;
