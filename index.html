@@ -522,7 +522,7 @@ function setAuthUI(user) {
       }
     }
 
-    window.handleSignUp = async function () {
+window.handleSignUp = async function () {
       if (!supabaseClient) return setAuthStatus("Supabase library not loaded.", true);
       const email = (document.getElementById("authEmail")?.value || "").trim();
       const password = document.getElementById("authPassword")?.value || "";
@@ -533,16 +533,20 @@ function setAuthUI(user) {
       try {
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
         if (error) return setAuthStatus(error.message, true);
-        if (data.user) {
-          if (data.session) {
-            const cloudData = await loadCloudProgress(data.user.id);
-            if (window.applyCloudState) window.applyCloudState(cloudData);
-            setAuthUI(data.user);
-            setAuthStatus("Account created & synced!");
-            setTimeout(() => document.getElementById("authDialog")?.close(), 600);
-          } else {
-            setAuthStatus("Created! Turn off 'Confirm email' in Supabase Auth settings, then click Log in.");
-          }
+
+        let user = data.user;
+        if (user && !data.session) {
+          const signInRes = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (signInRes.error) return setAuthStatus(signInRes.error.message, true);
+          user = signInRes.data.user;
+        }
+
+        if (user) {
+          const cloudData = await loadCloudProgress(user.id);
+          if (window.applyCloudState) window.applyCloudState(cloudData);
+          setAuthUI(user);
+          setAuthStatus("Account created & synced!");
+          setTimeout(() => document.getElementById("authDialog")?.close(), 600);
         }
       } catch (err) {
         setAuthStatus(err.message || "Error creating account.", true);
