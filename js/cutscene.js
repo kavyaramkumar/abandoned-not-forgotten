@@ -943,7 +943,7 @@ window.Cutscene = (function () {
   }
 
   /* ---------------- the museum: classical hall under a glass dome ---------------- */
-  function buildMuseum(glow) {
+  function buildMuseum(glow, noDome) {
     const g = new T.Group();
     const stone = std("#ece4d2", { roughness: 0.7 });
     const stone2 = std("#cfc6b2", { roughness: 0.8 });
@@ -973,8 +973,9 @@ window.Cutscene = (function () {
 
     add(new T.BoxGeometry(2.2, 3.2, 0.12), warm, 0, 2.4, 2.62);
     [-4.6, -2.4, 2.4, 4.6].forEach((x) => add(new T.BoxGeometry(1.0, 1.6, 0.1), warm, x, 3.3, 2.62));
-    // glass dome with metal ribs
+    // glass dome with metal ribs (Moon and Mars only; an Earth museum stands in the open air)
     const R0 = 15;
+    const domeParts = g.children.length;
     const dome = add(
       new T.SphereGeometry(R0, 48, 24, 0, TAU, 0, Math.PI / 2),
       new T.MeshPhongMaterial({ color: "#a9dcff", specular: "#ffffff", shininess: 90, transparent: true, opacity: 0.17, depthWrite: false, side: T.DoubleSide }),
@@ -994,6 +995,7 @@ window.Cutscene = (function () {
       g.add(t);
     });
     add(new T.TorusGeometry(R0, 0.3, 8, 64), rib, 0, 0.15, 0).rotation.x = Math.PI / 2;
+    if (noDome) g.children.slice(domeParts).forEach((m) => g.remove(m));
     shadows(g, true, true);
     dome.castShadow = false;
     const shine = glowSprite(glow, new T.Color(1, 0.85, 0.6), 16, 0.35);
@@ -1839,7 +1841,7 @@ window.Cutscene = (function () {
         });
         airfield(A.scene, 0, "#6d9150");
         {
-          const museum = buildMuseum(glow);
+          const museum = buildMuseum(glow, true);
           museum.position.set(34, 0, 46);
           museum.rotation.y = Math.atan2(-24, -34); // front door faces the plane's stairs
           A.scene.add(museum);
