@@ -41,7 +41,7 @@ I18N.add("zh", {
   "level.medium": "中等",
   "level.mediumDesc": "门更多，有单向气闸，还有一个秘密房间。可以扫描 3 次。",
   "level.hard": "困难",
-  "level.hardDesc": "路线弯弯绕绕，有死胡同和秘密房间。没有扫描仪。",
+  "level.hardDesc": "路线弯弯绕绕，有陷阱门、死胡同和秘密房间。没有扫描仪，也没有地图。",
   "intro.start": "开始新的冒险",
   "intro.startLearn": "开始参观",
   "intro.continue": "继续：{level}",

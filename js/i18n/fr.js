@@ -41,7 +41,7 @@ I18N.add("fr", {
   "level.medium": "Moyen",
   "level.mediumDesc": "Plus de portes, un sas à sens unique, une salle secrète. 3 scans.",
   "level.hard": "Difficile",
-  "level.hardDesc": "Chemins emmêlés, culs-de-sac, salles secrètes. Pas de scanner.",
+  "level.hardDesc": "Chemins emmêlés, portes pièges, culs-de-sac, salles secrètes. Pas de scanner ni de carte.",
   "intro.start": "Commencer une nouvelle aventure",
   "intro.startLearn": "Commencer la visite",
   "intro.continue": "Continuer : {level}",

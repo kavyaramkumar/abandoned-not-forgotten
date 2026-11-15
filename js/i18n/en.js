@@ -46,7 +46,7 @@ I18N.add("en", {
   "level.medium": "Medium",
   "level.mediumDesc": "More doors, a one-way airlock, a secret room. 3 scans.",
   "level.hard": "Hard",
-  "level.hardDesc": "Tangled paths, dead ends, secret rooms. No scanner.",
+  "level.hardDesc": "Tangled paths, trap doors, dead ends, secret rooms. No scanner and no map.",
   "intro.start": "Start a new adventure",
   "intro.startLearn": "Start the tour",
   "intro.continue": "Continue: {level}",

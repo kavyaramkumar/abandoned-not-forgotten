@@ -2568,7 +2568,7 @@ const speechRate = () => {
     const hereEl = $("#mapBody .map-node.here");
     if (hereEl) hereEl.scrollIntoView({ block: "center", inline: "center" });
   }
-  $("#mapBtn").addEventListener("click", (e) => { e.stopPropagation(); if (R()) openMap(); });
+  $("#mapBtn").addEventListener("click", (e) => { e.stopPropagation(); if (R() && R().level !== "hard") openMap(); });
   // the ☰ Menu closes after you pick something, or click anywhere else
   $("#hudMenu").addEventListener("click", (e) => { if (e.target.closest(".hud-menu-panel button")) $("#hudMenu").open = false; });
   document.addEventListener("click", (e) => { if ($("#hudMenu").open && !e.target.closest("#hudMenu")) $("#hudMenu").open = false; });
@@ -3119,6 +3119,8 @@ const speechRate = () => {
       wc.innerHTML = `<span class="wing-dot"></span><b>${esc(wingName(wg))}</b><span>${esc(t("hud.wingMet", { n: seen, m: wg.exhibits.length }))}</span>`;
     }
     $("#pieces").hidden = isLearn();
+    // Hard is meant to be figured out without help: no map
+    $("#mapBtn").hidden = R().level === "hard";
     $("#pieces").innerHTML = g.pieces.map((p) => `<i class="${R().collected.includes(p) ? "got" : ""}"></i>`).join("") + `<span class="sr-only">${t("echo.console", { n: R().collected.length, k: g.pieces.length }).replace(/<[^>]+>/g, "")}</span>`;
     $("#doorsCount").dataset.i18nTip = isLearn() ? "tip.rooms" : "tip.doors";
     I18N.apply($("#doorsCount").parentElement);

@@ -41,7 +41,7 @@ I18N.add("es", {
   "level.medium": "Medio",
   "level.mediumDesc": "Más puertas, una esclusa de un solo sentido y un cuarto secreto. 3 escaneos.",
   "level.hard": "Difícil",
-  "level.hardDesc": "Caminos enredados, callejones sin salida y cuartos secretos. Sin escáner.",
+  "level.hardDesc": "Caminos enredados, puertas trampa, callejones sin salida y cuartos secretos. Sin escáner y sin mapa.",
   "intro.start": "Empezar una nueva aventura",
   "intro.startLearn": "Empezar el recorrido",
   "intro.continue": "Continuar: {level}",

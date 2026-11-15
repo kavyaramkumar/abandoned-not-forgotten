@@ -51,7 +51,7 @@ window.Maze = (function () {
       deadEnds: false, scanner: 3, signs: "names", riddleNames: true, riddleHint: false, parFactor: 2.4,
     },
     hard: {
-      label: "Hard", main: 15, pieces: 5, discoveries: 5, maxDoors: 4, extraLinks: 5, oneWay: 3, locks: 3, hidden: 2,
+      label: "Hard", main: 15, pieces: 5, discoveries: 5, maxDoors: 4, extraLinks: 5, oneWay: 4, locks: 3, hidden: 2,
       deadEnds: true, scanner: 0, signs: "chalk", riddleNames: false, riddleHint: false, parFactor: 2,
     },
   };
@@ -123,6 +123,8 @@ window.Maze = (function () {
       if (made >= L.oneWay) return;
       if (r() < 0.5) [e.a, e.b] = [e.b, e.a]; // door is in room a, leads to b
       e.oneWay = true;
+      // Hard: trap doors. Aim the airlock so it drops you into a room with only one way out.
+      if (L.deadEnds && exits(e.b) > 1) { [e.a, e.b] = [e.b, e.a]; if (exits(e.b) > 1) [e.a, e.b] = [e.b, e.a]; }
       // the room you arrive in must still have at least two ways out (Easy/Medium)
       if (!L.deadEnds && exits(e.b) < 2) { [e.a, e.b] = [e.b, e.a]; if (exits(e.b) < 2) { e.oneWay = false; return; } }
       made++;

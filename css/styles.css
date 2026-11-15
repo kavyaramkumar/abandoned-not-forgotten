@@ -1508,3 +1508,4 @@ dialog.sheet .wing-badge b { color: #ffffff !important; font: 800 18px var(--ser
   .chat-fab { padding: 12px; gap: 0; }
   .chat-fab #chatFabLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+.cam-controls .map-btn[hidden] { display: none; }

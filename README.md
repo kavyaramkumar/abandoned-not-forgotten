@@ -82,10 +82,11 @@ The story always keeps the same shape: the arrival and the mystery, exploring an
 | Doors per room | up to 3 | up to 3 (+1 secret) | up to 4 (+1 secret) |
 | Signal pieces | 3 | 4 | 5 |
 | Extra loops between rooms | 1 | 3 | 5 |
-| One-way airlocks | 0 | 1 | 3 |
+| One-way airlocks | 0 | 1 | 4 (aimed at dead ends: trap doors) |
 | Dead ends | none | none | yes |
 | Secret rooms | 0 | 1 | 2 (always one note) |
 | Robot's scanner | always points the way | 3 scans | none |
+| Map button | yes | yes | none |
 | Door signs after you visit | room name | room name | just a ✓ (remember it yourself) |
 | Riddle locks | names + hint | names | pictures only |
 | Gold route goal | none | about 2.4× the shortest | about 2× the shortest |
