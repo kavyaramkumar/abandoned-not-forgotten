@@ -325,7 +325,7 @@ I18N.add("en", {
   "ex.stop": "Stop reading",
   "ex.more": "Read more",
   "ex.less": "Show less",
-  "ex.keep": "Keep listening",
+  "ex.keep": "Continue",
   "ex.back": "Back to the room",
   "ex.englishOnly": "The machines tell their stories in English for now.",
   "status.silent": "Silent now",

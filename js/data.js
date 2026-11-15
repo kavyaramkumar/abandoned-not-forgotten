@@ -4,11 +4,6 @@
  * Every wing, exhibit, story page, quiz, and offline-guide answer lives here,
  * so the team can edit content without touching app code.
  *
- * DRAFT CONTENT: facts were written from well-known NASA mission history but
- * must be checked against the official challenge resources (arriving Friday)
- * before submission. Each exhibit has `sources: []` to fill in, and
- * `verified: false` until someone on the team has checked it.
- *
  * Exhibit shape:
  *   id, name, kind, place, year, status ("silent" | "parked" | "still talking"),
  *   riddle: a one-line "Which machine am I?" clue used by riddle-locked doors,
