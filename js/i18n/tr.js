@@ -493,5 +493,10 @@ I18N.add("tr", {
   "echo.learnStart": "Başlamak için bir kanat seç. İçeride <b>SONRAKİ</b> kapılarını izle, sonra <b>↩ GİRİŞ HOLÜ</b> kapısından buraya dön. Hikâyesini dinlemek için bir makineye tıkla!",
   "tab.story": "Hikâye",
   "tab.orbit": "Dün ve bugün",
-  "level.hardDesc": "Karışık yollar, tuzak kapılar, çıkmaz sokaklar, gizli odalar. Tarayıcı yok, harita yok."
+  "level.hardDesc": "Karışık yollar, tuzak kapılar, çıkmaz sokaklar, gizli odalar. Tarayıcı yok, harita yok.",
+  "cut.plane.board": "Gezi günü! Herkes merdivenlerden çıkıp uçağa binsin.",
+  "cut.plane.takeoff": "Kalkış!",
+  "cut.plane.cruise": "Bulutların üstünde, müzenin olduğu şehre uçuyoruz.",
+  "cut.plane.land": "İnişe hazırlanıyoruz...",
+  "place.earthDesc": "Büyük bir şehirde ünlü bir müze. Oraya uçakla gidiyorsun!",
 });

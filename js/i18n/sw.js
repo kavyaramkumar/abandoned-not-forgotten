@@ -493,5 +493,10 @@ I18N.add("sw", {
   "echo.learnStart": "Chagua sehemu ili uanze. Ndani, fuata milango ya <b>IJAYO</b>, kisha pita mlango wa <b>↩ UKUMBI WA KUINGILIA</b> kurudi hapa. Bofya mashine ili usikie hadithi yake!",
   "tab.story": "Hadithi",
   "tab.orbit": "Zamani na sasa",
-  "level.hardDesc": "Njia zilizochanganyika, milango ya mtego, njia zisizo na mwisho, vyumba vya siri. Hakuna kichanganuzi wala ramani."
+  "level.hardDesc": "Njia zilizochanganyika, milango ya mtego, njia zisizo na mwisho, vyumba vya siri. Hakuna kichanganuzi wala ramani.",
+  "cut.plane.board": "Siku ya safari ya shule! Kila mtu apande ngazi aingie ndani ya ndege.",
+  "cut.plane.takeoff": "Ndege inapaa!",
+  "cut.plane.cruise": "Tunaruka juu ya mawingu kwenda mji wenye jumba la makumbusho.",
+  "cut.plane.land": "Tunajiandaa kutua...",
+  "place.earthDesc": "Jumba maarufu la makumbusho katika mji mkubwa. Unasafiri huko kwa ndege!",
 });

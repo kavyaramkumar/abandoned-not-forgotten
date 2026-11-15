@@ -493,5 +493,10 @@ I18N.add("pt", {
   "echo.learnStart": "Escolha uma ala para começar. Lá dentro, siga as portas <b>PRÓXIMA</b> e depois use a porta <b>↩ ÁTRIO</b> para voltar aqui. Clique numa máquina para ouvir a história dela!",
   "tab.story": "A história",
   "tab.orbit": "Antes e agora",
-  "level.hardDesc": "Caminhos embaralhados, alçapões, becos sem saída e salas secretas. Sem scanner e sem mapa."
+  "level.hardDesc": "Caminhos embaralhados, alçapões, becos sem saída e salas secretas. Sem scanner e sem mapa.",
+  "cut.plane.board": "Dia de excursão! Todo mundo sobe a escada e entra no avião.",
+  "cut.plane.takeoff": "Decolagem!",
+  "cut.plane.cruise": "Voando acima das nuvens até a cidade do museu.",
+  "cut.plane.land": "Preparando para pousar...",
+  "place.earthDesc": "Um museu famoso em uma cidade grande. Você vai de avião!",
 });

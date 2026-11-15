@@ -297,8 +297,11 @@ const speechRate = () => {
     e.preventDefault();
     readIntro();
     newRun(S.mode === "learn" ? "learn" : S.level);
-    // off Earth, the trip starts with a short movie: board the rocket, fly, land
-    if (PLACE() !== "earth" && window.Cutscene) {
+    // every trip starts with a short movie: a plane ride on Earth, a rocket to the Moon or Mars.
+    // The setup card disappears at once behind a dark screen, so it never flashes
+    // before or after the movie.
+    if (window.Cutscene) {
+      $("#intro").classList.add("to-trip");
       Cutscene.play({ place: PLACE(), kid: S.kid, robot: S.look, robotName: S.robotName, t })
         .catch((err) => console.warn("cutscene skipped:", err))
         .then(() => enterMuseum(true));
@@ -1460,11 +1463,13 @@ const speechRate = () => {
     // door approach paths, hid door signs, and could be walked through.
   }
 
+  // realistic globes from image maps (Moon: NASA LRO CGI Moon Kit; Mars: NASA Viking color mosaic)
+  const PHOTO_GLOBES = { earth: "earth-hyperreal-v1.png", "moon-real": "moon-lroc-color-2k.jpg", "mars-real": "mars-viking-color.jpg" };
   function planetTex(kind) {
-    if (kind === "earth") {
-      const key = "planet-earth-hyperreal-v1";
+    if (PHOTO_GLOBES[kind]) {
+      const key = "planet-photo-" + kind;
       if (!texCache[key]) {
-        const map = new T.TextureLoader().load("assets/textures/earth-hyperreal-v1.png");
+        const map = new T.TextureLoader().load("assets/textures/" + PHOTO_GLOBES[kind]);
         map.encoding = T.sRGBEncoding;
         map.wrapS = T.RepeatWrapping;
         map.wrapT = T.ClampToEdgeWrapping;
@@ -1544,27 +1549,31 @@ const speechRate = () => {
   function buildOrrery(cx, cz) {
     const g = add(new T.Group());
     g.position.set(cx, 0, cz);
+    // The centerpiece shows where the museum is: Earth, the Moon, or Mars.
+    const pl = PLACE();
+    const center = pl === "moon" ? "moon-real" : pl === "mars" ? "mars-real" : "earth";
     const planets = [
-      ["earth", 0, 1.58, 0, 1.02, 0.045],
+      [center, 0, 1.58, 0, 1.02, pl === "moon" ? 0.02 : 0.045],
       // Large planets hang high in the four corners, outside the ceiling
       // rings, like the suspended models in the reference galleries. They sit
       // above head height, off every door axis, and fade out whenever one
       // comes between the camera and a door sign (see guardSignSightlines).
       ["jupiter", -6.15, 3.12, -4.15, 0.78, 0.03],
       ["saturn", 6.15, 3.18, -4.15, 0.62, 0.025],
-      ["mars", 6.25, 3.05, 4.75, 0.44, 0.06],
+      [pl === "mars" ? "earth" : "mars", 6.25, 3.05, 4.75, 0.44, 0.06],
       ["neptune", -6.25, 3.05, 4.75, 0.48, 0.05],
     ];
     const wireMat = new T.LineBasicMaterial({ color: "#d7e0e4", transparent: true, opacity: 0.55 });
     const pick = [];
     planets.forEach(([kind, x, y, z, radius, speed], i) => {
+      const isCenter = i === 0;
       const tex = planetTex(kind);
       const matOpts = {
-        map: tex, bumpMap: tex, bumpScale: kind === "earth" ? 0.012 : 0.025,
-        roughness: kind === "earth" ? 0.46 : kind === "sun" ? 0.62 : 0.78, metalness: 0.02,
+        map: tex, bumpMap: tex, bumpScale: kind === "earth" ? 0.012 : kind === "moon-real" ? 0.03 : 0.025,
+        roughness: kind === "earth" ? 0.46 : kind === "sun" ? 0.62 : kind === "moon-real" ? 0.95 : 0.78, metalness: 0.02,
         emissive: kind === "sun" ? "#a54d16" : "#000000", emissiveIntensity: kind === "sun" ? 0.42 : 0,
       };
-      const mat = kind === "earth"
+      const mat = isCenter && kind === "earth"
         ? new T.MeshPhysicalMaterial({ ...matOpts, clearcoat: 0.34, clearcoatRoughness: 0.22 })
         : new T.MeshStandardMaterial(matOpts);
       const planet = new T.Mesh(new T.SphereGeometry(radius, 52, 36), mat);
@@ -1572,15 +1581,16 @@ const speechRate = () => {
       planet.rotation.z = (i - 2) * 0.09;
       planet.castShadow = planet.receiveShadow = true;
       g.add(planet);
-      if (kind === "earth" && radius > 0.5) {
-        const atmosphere = new T.Mesh(new T.SphereGeometry(radius * 1.025, 52, 36), new T.MeshPhysicalMaterial({ color: "#83cfff", transparent: true, opacity: 0.08, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false }));
+      // Earth gets a blue atmosphere, Mars a thin dusty one; the airless Moon gets none
+      if (isCenter && kind !== "moon-real") {
+        const atmosphere = new T.Mesh(new T.SphereGeometry(radius * 1.025, 52, 36), new T.MeshPhysicalMaterial({ color: kind === "mars-real" ? "#f0a070" : "#83cfff", transparent: true, opacity: kind === "mars-real" ? 0.06 : 0.08, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.08, depthWrite: false }));
         atmosphere.position.copy(planet.position);
         g.add(atmosphere);
       }
       spin.push({ o: planet, s: speed });
       pick.push(planet);
-      if (kind !== "earth") { mat.transparent = true; signOccluders.push(planet); }
-      if (kind !== "earth") {
+      if (!isCenter) { mat.transparent = true; signOccluders.push(planet); }
+      if (!isCenter) {
         const wire = new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(x, 4.12, z), new T.Vector3(x, y + radius * 0.82, z)]), wireMat);
         g.add(wire);
       }
@@ -1592,14 +1602,23 @@ const speechRate = () => {
         g.add(ring); pick.push(ring);
         ring.userData.fadeWith = planet; signOccluders.push(ring);
       }
-      if (kind === "earth") {
-        const moonWire = new T.Mesh(new T.TorusGeometry(radius * 1.65, 0.008, 5, 56), new T.MeshBasicMaterial({ color: "#9fb4c2", transparent: true, opacity: 0.45 }));
-        moonWire.position.copy(planet.position);
-        moonWire.rotation.set(Math.PI / 2.4, 0.25, 0.15);
-        g.add(moonWire);
-        const moon = new T.Mesh(new T.SphereGeometry(0.13, 24, 16), new T.MeshStandardMaterial({ color: "#aaa79f", roughness: 1 }));
-        moon.position.set(x + radius * 1.55, y + 0.08, z);
-        g.add(moon);
+      if (isCenter) {
+        // companions on a thin orbit line: Earth's Moon, the Moon's Earth, Mars's Phobos and Deimos
+        const companions = kind === "earth" ? [{ r: 0.13, d: 1.55, map: planetTex("moon-real") }]
+          : kind === "moon-real" ? [{ r: 0.2, d: 1.6, map: planetTex("earth") }]
+          : [{ r: 0.07, d: 1.35, color: "#8a8178", lumpy: true }, { r: 0.05, d: 1.75, color: "#a39787", lumpy: true }];
+        companions.forEach((cmp, ci) => {
+          const wire = new T.Mesh(new T.TorusGeometry(radius * cmp.d, 0.008, 5, 56), new T.MeshBasicMaterial({ color: "#9fb4c2", transparent: true, opacity: 0.45 }));
+          wire.position.copy(planet.position);
+          wire.rotation.set(Math.PI / 2.4 + ci * 0.25, 0.25, 0.15);
+          g.add(wire);
+          const geo = cmp.lumpy ? new T.IcosahedronGeometry(cmp.r, 2) : new T.SphereGeometry(cmp.r, 32, 20);
+          if (cmp.lumpy) geo.scale(1.35, 0.85, 1); // Phobos and Deimos are potato-shaped
+          const m = new T.Mesh(geo, new T.MeshStandardMaterial(cmp.map ? { map: cmp.map, roughness: 0.9 } : { color: cmp.color, roughness: 1, flatShading: true }));
+          const a = ci * 2.2;
+          m.position.set(x + Math.cos(a) * radius * cmp.d, y + 0.08 - ci * 0.12, z + Math.sin(a) * radius * cmp.d * 0.4);
+          g.add(m);
+        });
       }
     });
     // Central illuminated plinth and interpretive halo.
@@ -1931,9 +1950,8 @@ const speechRate = () => {
       // A smooth, textured globe at a size that no longer hides the doors
       // behind it. Loose floor rocks and bootprint decals were removed: they
       // sat on the side-door approach lines.
-      const moonTex = h.deco === "moon" && regolithTex("moon");
-      const tex = moonTex ? moonTex.map : planetTex("mars");
-      const ball = new T.Mesh(new T.SphereGeometry(0.72, 64, 40), new T.MeshStandardMaterial({ map: tex, bumpMap: moonTex ? moonTex.emissive : tex, bumpScale: 0.02, roughness: 0.96, metalness: 0 }));
+      const tex = planetTex(h.deco === "moon" ? "moon-real" : "mars-real");
+      const ball = new T.Mesh(new T.SphereGeometry(0.72, 64, 40), new T.MeshStandardMaterial({ map: tex, bumpMap: tex, bumpScale: 0.025, roughness: 0.95, metalness: 0 }));
       ball.position.y = 1.55; g.add(ball);
       spin.push({ o: ball, s: 0.2 });
     } else {
@@ -2984,9 +3002,11 @@ const speechRate = () => {
    * ENTER THE MUSEUM
    * ========================================================= */
   function enterMuseum(isNew) {
+    const afterTrip = $("#intro").classList.contains("to-trip");
     $("#intro").classList.add("leaving");
     setTimeout(() => {
       $("#intro").hidden = true;
+      $("#intro").classList.remove("to-trip");
       $("#museum").hidden = false;
       if (!scene) {
         initThree();
@@ -3008,7 +3028,7 @@ const speechRate = () => {
       showBanner(R().cur);
       if (isNew) setTimeout(openStory, 500);
       else say(isLearn() ? t("echo.learnWelcomeBack") : t("echo.welcomeBack", { n: R().collected.length, k: G().pieces.length }));
-    }, isNew ? 600 : 0);
+    }, isNew && !afterTrip ? 600 : 0);
   }
 
   function openStory() {

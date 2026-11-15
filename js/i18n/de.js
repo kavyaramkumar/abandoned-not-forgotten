@@ -493,5 +493,10 @@ I18N.add("de", {
   "echo.learnStart": "Wähle einen Flügel, um zu starten. Folge drinnen den <b>WEITER</b>-Türen und nimm dann die Tür <b>↩ ATRIUM</b> zurück hierher. Klick auf eine Maschine, um ihre Geschichte zu hören!",
   "tab.story": "Die Geschichte",
   "tab.orbit": "Damals und heute",
-  "level.hardDesc": "Verworrene Wege, Falltüren, Sackgassen, Geheimräume. Kein Scanner und keine Karte."
+  "level.hardDesc": "Verworrene Wege, Falltüren, Sackgassen, Geheimräume. Kein Scanner und keine Karte.",
+  "cut.plane.board": "Ausflugstag! Alle die Treppe hoch und rein ins Flugzeug.",
+  "cut.plane.takeoff": "Abheben!",
+  "cut.plane.cruise": "Über den Wolken fliegen wir in die Stadt mit dem Museum.",
+  "cut.plane.land": "Gleich landen wir...",
+  "place.earthDesc": "Ein berühmtes Museum in einer großen Stadt. Du fliegst hin!",
 });

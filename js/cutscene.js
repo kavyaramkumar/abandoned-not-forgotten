@@ -802,6 +802,79 @@ window.Cutscene = (function () {
     return g;
   }
 
+  /* ---------------- the field-trip airplane (Earth trips) ----------------
+   * Nose points +x. The fuselage centre sits 3 m up on its landing gear; the
+   * cabin door is on the +z side near the nose, its floor 2.2 m up. */
+  const PLANE_DOOR = { x: 7.2, y: 2.2, z: 1.6 };
+  function buildPlane() {
+    const g = new T.Group();
+    const white = std("#f4f6f8", { roughness: 0.35, metalness: 0.15 });
+    const blue = std("#2457a8", { roughness: 0.4 });
+    const gold = std("#f2b632", { roughness: 0.45 });
+    const dark = std("#1d2430", { roughness: 0.35, metalness: 0.4 });
+    const glass = std("#20354f", { roughness: 0.1, metalness: 0.6, emissive: "#0d1a2a", emissiveIntensity: 0.4 });
+    const add = (geo, mat, x, y, z) => {
+      const m = new T.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      g.add(m);
+      return m;
+    };
+    const body = add(new T.CapsuleGeometry(1.6, 19, 10, 28), white, 0, 3, 0);
+    body.rotation.z = Math.PI / 2;
+    // cockpit windows, cabin window strips, and a blue-and-gold stripe on both sides
+    add(new T.BoxGeometry(0.9, 0.42, 2.5), glass, 10.25, 3.62, 0);
+    [-1, 1].forEach((side) => {
+      add(new T.BoxGeometry(15, 0.3, 0.05), glass, 0.4, 3.45, side * 1.56);
+      add(new T.BoxGeometry(19.5, 0.26, 0.05), blue, 0, 2.72, side * 1.6);
+      add(new T.BoxGeometry(19.5, 0.08, 0.05), gold, 0, 2.52, side * 1.6);
+    });
+    // swept wings
+    [-1, 1].forEach((side) => {
+      const geo = new T.BoxGeometry(3.6, 0.28, 12.5);
+      geo.translate(0, 0, side * 6.6);
+      const w = add(geo, white, 0.6, 2.25, 0);
+      w.rotation.y = -side * 0.3;
+      const tip = add(new T.BoxGeometry(1.2, 1.1, 0.12), blue, -2.8, 2.8, side * 12.9);
+      tip.rotation.z = 0.35;
+      // engines hang under the wings
+      const eng = add(new T.CylinderGeometry(0.72, 0.62, 3.2, 24), white, 1.9, 1.55, side * 4.7);
+      eng.rotation.z = Math.PI / 2;
+      const fan = add(new T.CircleGeometry(0.62, 24), dark, 3.52, 1.55, side * 4.7);
+      fan.rotation.y = Math.PI / 2;
+    });
+    // tail
+    const fin = add(new T.BoxGeometry(3.4, 4.4, 0.24), blue, -9.6, 5.6, 0);
+    fin.rotation.z = 0.42;
+    const star = new T.MeshBasicMaterial({ map: textTexture("★", 128, 128, false, "#f2b632"), transparent: true, depthWrite: false });
+    [-1, 1].forEach((side) => {
+      const s = add(new T.PlaneGeometry(1.6, 1.6), star, -9.9, 5.9, side * 0.13);
+      if (side < 0) s.rotation.y = Math.PI;
+      s.castShadow = false;
+    });
+    add(new T.BoxGeometry(2.4, 0.18, 8.4), white, -10.2, 3.7, 0);
+    // cabin door: a dark opening with a panel that slides open
+    add(new T.BoxGeometry(0.95, 1.85, 0.04), dark, PLANE_DOOR.x, 3.12, 1.59);
+    const door = add(new T.BoxGeometry(0.95, 1.85, 0.05), white, PLANE_DOOR.x, 3.12, 1.63);
+    // landing gear (folds away after takeoff)
+    const gear = new T.Group();
+    g.add(gear);
+    const wheel = new T.CylinderGeometry(0.5, 0.5, 0.36, 18);
+    [[7.6, 0], [-0.6, 2.2], [-0.6, -2.2]].forEach(([x, z]) => {
+      const strut = new T.Mesh(new T.CylinderGeometry(0.1, 0.1, 1.2, 8), std("#b9bec6", { metalness: 0.6, roughness: 0.4 }));
+      strut.position.set(x, 1.1, z);
+      const w = new T.Mesh(wheel, dark);
+      w.rotation.x = Math.PI / 2;
+      w.position.set(x, 0.5, z);
+      gear.add(strut, w);
+    });
+    shadows(g, true, true);
+    g.userData = {
+      setGear(k) { gear.scale.y = Math.max(0.01, k); gear.visible = k > 0.03; },
+      setDoor(k) { door.position.x = PLANE_DOOR.x + k * 1.05; },
+    };
+    return g;
+  }
+
   /* ---------------- ground with gentle dunes, far hills and (Moon) craters ---------------- */
   const MUSEUM = { x: 36, z: -36 };
   function buildGround(kind) {
@@ -962,6 +1035,8 @@ window.Cutscene = (function () {
   function run(opts, resolve) {
     const tr = typeof opts.t === "function" ? opts.t : window.I18N ? window.I18N.t : (k) => k;
     const place = opts.place === "mars" ? "mars" : "moon";
+    // Earth museums are reached by airplane instead of rocket
+    const flight = opts.place === "earth";
     const mars = place === "mars";
     // the game's "Reduce motion" setting, or the device's own setting
     const reduced = document.documentElement.classList.contains("a11y-calm") || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -1137,7 +1212,7 @@ window.Cutscene = (function () {
       ];
       const crew = [];
       const addKid = (look) => {
-        const m = Models.kid(Object.assign({}, look, { suit: true }));
+        const m = Models.kid(Object.assign({}, look, { suit: !flight }));
         const holder = new T.Group();
         holder.add(m);
         crew.push({ holder, model: m, robot: false });
@@ -1633,6 +1708,276 @@ window.Cutscene = (function () {
           const sp = R(10, 28) * power;
           L.dust.emit(ca * r0, R(0.2, 0.8), sa * r0, ca * sp, R(0.5, 4.5), sa * sp, R(1.8, 3.4), R(0.6, 1.1), R(2.4, 4.6), 0.6, DUST0, DUST1, R(0.25, 0.6), -1.6);
         }
+      }
+
+      /* =================================================================
+       *  EARTH TRIP BY AIRPLANE (replaces the rocket shots)
+       * ================================================================= */
+      if (flight) {
+        const plane = buildPlane();
+        const PLn = plane.userData;
+        loose.push(plane);
+        const tarmac = std("#3a3b3e", { roughness: 0.92 });
+        const paint = new T.MeshBasicMaterial({ color: "#f3f1e8" });
+        // flat grass, a runway along x at runwayZ, and a concrete stand at the origin
+        function airfield(s, runwayZ, grass) {
+          const g = new T.Group();
+          const field = new T.Mesh(new T.PlaneGeometry(2600, 2600), std(grass, { roughness: 1 }));
+          field.rotation.x = -Math.PI / 2;
+          field.receiveShadow = true;
+          g.add(field);
+          const rw = new T.Mesh(new T.PlaneGeometry(1100, 30), tarmac);
+          rw.rotation.x = -Math.PI / 2;
+          rw.position.set(300, 0.03, runwayZ);
+          rw.receiveShadow = true;
+          g.add(rw);
+          for (let x = -240; x < 840; x += 24) {
+            const d = new T.Mesh(new T.PlaneGeometry(12, 0.7), paint);
+            d.rotation.x = -Math.PI / 2;
+            d.position.set(x, 0.05, runwayZ);
+            g.add(d);
+          }
+          [-13.5, 13.5].forEach((dz) => {
+            const e = new T.Mesh(new T.PlaneGeometry(1100, 0.5), paint);
+            e.rotation.x = -Math.PI / 2;
+            e.position.set(300, 0.05, runwayZ + dz);
+            g.add(e);
+          });
+          const stand = new T.Mesh(new T.PlaneGeometry(90, 60), std("#a19d93", { roughness: 0.95 }));
+          stand.rotation.x = -Math.PI / 2;
+          stand.position.set(4, 0.02, 14);
+          stand.receiveShadow = true;
+          g.add(stand);
+          s.add(g);
+        }
+        function lightWorld(W, o) {
+          const s = W.scene;
+          W.sunDir = o.sunDir;
+          W.sky = makeSky(Object.assign({ sunDir: o.sunDir }, o.sky));
+          s.add(W.sky);
+          s.fog = new T.Fog(new T.Color(o.fog), 180, 1300);
+          s.add(new T.HemisphereLight(o.hemiTop, o.hemiBottom, 0.95));
+          const sun = new T.DirectionalLight(o.sunCol, o.sunInt);
+          sun.position.copy(o.sunDir).multiplyScalar(90);
+          sun.castShadow = true;
+          sun.shadow.mapSize.set(2048, 2048);
+          Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 280 });
+          sun.shadow.bias = -0.0005;
+          s.add(sun, sun.target);
+          W.sun = makeSun(glow, o.sunGlow);
+          s.add(W.sun);
+        }
+
+        /* departure airport at golden hour */
+        const F = { scene: new T.Scene() };
+        scenes.push(F.scene);
+        lightWorld(F, {
+          sunDir: V(-0.7, 0.2, -0.62).normalize(),
+          sky: { top: "#2c5aa0", horizon: "#ffb26b", bottom: "#b98a5e", sunCol: "#ffd9a0", sunAmt: 1 },
+          fog: "#f2b47e", hemiTop: "#ffd8b0", hemiBottom: "#55603a", sunCol: "#ffc48a", sunInt: 2.6, sunGlow: new T.Color(1.0, 0.75, 0.45),
+        });
+        airfield(F.scene, -34, "#5f8a3e");
+        F.scene.fog.near = 320;
+        {
+          const terminal = new T.Group();
+          const wall = new T.Mesh(new T.BoxGeometry(46, 10, 16), std("#d9d4c8", { roughness: 0.8 }));
+          wall.position.y = 5;
+          const glassBand = new T.Mesh(new T.BoxGeometry(46.2, 4, 16.2), std("#7fa6c4", { roughness: 0.15, metalness: 0.5, emissive: "#ffd9a0", emissiveIntensity: 0.25 }));
+          glassBand.position.y = 5.5;
+          const roof = new T.Mesh(new T.BoxGeometry(48, 0.8, 18), std("#8e9aa6", { roughness: 0.6 }));
+          roof.position.y = 10.4;
+          terminal.add(wall, glassBand, roof);
+          terminal.position.set(14, 0, 52);
+          shadows(terminal, true, true);
+          F.scene.add(terminal);
+          const bus = buildBus();
+          bus.position.set(26, 0, 30);
+          bus.rotation.y = 2.3;
+          F.scene.add(bus);
+        }
+        F.stairs = buildRamp({ x: 0, y: PLANE_DOOR.y }, { x: 6.5, y: 0 }, 1.6, true);
+        F.stairs.group.rotation.y = -Math.PI / 2;
+        F.stairs.group.position.set(PLANE_DOOR.x, 0, PLANE_DOOR.z);
+        F.scene.add(F.stairs.group);
+        F.path = makePath([[22, 0, 26], [PLANE_DOOR.x, 0, PLANE_DOOR.z + 8], [PLANE_DOOR.x, 0, PLANE_DOOR.z + 6.5], [PLANE_DOOR.x, PLANE_DOOR.y, PLANE_DOOR.z], [PLANE_DOOR.x, PLANE_DOOR.y, 0.3]]);
+
+        /* above the clouds */
+        const C = { scene: new T.Scene() };
+        scenes.push(C.scene);
+        lightWorld(C, {
+          sunDir: V(0.45, 0.35, -0.8).normalize(),
+          sky: { top: "#174f9e", horizon: "#8cc6f5", bottom: "#6aa7e2", sunCol: "#fff3d6", sunAmt: 0.9 },
+          fog: "#9fcff5", hemiTop: "#cfe6ff", hemiBottom: "#ffffff", sunCol: "#fff6e6", sunInt: 2.4, sunGlow: new T.Color(1.0, 0.95, 0.85),
+        });
+        C.scene.fog.near = 320;
+        C.scene.fog.far = 1600;
+        C.clouds = [];
+        for (let i = 0; i < 110; i++) {
+          const c = new T.Sprite(new T.SpriteMaterial({ map: puff, color: new T.Color(1, 1, 1), transparent: true, opacity: R(0.75, 0.95), depthWrite: false }));
+          const sc = R(40, 95);
+          c.position.set(R(-420, 420), R(-34, -12), R(-260, 140));
+          c.scale.set(sc * 1.7, sc * 0.7, 1);
+          C.scene.add(c);
+          C.clouds.push(c);
+        }
+        for (let i = 0; i < 14; i++) {
+          const c = new T.Sprite(new T.SpriteMaterial({ map: puff, color: new T.Color(1, 1, 1), transparent: true, opacity: R(0.35, 0.6), depthWrite: false }));
+          const sc = R(20, 40);
+          c.position.set(R(-420, 420), R(10, 40), R(-300, -120));
+          c.scale.set(sc * 1.8, sc * 0.6, 1);
+          C.scene.add(c);
+          C.clouds.push(c);
+        }
+
+        /* arrival airport next to the museum */
+        const A = { scene: new T.Scene() };
+        scenes.push(A.scene);
+        lightWorld(A, {
+          sunDir: V(-0.5, 0.55, 0.6).normalize(),
+          sky: { top: "#3d7dd6", horizon: "#cfe6f7", bottom: "#9fb99a", sunCol: "#fff6e0", sunAmt: 0.85 },
+          fog: "#cfe2f0", hemiTop: "#dcecff", hemiBottom: "#5a6b3c", sunCol: "#fff3dc", sunInt: 2.8, sunGlow: new T.Color(1, 0.95, 0.85),
+        });
+        airfield(A.scene, 0, "#6d9150");
+        {
+          const museum = buildMuseum(glow);
+          museum.position.set(34, 0, 46);
+          museum.rotation.y = Math.atan2(-24, -34); // front door faces the plane's stairs
+          A.scene.add(museum);
+        }
+        A.stairs = buildRamp({ x: 0, y: PLANE_DOOR.y }, { x: 6.5, y: 0 }, 1.6, true);
+        A.stairs.group.rotation.y = -Math.PI / 2;
+        A.stairs.group.position.set(PLANE_DOOR.x, 0, PLANE_DOOR.z);
+        A.scene.add(A.stairs.group);
+        A.puff = new Particles(600, puff, false, { floor: 0.1 });
+        A.scene.add(A.puff.mesh);
+        A.path = makePath([[PLANE_DOOR.x, PLANE_DOOR.y, 0.3], [PLANE_DOOR.x, PLANE_DOOR.y, PLANE_DOOR.z], [PLANE_DOOR.x, 0, PLANE_DOOR.z + 6.5], [14, 0, 20], [27, 0, 36]]);
+
+        [F, C, A].forEach((W) => {
+          W.scene.add(plane);
+          crew.forEach((c) => W.scene.add(c.holder));
+          renderer.compile(W.scene, camera);
+        });
+        const TIRE = col(0.78, 0.78, 0.8);
+
+        shots.length = 0;
+        shots.push(
+          /* 1. boarding at golden hour */
+          {
+            W: F, dur: 6.5, from: reduced ? 1.5 : 0, fadeIn: 0.8, fadeOut: 0.3,
+            enter() {
+              F.scene.add(plane);
+              crew.forEach((c) => F.scene.add(c.holder));
+              plane.position.set(0, 0, 0);
+              plane.rotation.set(0, 0, 0);
+              PLn.setGear(1);
+              PLn.setDoor(1);
+              F.stairs.group.visible = true;
+              caption("cut.plane.board");
+            },
+            update(lt, dt, time) {
+              cam(V(36, 7, 34), V(27, 5, 27), V(5, 3, 6), V(7, 3.2, 4), easeIO(lt / 6.5));
+              walk(F.path, 2.6 * lt, 1.25, time, 1, 0.25);
+              PLn.setDoor(1 - smooth(5.6, 6.4, lt));
+            },
+          },
+          /* 2. takeoff down the runway */
+          {
+            W: F, dur: 6, from: reduced ? 1 : 0, fadeIn: 0.3, fadeOut: 0.35,
+            enter() {
+              hideCrew();
+              F.stairs.group.visible = false;
+              PLn.setDoor(0);
+              caption("cut.plane.takeoff");
+            },
+            update(lt, dt, time) {
+              const x = -150 + 0.5 * 13 * lt * lt;
+              const lift = Math.max(0, x - 20);
+              const y = 0.0016 * lift * lift;
+              plane.position.set(x, y, -34);
+              plane.rotation.set(0, 0, Math.min(0.16, lift * 0.0022));
+              PLn.setGear(1 - smooth(8, 18, y));
+              camPos.set(lerp(-40, 30, easeIO(lt / 6)), 2.2 + y * 0.25, -6);
+              camLook.set(x, 3 + y, -34);
+              cur.shake = 0.02 * smooth(0, 3, lt) * (1 - smooth(3, 10, y));
+            },
+          },
+          /* 3. cruising above the clouds */
+          {
+            W: C, dur: 5, from: reduced ? 1 : 0, fadeIn: 0.35, fadeOut: 0.35,
+            enter() {
+              C.scene.add(plane);
+              plane.position.set(0, 0, 0);
+              PLn.setGear(0);
+              caption("cut.plane.cruise");
+            },
+            update(lt, dt, time) {
+              plane.position.y = Math.sin(time * 0.9) * 0.4;
+              plane.rotation.set(Math.sin(time * 0.6) * 0.06, 0, 0.03 + Math.sin(time * 0.8) * 0.015);
+              C.clouds.forEach((c) => {
+                c.position.x -= 70 * dt;
+                if (c.position.x < -460) c.position.x += 920;
+              });
+              cam(V(-44, 3, 50), V(16, 1.5, 56), V(0, 5, 0), V(2, 5.5, 0), easeIO(lt / 5));
+            },
+          },
+          /* 4. landing at the museum's city */
+          {
+            W: A, dur: 7, from: reduced ? 2 : 0, fadeIn: 0.4, fadeOut: 0.3,
+            enter() {
+              A.scene.add(plane);
+              crew.forEach((c) => A.scene.add(c.holder));
+              hideCrew();
+              A.stairs.group.visible = false;
+              PLn.setGear(1);
+              PLn.setDoor(0);
+              touched = false;
+              caption("cut.plane.land");
+            },
+            update(lt, dt, time) {
+              let x, y;
+              if (lt < 4) {
+                const u = lt / 4;
+                x = lerp(-230, -45, u);
+                y = 34 * Math.pow(1 - u, 1.7);
+              } else {
+                x = lerp(-45, 0, easeOut((lt - 4) / 3));
+                y = 0;
+              }
+              plane.position.set(x, y, 0);
+              plane.rotation.set(0, 0, lt < 4 ? 0.06 : 0.06 * (1 - smooth(4, 4.6, lt)));
+              if (!touched && lt >= 4) {
+                touched = true;
+                caption("cut.touchdown");
+                for (let i = 0; i < (reduced ? 40 : 120); i++) {
+                  const z = rng() < 0.5 ? 2.2 : -2.2;
+                  A.puff.emit(x - 0.6 + R(-1, 1), 0.3, z + R(-0.4, 0.4), R(-6, -1), R(0.3, 1.5), R(-1, 1), R(1.2, 2), R(0.8, 1.4), R(2.5, 4), 0.55, TIRE, TIRE, 1.2, -0.2);
+                }
+              }
+              A.puff.update(dt);
+              cam(V(-60, 3, 28), V(10, 2.4, 26), V(-120, 12, 0), V(0, 3, 0), easeIO(lt / 7));
+              cur.shake = lt > 4 && lt < 4.4 ? 0.12 : 0;
+            },
+          },
+          /* 5. down the stairs and off to the museum */
+          {
+            W: A, dur: 6, to: reduced ? 5 : 6, fadeIn: 0.25, fadeOut: 1.3, outColor: "#fff",
+            enter() {
+              caption("cut.arrive");
+              plane.position.set(0, 0, 0);
+              plane.rotation.set(0, 0, 0);
+              A.stairs.group.visible = true;
+            },
+            update(lt, dt, time) {
+              PLn.setDoor(smooth(0, 0.6, lt));
+              A.stairs.tilt.scale.x = Math.max(0.02, smooth(0, 0.8, lt));
+              walk(A.path, 2.6 * (lt - 0.6), 1.3, time, 1, 0);
+              A.puff.update(dt);
+              // a wide shot: the plane, the stairs, the class, then the museum
+              cam(V(-12, 6, 26), V(-6, 6, 30), V(6, 3, 5), V(24, 3, 36), easeIO(lt / 6));
+            },
+          }
+        );
+        shots.forEach((sh) => { sh.from = sh.from || 0; sh.to = sh.to || sh.dur; });
       }
 
       /* =================================================================

@@ -495,4 +495,9 @@ I18N.add("zh", {
   "wingQ.deep": "人类制造的机器能飞多远？",
   "fact.crewTag": "宇航员的故事",
   "fact.designTag": "设计上的选择",
+  "cut.plane.board": "研学旅行日！大家走上舷梯，登上飞机。",
+  "cut.plane.takeoff": "起飞！",
+  "cut.plane.cruise": "在云层上方飞行，前往博物馆所在的城市。",
+  "cut.plane.land": "准备降落……",
+  "place.earthDesc": "大城市里的一座著名博物馆。你要坐飞机去！",
 });

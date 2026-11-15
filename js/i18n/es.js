@@ -495,4 +495,9 @@ I18N.add("es", {
   "wingQ.deep": "¿Qué tan lejos puede viajar una máquina hecha por personas?",
   "fact.crewTag": "Historia de astronautas",
   "fact.designTag": "Decisión de diseño",
+  "cut.plane.board": "¡Día de excursión! Todos suben la escalera y entran al avión.",
+  "cut.plane.takeoff": "¡Despegamos!",
+  "cut.plane.cruise": "Volando sobre las nubes hacia la ciudad del museo.",
+  "cut.plane.land": "Preparándonos para aterrizar...",
+  "place.earthDesc": "Un museo famoso en una gran ciudad. ¡Llegas en avión!",
 });

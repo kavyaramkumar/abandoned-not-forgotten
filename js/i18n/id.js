@@ -493,5 +493,10 @@ I18N.add("id", {
   "echo.learnStart": "Pilih satu sayap untuk mulai. Di dalam, ikuti pintu <b>LANJUT</b>, lalu lewati pintu <b>↩ ATRIUM</b> untuk kembali ke sini. Klik sebuah mesin untuk mendengar kisahnya!",
   "tab.story": "Kisahnya",
   "tab.orbit": "Dulu dan sekarang",
-  "level.hardDesc": "Jalan berbelit, pintu jebakan, jalan buntu, ruang rahasia. Tanpa pemindai dan tanpa peta."
+  "level.hardDesc": "Jalan berbelit, pintu jebakan, jalan buntu, ruang rahasia. Tanpa pemindai dan tanpa peta.",
+  "cut.plane.board": "Hari karyawisata! Semua naik tangga dan masuk ke pesawat.",
+  "cut.plane.takeoff": "Lepas landas!",
+  "cut.plane.cruise": "Terbang di atas awan menuju kota tempat museum berada.",
+  "cut.plane.land": "Bersiap mendarat...",
+  "place.earthDesc": "Museum terkenal di kota besar. Kamu terbang ke sana!",
 });

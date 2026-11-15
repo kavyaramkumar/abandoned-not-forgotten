@@ -1509,3 +1509,7 @@ dialog.sheet .wing-badge b { color: #ffffff !important; font: 800 18px var(--ser
   .chat-fab #chatFabLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 .cam-controls .map-btn[hidden] { display: none; }
+
+/* Start pressed: hide the setup screen at once while the trip movie loads,
+ * so the card never shows before or after the movie. */
+.intro.to-trip { visibility: hidden; }

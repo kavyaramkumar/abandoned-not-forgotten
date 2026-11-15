@@ -493,5 +493,10 @@ I18N.add("vi", {
   "echo.learnStart": "Chọn một khu để bắt đầu. Bên trong, đi theo các cửa <b>TIẾP</b>, rồi đi qua cửa <b>↩ SẢNH CHÍNH</b> để về đây. Bấm vào một cỗ máy để nghe chuyện của nó nhé!",
   "tab.story": "Câu chuyện",
   "tab.orbit": "Xưa và nay",
-  "level.hardDesc": "Đường rối, cửa bẫy, ngõ cụt, phòng bí mật. Không có máy quét và không có bản đồ."
+  "level.hardDesc": "Đường rối, cửa bẫy, ngõ cụt, phòng bí mật. Không có máy quét và không có bản đồ.",
+  "cut.plane.board": "Ngày dã ngoại! Mọi người lên cầu thang để vào máy bay.",
+  "cut.plane.takeoff": "Cất cánh!",
+  "cut.plane.cruise": "Bay trên những đám mây đến thành phố có bảo tàng.",
+  "cut.plane.land": "Chuẩn bị hạ cánh...",
+  "place.earthDesc": "Một bảo tàng nổi tiếng ở thành phố lớn. Bạn sẽ bay đến đó!",
 });

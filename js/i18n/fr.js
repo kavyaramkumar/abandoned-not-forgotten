@@ -495,4 +495,9 @@ I18N.add("fr", {
   "wingQ.deep": "Jusqu'où une machine construite par des humains peut-elle voyager ?",
   "fact.crewTag": "Histoire d'astronautes",
   "fact.designTag": "Choix de conception",
+  "cut.plane.board": "Jour de sortie ! Tout le monde monte l'escalier et entre dans l'avion.",
+  "cut.plane.takeoff": "Décollage !",
+  "cut.plane.cruise": "On vole au-dessus des nuages vers la ville du musée.",
+  "cut.plane.land": "On se prépare à atterrir...",
+  "place.earthDesc": "Un musée célèbre dans une grande ville. Tu y vas en avion !",
 });

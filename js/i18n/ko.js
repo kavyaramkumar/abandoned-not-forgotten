@@ -493,5 +493,10 @@ I18N.add("ko", {
   "echo.learnStart": "전시관을 하나 골라 시작해요. 안에서는 <b>다음</b> 문을 따라가고, <b>↩ 중앙 홀</b> 문으로 여기 돌아와요. 기계를 클릭하면 이야기를 들을 수 있어요!",
   "tab.story": "이야기",
   "tab.orbit": "그때와 지금",
-  "level.hardDesc": "얽힌 길, 함정 문, 막다른 길, 비밀의 방. 스캐너도 지도도 없어요."
+  "level.hardDesc": "얽힌 길, 함정 문, 막다른 길, 비밀의 방. 스캐너도 지도도 없어요.",
+  "cut.plane.board": "현장 학습 날! 모두 계단을 올라 비행기에 타요.",
+  "cut.plane.takeoff": "이륙!",
+  "cut.plane.cruise": "구름 위를 날아 박물관이 있는 도시로 가요.",
+  "cut.plane.land": "곧 착륙해요...",
+  "place.earthDesc": "큰 도시에 있는 유명한 박물관. 비행기를 타고 가요!",
 });
