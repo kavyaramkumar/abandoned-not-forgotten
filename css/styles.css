@@ -60,9 +60,24 @@ kbd { font: 600 12px var(--mono); background: #fff2; border: 1px solid #fff4; bo
 .steps { height: 40px; background: repeating-linear-gradient(#d8ccb4 0 12px, #c9bb9f 12px 14px); margin: 0 -4%; }
 .street { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: #5c5f66; border-top: 14px solid #b9b2a3; }
 .street::after { content: ""; position: absolute; left: 0; right: 0; top: 52px; height: 6px; background: repeating-linear-gradient(90deg, #f2d67a 0 50px, transparent 50px 100px); }
-.bus-wrap { position: absolute; bottom: 52px; left: -320px; width: 300px; animation: busIn 2.6s cubic-bezier(.2, .7, .3, 1) .3s forwards; }
-.bus-wrap .wheel { animation: spinW .6s linear 5; transform-box: fill-box; transform-origin: center; }
-@keyframes busIn { to { left: 6vw; } }
+/* Earth trips: the class's plane glides in, touches down on the museum's
+ * airstrip, and rolls to a stop (the Moon and Mars get a rocket instead). */
+.bus-wrap { position: absolute; bottom: 64px; left: 6vw; width: clamp(240px, 30vw, 340px); transform-origin: 70% 90%; animation: planeIn 3s cubic-bezier(.25, .6, .3, 1) .2s both; }
+.bus-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+.bus-wrap .contrail { animation: trailFade 3.2s ease-out forwards; }
+.bus-wrap .wheel { animation: spinW .45s linear 1.9s 3; transform-box: fill-box; transform-origin: center; }
+@keyframes planeIn {
+  0% { transform: translate(-70vw, -42vh) rotate(-7deg); }
+  62% { transform: translate(-14vw, -2px) rotate(-3deg); }
+  70% { transform: translate(-9vw, 0) rotate(0deg); }
+  74% { transform: translate(-7.4vw, -3px) rotate(0deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+@keyframes trailFade { 0%, 40% { opacity: .55; } 100% { opacity: 0; } }
+/* on Earth the street out front is the museum's little airstrip */
+.intro[data-place="earth"] .street { background: #4f5258; border-top-color: #b9b2a3; }
+.intro[data-place="earth"] .street::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 4px; background: #f3f1e8; opacity: .85; }
+.intro[data-place="earth"] .street::after { background: repeating-linear-gradient(90deg, #f3f1e8 0 60px, transparent 60px 110px); }
 @keyframes spinW { to { transform: rotate(360deg); } }
 
 .intro-card {
@@ -73,7 +88,8 @@ kbd { font: 600 12px var(--mono); background: #fff2; border: 1px solid #fff4; bo
   max-height: 92vh; overflow: auto;
 }
 @keyframes cardIn { to { opacity: 1; transform: translateY(-50%); } }
-.intro.skipped .bus-wrap { animation: none; left: 6vw; }
+.intro.skipped .bus-wrap { animation: none; transform: none; }
+.intro.skipped .bus-wrap .contrail { display: none; }
 .intro.skipped .intro-card { animation: none; opacity: 1; transform: translateY(-50%); }
 .intro-card h1 { font-size: clamp(28px, 3.6vw, 40px); }
 .intro-card > p { color: var(--ink-2); margin: 0 0 18px; }
@@ -565,7 +581,7 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 [dir="rtl"] .level-pick button { text-align: right; }
 [dir="rtl"] .say .who { margin-left: 6px; margin-right: 0; }
 
-/* ---------- Moon and Mars trips: a rocket lands instead of the bus ---------- */
+/* ---------- Moon and Mars trips: a rocket lands instead of the plane ---------- */
 .rocket-wrap { position: absolute; left: 6vw; bottom: 104px; width: clamp(120px, 14vw, 170px); display: none; }
 .rocket-wrap svg { width: 100%; height: auto; display: block; }
 .intro[data-place="moon"] .rocket-wrap, .intro[data-place="mars"] .rocket-wrap { display: block; animation: rocketLand 2.8s cubic-bezier(.15, .6, .25, 1) .2s both; }
@@ -667,6 +683,37 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .a11y-text-xl .say { font-size: 22px; max-width: 420px; }
 .a11y-text-l .toast { font-size: 18px; }
 .a11y-text-xl .toast { font-size: 21px; }
+/* Zoom multiplies every length inside the zoomed box, vh included, so a
+ * dialog sized to "100vh" grows past the screen and its X ends up off the
+ * top. Divide the viewport-based limits by the zoom factor so every sheet
+ * still fits, let the sheet scroll, and pin its header (title + X) on top. */
+:root { --tz: 1; }
+.a11y-text-l { --tz: 1.15; }
+.a11y-text-xl { --tz: 1.32; }
+:is(.a11y-text-l, .a11y-text-xl) dialog.sheet {
+  max-height: calc((100vh - 24px) / var(--tz));
+  max-width: calc((100vw - 16px) / var(--tz));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+:is(.a11y-text-l, .a11y-text-xl) dialog.sheet .ex-head {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--paper, #f6f9fa);
+  box-shadow: 0 1px 0 #0000001a;
+}
+:is(.a11y-text-l, .a11y-text-xl) dialog.sheet .ex-foot {
+  position: sticky; bottom: 0; z-index: 6;
+  background: var(--paper, #f6f9fa);
+}
+:is(.a11y-text-l, .a11y-text-xl) dialog.sheet .ex-head h2 { font-size: clamp(22px, 2.6vw, 30px); }
+:is(.a11y-text-l, .a11y-text-xl) .a11y-body { max-height: none; overflow: visible; }
+:is(.a11y-text-l, .a11y-text-xl) .rules-body { max-height: none; overflow: visible; }
+:is(.a11y-text-l, .a11y-text-xl) .ex-content { max-height: calc((100vh - 28px) / var(--tz)); }
+:is(.a11y-text-l, .a11y-text-xl) .learn-sheet[open] { max-height: calc((100vh - 24px) / var(--tz)); }
+:is(.a11y-text-l, .a11y-text-xl) .chat-log { max-height: calc(50vh / var(--tz)); }
+:is(.a11y-text-l, .a11y-text-xl) .map-body { max-height: calc(min(64vh, 640px) / var(--tz)); }
+:is(.a11y-text-l, .a11y-text-xl) .compare { max-height: calc(52vh / var(--tz)); }
+:is(.a11y-text-l, .a11y-text-xl) .intro-card { max-height: calc((100vh - 32px) / var(--tz)); }
 
 /* easy-read font */
 .a11y-font body, .a11y-font button, .a11y-font input, .a11y-font select, .a11y-font .say,

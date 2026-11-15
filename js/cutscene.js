@@ -1752,6 +1752,108 @@ window.Cutscene = (function () {
           g.add(stand);
           s.add(g);
         }
+        /* The museum sits at the edge of a town, not in an empty field: a
+         * road from the plane to its front steps, a small terminal and control
+         * tower, parked cars, trees, and a city skyline on both sides of the
+         * runway so every camera angle has a place behind it. Uses its own
+         * seeded random so the rest of the movie stays the same each time. */
+        function townAround(s, museumAt) {
+          const rnd = seeded(77);
+          const RR = (a, b) => a + (b - a) * rnd();
+          const g = new T.Group();
+          const road = std("#4a4c50", { roughness: 0.95 });
+          const curb = std("#c9c4b8", { roughness: 0.9 });
+          const flat = (w, d, mat, x, z, rot, y) => {
+            const m = new T.Mesh(new T.PlaneGeometry(w, d), mat);
+            m.rotation.x = -Math.PI / 2;
+            m.rotation.z = rot || 0;
+            m.position.set(x, y || 0.04, z);
+            m.receiveShadow = true;
+            g.add(m);
+            return m;
+          };
+          // a walkway from the plane's stand up to the museum's front door
+          const from = V(10, 0, 18), to = museumAt.clone();
+          const dir = to.clone().sub(from), len = dir.length() - 14;
+          const ang = Math.atan2(dir.x, dir.z);
+          const mid = from.clone().add(dir.clone().setLength(len / 2));
+          flat(7, len, curb, mid.x, mid.z, ang, 0.035);
+          flat(5.6, len, std("#b9b2a3", { roughness: 0.9 }), mid.x, mid.z, ang, 0.045);
+          // a town street running past the museum, with a centre line
+          flat(1600, 14, road, 120, 82, 0, 0.03);
+          for (let x = -600; x < 840; x += 18) flat(8, 0.5, paint, x, 82, 0, 0.05);
+          // parking lot with cars
+          flat(40, 22, road, -4, 58, 0, 0.035);
+          const carCols = ["#c0392b", "#2e86de", "#f2f2f2", "#27ae60", "#f1c40f", "#34495e", "#8e44ad"];
+          for (let i = 0; i < 9; i++) {
+            const car = new T.Group();
+            const bodyM = std(carCols[i % carCols.length], { roughness: 0.35, metalness: 0.4 });
+            const b1 = new T.Mesh(new T.BoxGeometry(2, 0.8, 4.2), bodyM); b1.position.y = 0.7;
+            const b2 = new T.Mesh(new T.BoxGeometry(1.8, 0.7, 2.2), std("#26323f", { roughness: 0.2, metalness: 0.5 })); b2.position.set(0, 1.4, -0.2);
+            car.add(b1, b2);
+            car.position.set(-20 + (i % 9) * 4, 0, i % 2 ? 52 : 64);
+            if (i % 2) car.rotation.y = Math.PI;
+            g.add(car);
+          }
+          // a small terminal and a control tower beside the runway
+          const term = new T.Group();
+          const tw = new T.Mesh(new T.BoxGeometry(34, 8, 14), std("#d9d4c8", { roughness: 0.8 })); tw.position.y = 4;
+          const tg = new T.Mesh(new T.BoxGeometry(34.2, 3, 14.2), std("#7fa6c4", { roughness: 0.15, metalness: 0.5 })); tg.position.y = 4.5;
+          const tr = new T.Mesh(new T.BoxGeometry(36, 0.7, 16), std("#8e9aa6", { roughness: 0.6 })); tr.position.y = 8.3;
+          term.add(tw, tg, tr);
+          term.position.set(-52, 0, 40);
+          g.add(term);
+          const tower = new T.Group();
+          const shaft = new T.Mesh(new T.CylinderGeometry(1.6, 2.2, 22, 16), std("#e6e2d8", { roughness: 0.7 })); shaft.position.y = 11;
+          const cab = new T.Mesh(new T.CylinderGeometry(4, 3.2, 3.4, 8), std("#3d6f8f", { roughness: 0.1, metalness: 0.6, emissive: "#0d2233", emissiveIntensity: 0.4 })); cab.position.y = 23.7;
+          const cap = new T.Mesh(new T.CylinderGeometry(4.4, 4.4, 0.6, 8), std("#8e9aa6")); cap.position.y = 25.7;
+          tower.add(shaft, cab, cap);
+          tower.position.set(-78, 0, 34);
+          g.add(tower);
+          // trees: around the museum grounds and along the street, never on the
+          // runway, the plane's stand, the path, or the museum itself
+          const trunkM = std("#6b4a2f", { roughness: 0.9 });
+          const leafM = [std("#3f7a3a", { roughness: 0.9 }), std("#4f8f3f", { roughness: 0.9 }), std("#2f6a36", { roughness: 0.9 })];
+          const clear = (x, z) =>
+            Math.abs(z) < 24 ||                                   // runway
+            (x > -48 && x < 54 && z > -20 && z < 70) ||           // stand, path, lot
+            Math.hypot(x - museumAt.x, z - museumAt.z) < 30 ||    // museum
+            Math.abs(z - 82) < 10 ||                              // street
+            (x > -90 && x < -30 && z > 24 && z < 52);             // terminal + tower
+          let placed = 0;
+          for (let i = 0; i < 400 && placed < 120; i++) {
+            const x = RR(-260, 320), z = rnd() < 0.7 ? RR(24, 140) : RR(-120, -26);
+            if (clear(x, z)) continue;
+            const h = RR(4, 8);
+            const tree = new T.Group();
+            const trunk = new T.Mesh(new T.CylinderGeometry(0.25, 0.35, h * 0.4, 6), trunkM); trunk.position.y = h * 0.2;
+            const crown = new T.Mesh(new T.SphereGeometry(h * 0.32, 8, 6), leafM[placed % 3]); crown.position.y = h * 0.62; crown.scale.y = 1.25;
+            tree.add(trunk, crown);
+            tree.position.set(x, 0, z);
+            g.add(tree);
+            placed++;
+          }
+          // city blocks: low buildings across the street, towers further back,
+          // and a hazy skyline across the runway
+          const facades = ["#c8c2b6", "#a9b3bd", "#d8cfc0", "#8f9aa6", "#b8a690", "#e0dbd2"];
+          const winM = std("#6f8fa8", { roughness: 0.2, metalness: 0.5, emissive: "#ffe2b0", emissiveIntensity: 0.12 });
+          const block = (x, z, w, d, h, col) => {
+            const b = new T.Mesh(new T.BoxGeometry(w, h, d), std(col, { roughness: 0.8 }));
+            b.position.set(x, h / 2, z);
+            g.add(b);
+            // window bands on the taller ones
+            if (h > 14) for (let y = 4; y < h - 2; y += 4) {
+              const band = new T.Mesh(new T.BoxGeometry(w + 0.1, 1.3, d + 0.1), winM);
+              band.position.set(x, y, z);
+              g.add(band);
+            }
+          };
+          for (let x = -220; x < 300; x += RR(16, 26)) block(x, RR(100, 112), RR(10, 18), RR(10, 16), RR(7, 16), facades[Math.floor(rnd() * facades.length)]);
+          for (let i = 0; i < 34; i++) block(RR(-200, 300), RR(135, 230), RR(12, 22), RR(12, 22), RR(18, 70), facades[Math.floor(rnd() * facades.length)]);
+          for (let i = 0; i < 30; i++) block(RR(-300, 400), RR(-260, -140), RR(14, 26), RR(14, 26), RR(14, 60), facades[Math.floor(rnd() * facades.length)]);
+          shadows(g, true, true);
+          s.add(g);
+        }
         function lightWorld(W, o) {
           const s = W.scene;
           W.sunDir = o.sunDir;
@@ -1840,6 +1942,7 @@ window.Cutscene = (function () {
           fog: "#cfe2f0", hemiTop: "#dcecff", hemiBottom: "#5a6b3c", sunCol: "#fff3dc", sunInt: 2.8, sunGlow: new T.Color(1, 0.95, 0.85),
         });
         airfield(A.scene, 0, "#6d9150");
+        townAround(A.scene, V(34, 0, 46));
         {
           const museum = buildMuseum(glow, true);
           museum.position.set(34, 0, 46);

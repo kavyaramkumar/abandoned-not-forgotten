@@ -3,7 +3,7 @@
  *   Art.hardware(key)   simplified drawings of the real spacecraft
  *   Art.backdrop(key)   diorama scenes behind each exhibit
  *   Art.kid(look)       the player character
- *   Art.bus()           field-trip school bus (intro)
+ *   Art.bus()           field-trip airplane (intro, Earth trips)
  * Shared gradients (#gold, #silver, #panel) live in index.html.
  * Drawings are simplified for kids but keep each machine's recognizable shape.
  */
@@ -393,20 +393,31 @@ window.Art = (function () {
 </svg>`;
   }
 
-  /* ---------- School bus (260 x 120) ---------- */
+  /* ---------- Field-trip airplane (300 x 120) ----------
+   * Earth trips arrive by plane (the Moon and Mars get a rocket). Same white,
+   * blue and gold livery as the 3D plane in the arrival movie. Nose points right.
+   */
   function bus() {
     return `
-<svg class="bus" viewBox="0 0 260 120" aria-hidden="true">
-  <rect x="6" y="20" width="236" height="76" rx="12" fill="#f2b632" stroke="#2a2b2f" stroke-width="3"/>
-  <rect x="200" y="44" width="52" height="52" rx="8" fill="#f2b632" stroke="#2a2b2f" stroke-width="3"/>
-  <path d="M8 70h244" stroke="#2a2b2f" stroke-width="3"/>
-  ${[22, 62, 102, 142].map((x) => `<rect x="${x}" y="30" width="32" height="26" rx="4" fill="#bfe0f2" stroke="#2a2b2f" stroke-width="2"/>`).join("")}
-  <rect x="182" y="30" width="16" height="56" rx="3" fill="#bfe0f2" stroke="#2a2b2f" stroke-width="2"/>
-  <rect x="214" y="50" width="30" height="18" rx="3" fill="#bfe0f2" stroke="#2a2b2f" stroke-width="2"/>
-  <text x="100" y="86" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="12" fill="#2a2b2f">FIELD TRIP</text>
-  <circle cx="246" cy="84" r="4" fill="#fff6d0"/>
-  <g class="wheel"><circle cx="58" cy="98" r="16" fill="#2a2b2f"/><circle cx="58" cy="98" r="6" fill="#9b9da2"/></g>
-  <g class="wheel"><circle cx="206" cy="98" r="16" fill="#2a2b2f"/><circle cx="206" cy="98" r="6" fill="#9b9da2"/></g>
+<svg class="plane" viewBox="0 0 300 120" aria-hidden="true">
+  <path class="contrail" d="M-260 52 H24" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+  <path d="M20 54 L4 14 L30 14 L62 50 Z" fill="#2457a8" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M8 60 L-6 52 L30 52 L40 62 Z" fill="#2457a8" stroke="#2a2b2f" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M24 50 H250 C272 50 292 60 294 70 C292 80 274 88 250 88 H40 C28 88 20 74 24 50 Z" fill="#f4f6f8" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M30 76 H262 C276 76 286 74 291 72" fill="none" stroke="#2457a8" stroke-width="5"/>
+  <path d="M30 82 H256" fill="none" stroke="#f2b632" stroke-width="2.5"/>
+  ${[70, 88, 106, 124, 142, 160, 178, 196, 214].map((x) => `<rect x="${x}" y="58" width="9" height="10" rx="3" fill="#20354f"/>`).join("")}
+  <path d="M258 58 H276 C282 60 286 63 288 66 H262 Z" fill="#20354f"/>
+  <rect x="234" y="56" width="14" height="22" rx="3" fill="#dfe5ea" stroke="#2a2b2f" stroke-width="2"/>
+  <text x="140" y="74" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="9" fill="#2a2b2f" letter-spacing="1">FIELD TRIP</text>
+  <path d="M110 74 L176 74 L130 108 L104 108 Z" fill="#dfe5ea" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="138" y="86" width="22" height="9" rx="4.5" fill="#8e9aa6" stroke="#2a2b2f" stroke-width="2"/>
+  <g class="gear">
+    <path d="M84 88 V104 M232 88 V104" stroke="#2a2b2f" stroke-width="3"/>
+    <g class="wheel"><circle cx="84" cy="108" r="8" fill="#2a2b2f"/><circle cx="84" cy="108" r="3" fill="#9b9da2"/></g>
+    <g class="wheel"><circle cx="232" cy="108" r="7" fill="#2a2b2f"/><circle cx="232" cy="108" r="2.6" fill="#9b9da2"/></g>
+  </g>
+  <circle cx="292" cy="70" r="2.4" fill="#fff6d0"/>
 </svg>`;
   }
 

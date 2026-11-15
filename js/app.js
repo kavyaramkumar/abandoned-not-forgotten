@@ -1691,7 +1691,7 @@ const speechRate = () => {
   function buildExhibit(r) {
     const ex = exById(r.exhibit);
     const N = sideOf("N");
-    photoFrame(N, ex);
+    photoFrame(N, ex, r);
     // Immersive gallery treatment inspired by a real NASA exhibition:
     // warm landscape, dramatic edge lighting, and a lit artifact plinth.
     buildExhibitEnvironment(ex, r);
@@ -1813,16 +1813,23 @@ const speechRate = () => {
    * have one (js/photos.js), otherwise the drawn diorama. Sized to the photo.
    */
   const photoLoader = new T.TextureLoader();
-  function photoFrame(wall, ex) {
+  function photoFrame(wall, ex, r) {
     const ph = window.PHOTOS && PHOTOS[ex.id];
     const maxW = 7.7, maxH = 2.45;
     let w = 7.2, h = 2.35, map;
-    if (ph) {
-      w = 7.2; h = 2.4;
-      map = photoLoader.load(ph.src);
-      map.encoding = T.sRGBEncoding;
-      map.anisotropy = 4;
-    } else map = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
+    if (ph) h = 2.4;
+    // Keep the picture clear of any door on this wall (secret ones included,
+    // so a found door never opens under the photo): the frame stops short of
+    // the nearest door's jamb and sign with a little breathing room.
+    const doorsHere = r ? r.doors.filter((d) => SLOT_POS[d.slot].side === wall.side) : [];
+    if (doorsHere.length) {
+      const DOOR_HALF = DOOR_W / 2 + 0.06 + 0.18; // opening + jamb post
+      const nearest = Math.min(...doorsHere.map((d) => Math.abs(SLOT_POS[d.slot].along)));
+      const room = nearest - DOOR_HALF - 0.25; // gap between frame edge and door
+      w = Math.min(w, Math.max(2.4, 2 * room - 0.38));
+    }
+    if (ph) map = coverPhotoTex(ph.src, w / h);
+    else map = Models.svgTexture(Art.backdrop(ex.backdrop), 420);
     const frame = new T.Group();
     const shell = new T.Mesh(curvedPanelGeometry(w + 0.38, h + 0.32, 0.31, 44), new T.MeshStandardMaterial({ color: "#161b24", metalness: 0.42, roughness: 0.34, side: T.DoubleSide }));
     const pic = new T.Mesh(curvedPanelGeometry(w, h, 0.36, 44), new T.MeshBasicMaterial({ map, toneMapped: false, side: T.DoubleSide }));
@@ -1977,7 +1984,7 @@ const speechRate = () => {
     g.add(lightPool(5));
     if (r.find === "treasure") {
       const t = exById(r.treasure);
-      photoFrame(sideOf("N"), t);
+      photoFrame(sideOf("N"), t, r);
       const c = buildCase(t, 0, -1.6, 0.9);
       addSpot({ kind: "exhibit", ex: t, pos: [0, 0.6], face: Math.PI, meshes: c.userData.pick });
       obstacles.push({ x: 0, z: -1.6, r: 1.15 });
@@ -3526,11 +3533,27 @@ const speechRate = () => {
     save();
   }
   let pendingLine = null;
+  // The answer options are written with the right one usually second, so
+  // shuffle the order they are shown in. Each quiz keeps one order for the
+  // whole visit (switching tabs doesn't reshuffle), and the right answer is
+  // never left in the slot it was written in, so it can't be guessed by habit.
+  const quizOrders = {};
+  function quizOrder(e, n) {
+    const key = e.id + ":" + n;
+    if (quizOrders[key]) return quizOrders[key];
+    const idx = [...Array(n).keys()];
+    for (let tries = 0; tries < 20; tries++) {
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      if (n < 2 || idx.indexOf(e.quiz.answer) !== e.quiz.answer) break;
+    }
+    return (quizOrders[key] = idx);
+  }
   function renderQuiz() {
     const v = R().visits[ex.id] || {};
     const q = quizFor(ex);
+    const order = quizOrder(ex, q.options.length);
     $("#exBody").innerHTML = `<h3 lang="${q.lang}">${esc(q.q)}</h3>
-      <div class="opts" lang="${q.lang}">${q.options.map((o, i) => `<button data-opt="${i}">${esc(o)}</button>`).join("")}</div>
+      <div class="opts" lang="${q.lang}">${order.map((i) => `<button data-opt="${i}">${esc(q.options[i])}</button>`).join("")}</div>
       <p class="fb" id="fb" aria-live="polite">${v.quiz != null ? esc(t("quiz.again")) : ""}</p>${q.lang === "en" ? englishNote() : ""}`;
     $("#exBody").querySelectorAll("[data-opt]").forEach((b) => b.addEventListener("click", () => answer(+b.dataset.opt, b)));
   }
