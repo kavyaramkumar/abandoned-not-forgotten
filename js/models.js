@@ -101,9 +101,19 @@ window.Models = (function () {
     } else {
       badge = new T.Mesh(new T.BoxGeometry(0.1, 0.12, 0.012), std("#f4ecdc"));
       badge.position.set(0.02, 0.76, 0.17);
-      strap = new T.Mesh(new T.TorusGeometry(0.1, 0.008, 4, 16, Math.PI), std("#f2c14e"));
-      strap.rotation.set(-0.25, 0, Math.PI);
-      strap.position.set(0.02, 0.9, 0.13);
+      // The cord runs from the collar, over the chest, down to the badge's clip.
+      // Its points sit just outside the shirt (the torso's front is about
+      // z 0.155 to 0.165 here), so it never sinks into the body and looks cut off.
+      const cord = new T.CatmullRomCurve3([
+        new T.Vector3(-0.075, 0.975, 0.045),
+        new T.Vector3(-0.1, 0.93, 0.15),
+        new T.Vector3(-0.05, 0.87, 0.182),
+        new T.Vector3(0.02, 0.828, 0.184),
+        new T.Vector3(0.09, 0.87, 0.182),
+        new T.Vector3(0.12, 0.93, 0.15),
+        new T.Vector3(0.075, 0.975, 0.045),
+      ]);
+      strap = new T.Mesh(new T.TubeGeometry(cord, 40, 0.008, 6, false), std("#f2c14e"));
     }
     g.add(badge, strap);
 
