@@ -656,6 +656,17 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .a11y-body { padding: 4px 24px 12px; display: grid; gap: 12px; overflow: auto; max-height: calc(100vh - 220px); }
 .a11y-row { border: 0; margin: 0; padding: 0; }
 .a11y-row legend { font-weight: 800; margin-bottom: 6px; }
+#a11yVoice,
+#a11yPitch {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 2px solid #d5ccb9;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: 700 15px var(--sans);
+}
 .seg { display: flex; flex-wrap: wrap; gap: 6px; }
 .seg button { padding: 8px 14px; border: 2px solid #d5ccb9; border-radius: 8px; background: #fff; color: var(--ink); font: 700 15px var(--sans); cursor: pointer; }
 .seg button[data-size="l"] { font-size: 17px; }
