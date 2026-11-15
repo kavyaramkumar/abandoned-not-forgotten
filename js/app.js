@@ -3037,10 +3037,11 @@ const speechRate = () => {
     if (!text) return;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    const voice = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(I18N.lang));
+    const voice = voiceForLanguage(I18N.lang);
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : I18N.lang;
     u.rate = speechRate();
+    u.pitch = Number(S.a11y.pitch) || 1;
     speechSynthesis.speak(u);
   }
 
@@ -3752,7 +3753,7 @@ if ("speechSynthesis" in window) {
       roots.filter(Boolean).forEach((r) => walk(r, I18N.lang));
       return out;
     }
-    const voiceFor = (lang) => speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(lang));
+    const voiceFor = voiceForLanguage;
     function stop() {
       if ("speechSynthesis" in window) speechSynthesis.cancel();
       if (active) { active.classList.remove("reading"); active.setAttribute("aria-pressed", "false"); const lb = active.querySelector(".rd-label"); if (lb) lb.textContent = t("ex.read"); }
@@ -3772,6 +3773,7 @@ if ("speechSynthesis" in window) {
         if (v) u.voice = v;
         u.lang = v ? v.lang : p.lang;
         u.rate = speechRate();
+        u.pitch = Number(S.a11y.pitch) || 1;
         if (i === parts.length - 1) u.onend = () => { if (active === btn) stop(); };
         speechSynthesis.speak(u);
       });
