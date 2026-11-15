@@ -50,7 +50,7 @@
     place: "earth", // where the museum is: earth | moon | mars
     lang: "en",
     // accessibility: text size n | l | xl, and on/off switches
-    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false, rate: 1 },
+    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false, rate: 1 ,voiceURI: "", pitch: 1 },
     stars: 0,
     owned: ["c-silver", "e-cyan", "h-none", "g-none"],
     look: { color: "#c9d3e6", eyes: "#5ef2ff", hat: "none", gear: "none" },
@@ -80,7 +80,40 @@ function save() {
       if (typeof saveCloudProgress === "function") saveCloudProgress(S);
     } catch (e) {}
   }
-
+  function voiceForLanguage(lang) {
+  if (!("speechSynthesis" in window)) return null;
+  const voices = speechSynthesis.getVoices();
+  const wantedLanguage = String(lang || "en").toLowerCase();
+  const chosen = voices.find((voice) => voice.voiceURI === S.a11y.voiceURI);
+  if (
+    chosen &&
+    chosen.lang &&
+    chosen.lang.toLowerCase().startsWith(wantedLanguage)
+  ) {
+    return chosen;
+  }
+  return voices.find(
+    (voice) =>
+      voice.lang &&
+      voice.lang.toLowerCase().startsWith(wantedLanguage)
+  ) || null;
+}
+function fillVoiceOptions() {
+  const select = $("#a11yVoice");
+  if (!select || !("speechSynthesis" in window)) return;
+  const savedVoice = S.a11y.voiceURI || "";
+  const voices = speechSynthesis.getVoices()
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name));
+  select.innerHTML = '<option value="">Automatic for this language</option>';
+  voices.forEach((voice) => {
+    const option = document.createElement("option");
+    option.value = voice.voiceURI;
+    option.textContent = `${voice.name} (${voice.lang || "unknown"})`;
+    select.appendChild(option);
+  });
+  select.value = savedVoice;
+}
   window.applyCloudState = function (cloudData) {
     if (!cloudData) return;
     S.player = cloudData.player ?? "";
@@ -2935,6 +2968,8 @@ const speechRate = () => {
     $("#a11yMotion").checked = a.motion;
     $("#a11yFont").checked = a.font;
     $("#a11ySpeak").checked = a.speak;
+    $("#a11yVoice").value = S.a11y.voiceURI || "";
+$("#a11yPitch").value = String(S.a11y.pitch || 1);
     $("#a11yRate").querySelectorAll("[data-rate]").forEach((button) => {
   button.setAttribute(
     "aria-pressed",
@@ -2949,6 +2984,18 @@ const speechRate = () => {
     if (!b) return;
     S.a11y.text = b.dataset.size; save(); applyA11y();
   });
+  $("#a11yVoice").addEventListener("change", (event) => {
+  S.a11y.voiceURI = event.target.value;
+  save();
+});
+$("#a11yPitch").addEventListener("change", (event) => {
+  S.a11y.pitch = Number(event.target.value);
+  save();
+});
+if ("speechSynthesis" in window) {
+  fillVoiceOptions();
+  speechSynthesis.onvoiceschanged = fillVoiceOptions;
+}
   $("#a11yRate").addEventListener("click", (event) => {
   const button = event.target.closest("[data-rate]");
   if (!button) return;
