@@ -1354,3 +1354,34 @@ dialog.sheet .story-hook { color: #ffffff !important; }
 dialog.sheet.chapter-sheet .ex-head .catalog { color: #9fe6f6 !important; }
 dialog.sheet.chapter-sheet .ex-head h2 { color: #ffffff !important; }
 dialog.sheet .beat-label { color: #005f76 !important; }
+
+/* ---------- Intro: museum by day, maze after dark ---------- */
+/* The facade sign used var(--ink), which the dark museum theme turned
+ * near-white; pin it to a dark, high-contrast color on the cream stone. */
+.facade-sign { color: #1d2a33 !important; text-shadow: none; }
+.intro { transition: background .9s ease, opacity .6s; }
+.intro .sun, .intro .cloud, .intro .stars-bg { transition: opacity .9s ease, background .9s ease; }
+.intro[data-time="night"][data-place="earth"] { background: linear-gradient(#040915, #0c1a33 55%, #1b2b4a); }
+.intro[data-time="night"] .stars-bg { display: block; }
+.intro[data-time="night"][data-place="earth"] .cloud { opacity: .18; }
+/* the Sun becomes a full Moon */
+.intro[data-time="night"][data-place="earth"] .sun { background: radial-gradient(circle at 38% 35%, #f6f4ec, #d9d6cc 60%, #b9b6ad); box-shadow: 0 0 40px 8px #c9d8ff33; }
+.intro[data-time="night"] .facade { filter: brightness(.62) saturate(.8); }
+/* the doorway glows, as if something inside just switched on */
+.intro[data-time="night"] .doors { background: radial-gradient(ellipse at 50% 70%, #ffd77a, #c98a2c 55%, #3b2a14); box-shadow: 0 0 60px 10px #ffc25a66; }
+.intro[data-time="night"] .facade-sign { background: #2a3442; color: #ffe6a6 !important; border-bottom-color: #1a222c; letter-spacing: .18em; }
+.intro[data-time="night"] .street { background: #2c2f36; }
+@media (prefers-reduced-motion: reduce) { .intro, .intro .sun, .intro .cloud, .intro .stars-bg { transition: none; } }
+
+/* Learning mode: which wing am I in? */
+.wing-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 999px;
+  border: 2px solid var(--wc, #9fb7ff);
+  background: #0f1a24; color: #ffffff;
+  font: 600 13px/1.2 var(--sans); white-space: nowrap;
+}
+.wing-chip[hidden] { display: none; }
+.wing-chip b { font: 800 14px var(--serif); letter-spacing: .01em; color: #ffffff; }
+.wing-chip span:last-child { color: #c9d8e2; }
+.wing-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wc, #9fb7ff); box-shadow: 0 0 10px var(--wc, #9fb7ff); }

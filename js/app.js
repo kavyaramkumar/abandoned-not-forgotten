@@ -231,6 +231,8 @@
   function drawPicks() {
     $("#placePick").querySelectorAll("[data-place]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.place === S.place)));
     $("#intro").dataset.place = S.place;
+    // Day is the museum (learning mode); after dark it becomes the maze (game mode).
+    $("#intro").dataset.time = S.mode === "game" ? "night" : "day";
     $("#modePick").querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === S.mode)));
     $("#levelField").hidden = S.mode !== "game";
     $("#levelPick").querySelectorAll("[data-level]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.level === S.level)));
@@ -332,7 +334,12 @@
     const st = $("#stage");
     renderer.setSize(st.clientWidth, st.clientHeight, false);
     camera.aspect = st.clientWidth / st.clientHeight;
-    camera.fov = camera.aspect < 1 ? 62 : 55;
+    // Keep at least ~70 degrees of view side to side. Tall, narrow windows
+    // (phones, side panels) otherwise see only a thin slice of the room, so
+    // turning toward a wall fills the screen with that wall.
+    const minH = 70 * Math.PI / 180;
+    const needV = 2 * Math.atan(Math.tan(minH / 2) / camera.aspect) * 180 / Math.PI;
+    camera.fov = Math.min(95, Math.max(55, needV));
     camera.updateProjectionMatrix();
   }
   // what you see past the cut-away walls: an evening sky on Earth, black space on
@@ -537,39 +544,42 @@
   }
 
   function atriumWallSurfaceTex(base, glow) {
+    // Calm, dark architectural paneling (no decorative line art): tall
+    // brushed panels, fine reveals between them, a faint star speckle, and
+    // two soft cove-light lines like a planetarium wall.
     const map = canvasTex(512, 512, (c, W, H) => {
-      const g = c.createLinearGradient(0, 0, W, H);
-      g.addColorStop(0, "#20272d"); g.addColorStop(0.48, base); g.addColorStop(1, "#171d22");
+      const g = c.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "#1a2027"); g.addColorStop(0.55, "#262d35"); g.addColorStop(1, "#14191f");
       c.fillStyle = g; c.fillRect(0, 0, W, H);
-      // Layered graphite panels and brushed structural ribs.
-      c.fillStyle = "rgba(255,255,255,.035)"; c.fillRect(20, 22, W - 40, H - 44);
-      c.strokeStyle = "rgba(255,255,255,.16)"; c.lineWidth = 3; c.strokeRect(20, 22, W - 40, H - 44);
-      [0, .25, .5, .75, 1].forEach((f) => {
+      // brushed grain
+      for (let i = 0; i < 1400; i++) {
+        c.fillStyle = `rgba(255,255,255,${(Math.random() * 0.025).toFixed(3)})`;
+        c.fillRect(Math.random() * W, Math.random() * H, 1, 6 + Math.random() * 30);
+      }
+      // two tall panels per tile with thin shadowed reveals
+      [0, 0.5].forEach((f) => {
         const x = f * W;
-        c.fillStyle = "rgba(8,12,16,.34)"; c.fillRect(x - 7, 0, 14, H);
-        c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(x + 6, 0, 2, H);
+        c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(x, 0, 3, H);
+        c.fillStyle = "rgba(255,255,255,.07)"; c.fillRect(x + 3, 0, 1, H);
       });
-      [0.14, 0.52, 0.88].forEach((f) => {
-        c.fillStyle = "rgba(4,8,12,.42)"; c.fillRect(0, f * H, W, 7);
-        c.fillStyle = "rgba(255,255,255,.16)"; c.fillRect(0, f * H + 7, W, 2);
+      // a soft vertical sheen on each panel
+      [0.25, 0.75].forEach((f) => {
+        const sh = c.createLinearGradient(f * W - 90, 0, f * W + 90, 0);
+        sh.addColorStop(0, "rgba(255,255,255,0)"); sh.addColorStop(0.5, "rgba(255,255,255,.035)"); sh.addColorStop(1, "rgba(255,255,255,0)");
+        c.fillStyle = sh; c.fillRect(f * W - 90, 0, 180, H);
       });
-      // Overscale orbital diagram gives otherwise blank spans a focal gesture.
-      c.save(); c.translate(W * .68, H * .43); c.rotate(-.22);
-      c.strokeStyle = "rgba(182,225,236,.58)"; c.lineWidth = 3;
-      for (let i = 0; i < 4; i++) { c.beginPath(); c.ellipse(0, 0, 70 + i * 44, 28 + i * 18, 0, 0, Math.PI * 2); c.stroke(); }
-      c.fillStyle = "rgba(230,246,250,.92)"; c.beginPath(); c.arc(0, 0, 20, 0, Math.PI * 2); c.fill();
-      c.restore();
-      // Constellation path and labeled data ticks are decorative, not required text.
-      const pts = [[54,330],[108,286],[165,350],[228,304],[292,372],[348,324],[430,356]];
-      c.strokeStyle = "rgba(116,214,235,.82)"; c.lineWidth = 2; c.beginPath();
-      pts.forEach(([x,y],i) => i ? c.lineTo(x,y) : c.moveTo(x,y)); c.stroke();
-      pts.forEach(([x,y],i) => { c.fillStyle = i % 2 ? "#f0c47a" : "#82dff0"; c.beginPath(); c.arc(x,y,5,0,Math.PI*2); c.fill(); });
+      // faint stars, as if the ceiling's night sky spills down the walls
+      for (let i = 0; i < 70; i++) {
+        c.fillStyle = `rgba(220,235,255,${(0.15 + Math.random() * 0.35).toFixed(2)})`;
+        c.fillRect(Math.random() * W, Math.random() * H * 0.6, 1.4, 1.4);
+      }
+      // cove light lines near the top and bottom
+      [[0.1, 3], [0.92, 3]].forEach(([f, h]) => { c.fillStyle = "rgba(200,240,255,.55)"; c.fillRect(0, f * H, W, h); });
     });
     const emissive = canvasTex(512, 512, (c, W, H) => {
       c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
-      c.strokeStyle = glow; c.globalAlpha = .45; c.lineWidth = 4;
-      c.beginPath(); c.moveTo(0, H * .14); c.lineTo(W, H * .14); c.moveTo(0, H * .88); c.lineTo(W, H * .88); c.stroke();
-      [[54,330],[108,286],[165,350],[228,304],[292,372],[348,324],[430,356]].forEach(([x,y]) => { c.beginPath(); c.arc(x,y,4,0,Math.PI*2); c.fillStyle=glow; c.fill(); });
+      c.fillStyle = glow; c.globalAlpha = 0.55;
+      c.fillRect(0, H * 0.1, W, 3); c.fillRect(0, H * 0.92, W, 3);
     });
     [map, emissive].forEach((tx) => { tx.wrapS = T.RepeatWrapping; });
     return { map, emissive };
@@ -1296,6 +1306,46 @@
     });
   }
 
+  /* A wing sign for the atrium: a real NASA photo, the wing's name in big
+   * type, and the one question that wing answers. Makes the three wings
+   * obvious from the first room. */
+  const WING_PHOTO = { moon: "assets/photos/apollo-11.jpg", mars: "assets/photos/opportunity.jpg", deep: "assets/photos/voyager-1.jpg" };
+  function wingSignTex(w) {
+    const W = 760, H = 640;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const x = c.getContext("2d");
+    const tex = new T.CanvasTexture(c);
+    tex.encoding = T.sRGBEncoding; tex.anisotropy = 4;
+    const draw = (img) => {
+      x.fillStyle = "#0b1118"; x.fillRect(0, 0, W, H);
+      const ph = H * 0.62;
+      if (img) {
+        const ia = img.width / img.height, a = W / ph;
+        const sw = ia > a ? img.height * a : img.width, sh = ia > a ? img.height : img.width / a;
+        x.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, W, ph);
+        const fade = x.createLinearGradient(0, ph * 0.55, 0, ph);
+        fade.addColorStop(0, "rgba(11,17,24,0)"); fade.addColorStop(1, "rgba(11,17,24,1)");
+        x.fillStyle = fade; x.fillRect(0, 0, W, ph);
+      }
+      x.fillStyle = w.color; x.fillRect(0, ph - 8, W, 8);
+      x.textAlign = "left"; x.textBaseline = "alphabetic";
+      x.fillStyle = "#ffffff";
+      fitText(x, w.name.toUpperCase(), W - 72, 70, 800, '"Lexend", "Atkinson Hyperlegible", system-ui, sans-serif');
+      x.fillText(w.name.toUpperCase(), 36, ph + 82);
+      x.fillStyle = "#d9e6ee";
+      x.font = '600 30px "Atkinson Hyperlegible", system-ui, sans-serif';
+      // wrap the wing's question onto two lines
+      const words = w.question.split(" "); let line = "", y = ph + 136;
+      words.forEach((wd) => { const tryL = line ? line + " " + wd : wd; if (x.measureText(tryL).width > W - 72) { x.fillText(line, 36, y); line = wd; y += 38; } else line = tryL; });
+      x.fillText(line, 36, y);
+      tex.needsUpdate = true;
+    };
+    draw(null);
+    const img = new Image();
+    img.onload = () => draw(img);
+    img.src = WING_PHOTO[w.id] || "";
+    return tex;
+  }
   function atriumWallTex(kind, label) {
     return canvasTex(640, 480, (c, W, H) => {
       const warm = kind === "warm";
@@ -1341,7 +1391,7 @@
     // Fill every unused wall bay with a layered astronomical mural. These are
     // integrated architectural panels, not additional signs competing for
     // attention, and they make random room layouts feel intentionally designed.
-    const wallLabels = ["EARTH SYSTEM", "DISTANT WORLDS", "MOON LAB", "DEEP SPACE"];
+    const wingOrder = wings.filter((w) => w.exhibits && w.exhibits.length);
     let muralIndex = 0;
     [["S", [-4.6, 4.6]], ["W", ["W1", "W2"]], ["E", ["E1", "E2"]]].forEach(([sideName, slots]) => {
       const s = sideOf(sideName);
@@ -1351,8 +1401,10 @@
         const kind = muralIndex % 2 ? "warm" : "cool";
         const shell = new T.Mesh(roundedPanelGeometry(2.34, 2.18, 0.16, 0.22), new T.MeshStandardMaterial({ color: "#d5dadd", metalness: 0.35, roughness: 0.4 }));
         onWall(s, shell, along, 2.05, 0.08);
-        const art = new T.Mesh(new T.PlaneGeometry(2.12, 1.92), new T.MeshBasicMaterial({ map: atriumWallTex(kind, wallLabels[muralIndex % wallLabels.length]), toneMapped: false }));
-        onWall(s, art, along, 2.05, 0.18);
+        const w = wingOrder[muralIndex % wingOrder.length];
+        const art = new T.Mesh(new T.PlaneGeometry(2.12, 1.79), new T.MeshBasicMaterial({ map: wingSignTex(w), toneMapped: false }));
+        // the beveled frame's front face sits ~0.2 m out, so the picture goes in front of it
+        onWall(s, art, along, 2.05, 0.215);
         muralIndex++;
       });
     });
@@ -2087,7 +2139,6 @@
     for (let i = 0; i < 7; i++) {
       dx = P.x - fx * followDist;
       dz = P.z - fz * followDist;
-      if (exhibitView) dx = Math.max(-2.05, Math.min(2.05, dx));
       dx = Math.max(X0 + margin, Math.min(X1 - margin, dx));
       dz = Math.max(Z0 + margin, Math.min(Z1 - margin, dz));
       const blocked = obstacles.some((o) => (dx - o.x) ** 2 + (dz - o.z) ** 2 < (o.r + 0.34) ** 2);
@@ -2096,8 +2147,15 @@
     }
     cam.tx += (dx - cam.tx) * k;
     cam.tz += (dz - cam.tz) * k;
-    camera.position.set(cam.tx, 1.62, cam.tz);
-    const focusDistance = 2.4;
+    // When a wall squeezes the trailing camera (right after walking through a
+    // door, or turning to face a wall), lift it up and look down over the
+    // explorer instead of pressing the lens into the wall. Turning stays a
+    // full, smooth 360 degrees in every room.
+    const gap = Math.hypot(cam.tx - P.x, cam.tz - P.z);
+    const squeeze = Math.max(0, Math.min(1, 1 - gap / Math.max(1.2, cam.dist)));
+    cam.lift = (cam.lift || 0) + (squeeze - (cam.lift || 0)) * k;
+    camera.position.set(cam.tx, 1.62 + cam.lift * 1.25, cam.tz);
+    const focusDistance = 2.4 + cam.lift * 1.2;
     camera.lookAt(P.x + fx * focusDistance, 1.35 + cam.pitch * 1.8, P.z + fz * focusDistance);
     // Do not let the avatar block the lens when the trailing distance collapses.
     if (kid) kid.visible = Math.hypot(cam.tx - P.x, cam.tz - P.z) > 2.35;
@@ -2531,7 +2589,8 @@
       if (!drag.moved && Math.hypot(dx, dy) < 7) return;
       drag.moved = true;
       want.yaw -= dx * 0.008;
-      want.pitch = Math.max(-0.28, Math.min(0.34, want.pitch + dy * 0.0035));
+      // look well up toward the ceiling planets and down at the floor
+      want.pitch = Math.max(-0.45, Math.min(0.8, want.pitch + dy * 0.0035));
       drag.x = e.clientX; drag.y = e.clientY;
     });
     c.addEventListener("pointerup", (e) => { if (!drag) return; const was = drag.moved; drag = null; if (!was) clickAt(e.clientX, e.clientY); });
@@ -2797,6 +2856,14 @@
   /* =========================================================
    * HUD + JOURNAL
    * ========================================================= */
+  // which wing the explorer is in: a machine's wing, or the wing a learning-tour hall opens
+  function currentWing() {
+    const r = R() && room(R().cur);
+    if (!r) return null;
+    if (r.type === "exhibit") return exById(r.exhibit).wing;
+    if (r.type === "hall") { const id = Object.keys(WING_HALL).find((k) => WING_HALL[k] === r.hall); return wings.find((w) => w.id === id) || null; }
+    return null;
+  }
   function updateHUD(pop) {
     $("#starCount").textContent = S.stars;
     if (!R()) return;
@@ -2804,6 +2871,14 @@
     $("#hudPlace").textContent = t("place." + PLACE());
     $("#hudLevel").textContent = levelLabel(R().level);
     $("#hudSeed").textContent = isLearn() ? "" : `· ${t("hud.layout", { seed: "#" + R().seed })}`;
+    // learning mode: always show which wing you're in and how far through it
+    const wc = $("#wingChip"), wg = isLearn() && currentWing();
+    wc.hidden = !wg;
+    if (wg) {
+      const seen = wg.exhibits.filter((e) => R().visits[e.id] && R().visits[e.id].story).length;
+      wc.style.setProperty("--wc", wg.color);
+      wc.innerHTML = `<span class="wing-dot"></span><b>${esc(wg.name)}</b><span>${esc(t("hud.wingMet", { n: seen, m: wg.exhibits.length }))}</span>`;
+    }
     $("#pieces").hidden = isLearn();
     $("#pieces").innerHTML = g.pieces.map((p) => `<i class="${R().collected.includes(p) ? "got" : ""}"></i>`).join("") + `<span class="sr-only">${t("echo.console", { n: R().collected.length, k: g.pieces.length }).replace(/<[^>]+>/g, "")}</span>`;
     $("#doorsCount").dataset.i18nTip = isLearn() ? "tip.rooms" : "tip.doors";
@@ -3144,6 +3219,7 @@
     visit(e.id).story = true;
     S.met[e.id] = true;
     award(1, "story");
+    updateHUD();
     const sp = spots.find((s) => s.ex && s.ex.id === e.id);
     if (sp && sp.labelBoard) sp.labelBoard.redraw();
     const r = room(R().cur);
