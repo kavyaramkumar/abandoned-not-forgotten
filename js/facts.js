@@ -127,10 +127,6 @@ window.FACTS = {
     builtBy: "Astronaut Alan Shepard brought them, plus a six-iron club head that fit on a tool for scooping up Moon samples.",
     launched: "Apollo 14 launched on January 31, 1971, and Shepard hit the golf balls on February 6, 1971.",
   },
-  "family-photo": {
-    builtBy: "Astronaut Charlie Duke left the photo of his family.",
-    launched: "Apollo 16 launched on April 16, 1972, and landed on the Moon on April 21, 1972.",
-  },
   "goodwill-disc": {
     builtBy: "The disc was made by Sprague Electric, using the same method used to make computer chips, so the messages are tiny.",
     launched: "Apollo 11 astronauts left it on the Moon on July 21, 1969.",

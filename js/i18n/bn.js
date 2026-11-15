@@ -45,7 +45,7 @@ I18N.add("bn", {
   "intro.start": "নতুন অভিযান শুরু করো",
   "intro.startLearn": "ভ্রমণ শুরু করো",
   "intro.continue": "চালিয়ে যাও: {level}",
-  "intro.credit": "NASA Space Apps 2026-এর জন্য Reach for the Stars টিমের তৈরি। ছবি আর মিশনের তথ্য NASA থেকে নেওয়া।",
+  "intro.credit": "ছবি ও মিশনের তথ্যের মূল উৎসকে কৃতিত্ব দেওয়া হয়েছে।",
   "intro.skip": "এড়িয়ে যাও ›",
 
   /* ---------- HUD ---------- */

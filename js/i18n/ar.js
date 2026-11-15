@@ -45,7 +45,7 @@ I18N.add("ar", {
   "intro.start": "ابدأ مغامرة جديدة",
   "intro.startLearn": "ابدأ الجولة",
   "intro.continue": "تابع: {level}",
-  "intro.credit": "من صنع فريق Reach for the Stars لمسابقة NASA Space Apps 2026. الصور وحقائق المهمات مصدرها NASA.",
+  "intro.credit": "تُنسب الصور وحقائق المهمات إلى مصادرها الأصلية.",
   "intro.skip": "تخطَّ ‹",
 
   /* ---------- HUD ---------- */

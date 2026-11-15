@@ -49,7 +49,10 @@ I18N.add("en", {
   "intro.start": "Start a new adventure",
   "intro.startLearn": "Start the tour",
   "intro.continue": "Continue: {level}",
-  "intro.credit": "Made by team Reach for the Stars for NASA Space Apps 2026. Photos and mission facts come from NASA.",
+  "si.badge": "SI-assisted illustrations and development",
+  "credits.btn": "Credits",
+  "credits.title": "Credits",
+  "intro.credit": "Photos and mission facts are credited to their original sources.",
   "intro.skip": "Skip ›",
 
   /* ---------- HUD ---------- */

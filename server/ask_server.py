@@ -148,7 +148,7 @@ The machines in the museum (name [id]: kind, year, place):
 SEARCH_TOOL = {
     "name": "search_museum",
     "description": (
-        "Search the museum's notes about its 20 NASA machines (and 3 hidden treasures), space words, "
+        "Search the museum's notes about its 20 NASA machines (and 2 hidden treasures), space words, "
         "space law, health, and inventions. The notes come from NASA sources. Returns the best matching "
         "notes, each with an id like [n42] and its NASA source page. Use short English keywords, and "
         "include the machine's name when the question is about one machine."

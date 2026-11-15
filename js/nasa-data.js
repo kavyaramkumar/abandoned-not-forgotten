@@ -184,17 +184,6 @@ window.NASA_DATA = {
     restingPlace: "Fra Mauro, near the Apollo 14 lunar module site, Moon (3.64589 S, 17.47194 W)",
     status: "Hit on the second moonwalk, Feb. 6, 1971; still on the surface",
   },
-  "family-photo": {
-    nssdcId: "1972-031C",
-    nssdcUrl: "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-    missionUrl: "https://www.nasa.gov/mission/apollo-16/",
-    launch: "1972-04-16",
-    arrival: "1972-04-21",
-    lastContact: null,
-    mass: null,
-    restingPlace: "Descartes highlands, Apollo 16 site, Moon (8.9730 S, 15.5002 E)",
-    status: "Left on the surface during the third moonwalk, April 1972",
-  },
   "goodwill-disc": {
     nssdcId: "1969-059C",
     nssdcUrl: "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1969-059C",

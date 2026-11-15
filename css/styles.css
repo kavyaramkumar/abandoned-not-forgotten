@@ -742,12 +742,8 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 /* reduce motion: stop decorative animation */
 .a11y-calm *, .a11y-calm *::before, .a11y-calm *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; scroll-behavior: auto !important; }
 
-/* team patch on the building and in the credits */
 .pediment { position: relative; }
-.facade-patch { position: absolute; left: 50%; bottom: 4px; width: 60px; height: 60px; transform: translateX(-50%); filter: drop-shadow(0 2px 3px #0005); }
-.facade-patch svg, .credit-patch svg { width: 100%; height: 100%; display: block; }
 .intro-credit { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); margin: 14px 0 0; }
-.credit-patch { width: 40px; height: 40px; flex: none; }
 .facade-sign { font-size: clamp(12px, 2.1vw, 20px); }
 
 /* ---------- one-line explanations on hover / keyboard focus ---------- */

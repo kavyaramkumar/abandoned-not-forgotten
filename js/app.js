@@ -181,8 +181,6 @@ const speechRate = () => {
    * ========================================================= */
   function buildIntro() {
     $("#busWrap").innerHTML = Art.bus();
-    // the team patch is only the browser-tab icon
-    $("#favicon").href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(Art.patch().replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '));
     const lists = { skin: SKINS, shirt: SHIRTS, pants: PANTS, hairColor: HAIR_COLORS };
     document.querySelectorAll(".swatches").forEach((box) => {
       const key = box.dataset.look;

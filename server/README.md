@@ -20,7 +20,7 @@ cp .env.example .env          # paste your Anthropic API key into .env (it is gi
 Open the museum from `localhost` and the chat uses `http://localhost:8787/ask` automatically. Check it with `curl localhost:8787/health`:
 
 ```json
-{"ok": true, "model": "claude-opus-5-5", "sources": ["nasa.gov"], "notes": 607, "machines": 23, "api_key_configured": true}
+{"ok": true, "model": "claude-opus-5-5", "sources": ["nasa.gov"], "notes": 596, "machines": 22, "api_key_configured": true}
 ```
 
 `ok` is only true when the notes are loaded and an API key is set; otherwise the museum stays in its offline mode.

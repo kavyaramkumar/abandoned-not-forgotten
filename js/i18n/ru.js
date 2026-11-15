@@ -45,7 +45,7 @@ I18N.add("ru", {
   "intro.start": "Начать новое приключение",
   "intro.startLearn": "Начать экскурсию",
   "intro.continue": "Продолжить: {level}",
-  "intro.credit": "Сделано командой Reach for the Stars для NASA Space Apps 2026. Фотографии и факты о миссиях взяты у NASA.",
+  "intro.credit": "Фотографии и факты о миссиях сопровождаются ссылками на первоисточники.",
   "intro.skip": "Пропустить ›",
 
   /* ---------- HUD ---------- */

@@ -45,7 +45,7 @@ I18N.add("sw", {
   "intro.start": "Anza safari mpya",
   "intro.startLearn": "Anza ziara",
   "intro.continue": "Endelea: {level}",
-  "intro.credit": "Imetengenezwa na timu ya Reach for the Stars kwa ajili ya NASA Space Apps 2026. Picha na ukweli kuhusu misheni vinatoka NASA.",
+  "intro.credit": "Picha na taarifa za misheni zimetambuliwa kwa vyanzo vyake vya asili.",
   "intro.skip": "Ruka ›",
 
   /* ---------- HUD ---------- */

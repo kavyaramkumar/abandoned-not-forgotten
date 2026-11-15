@@ -92,12 +92,6 @@ window.PHOTOS = {
     credit: "NASA",
     source: "https://images.nasa.gov/details/as14_66_09232"
   },
-  "family-photo": {
-    src: "assets/photos/family-photo.jpg", w: 966, h: 715,
-    caption: "Charlie Duke left this photo of his family on the Moon in 1972.",
-    credit: "NASA",
-    source: "https://commons.wikimedia.org/wiki/File:DUKE_-_AS16-117-18841.jpg"
-  },
   "goodwill-disc": {
     src: "assets/photos/goodwill-disc.jpg", w: 1200, h: 885,
     caption: "The tiny goodwill message disc left on the Moon, next to a half dollar coin.",

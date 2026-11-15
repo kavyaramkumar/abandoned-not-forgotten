@@ -45,7 +45,7 @@ I18N.add("es", {
   "intro.start": "Empezar una nueva aventura",
   "intro.startLearn": "Empezar el recorrido",
   "intro.continue": "Continuar: {level}",
-  "intro.credit": "Hecho por el equipo Reach for the Stars para NASA Space Apps 2026. Las fotos y los datos de las misiones vienen de la NASA.",
+  "intro.credit": "Las fotos y los datos de las misiones se acreditan a sus fuentes originales.",
   "intro.skip": "Saltar ›",
 
   /* ---------- HUD ---------- */

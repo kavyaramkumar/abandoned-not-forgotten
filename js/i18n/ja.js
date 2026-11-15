@@ -45,7 +45,7 @@ I18N.add("ja", {
   "intro.start": "新しい冒険をはじめる",
   "intro.startLearn": "ツアーをはじめる",
   "intro.continue": "つづき：{level}",
-  "intro.credit": "Reach for the Stars チームが NASA Space Apps 2026 のために作りました。写真とミッションの情報は NASA からのものです。",
+  "intro.credit": "写真とミッション情報は元の出典を明記しています。",
   "intro.skip": "スキップ ›",
 
   /* ---------- HUD ---------- */

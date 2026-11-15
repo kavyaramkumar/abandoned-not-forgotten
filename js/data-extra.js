@@ -1,5 +1,5 @@
 /*
- * EXTRA EXHIBITS: machines from the NASA Space Apps 2026 challenge resources
+ * EXTRA EXHIBITS: additional machines included in the museum
  * ------------------------------------------------------------
  * Content written from NASA sources on 2026-11-14: the NSSDCA Master Catalog
  * (https://nssdc.gsfc.nasa.gov/) first, then science.nasa.gov, nasa.gov, and

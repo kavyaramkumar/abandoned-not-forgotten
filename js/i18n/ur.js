@@ -45,7 +45,7 @@ I18N.add("ur", {
   "intro.start": "نئی مہم شروع کریں",
   "intro.startLearn": "سیر شروع کریں",
   "intro.continue": "جاری رکھیں: {level}",
-  "intro.credit": "یہ NASA Space Apps 2026 کے لیے ٹیم Reach for the Stars نے بنایا ہے۔ تصویریں اور مشنز کی معلومات NASA سے لی گئی ہیں۔",
+  "intro.credit": "تصاویر اور مشن کی معلومات کے اصل ماخذ درج ہیں۔",
   "intro.skip": "چھوڑیں ‹",
 
   /* ---------- HUD ---------- */

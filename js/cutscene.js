@@ -633,16 +633,6 @@ window.Cutscene = (function () {
     );
     label.position.y = 6.6;
     g.add(label);
-    // NASA insignia on both sides of the rocket
-    if (window.Models && Models.nasaTexture) {
-      const pm = new T.MeshStandardMaterial({ map: Models.nasaTexture(), transparent: true, roughness: 0.45, depthWrite: false });
-      [[RR + 0.02, Math.PI / 2], [-(RR + 0.02), -Math.PI / 2]].forEach(([x, ry]) => {
-        const p = new T.Mesh(new T.CircleGeometry(0.62, 40), pm);
-        p.position.set(x, 4.2, 0);
-        p.rotation.y = ry;
-        g.add(p);
-      });
-    }
     shadows(g, true, true);
 
     // engine flame: two additive cones, a glow sprite and a light

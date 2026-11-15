@@ -45,7 +45,7 @@ I18N.add("id", {
   "intro.start": "Mulai petualangan baru",
   "intro.startLearn": "Mulai tur",
   "intro.continue": "Lanjutkan: {level}",
-  "intro.credit": "Dibuat oleh tim Reach for the Stars untuk NASA Space Apps 2026. Foto dan fakta misi berasal dari NASA.",
+  "intro.credit": "Foto dan fakta misi dikreditkan kepada sumber aslinya.",
   "intro.skip": "Lewati ›",
 
   /* ---------- HUD ---------- */

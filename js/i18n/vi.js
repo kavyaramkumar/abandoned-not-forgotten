@@ -45,7 +45,7 @@ I18N.add("vi", {
   "intro.start": "Bắt đầu cuộc phiêu lưu mới",
   "intro.startLearn": "Bắt đầu chuyến tham quan",
   "intro.continue": "Tiếp tục: {level}",
-  "intro.credit": "Do đội Reach for the Stars làm cho NASA Space Apps 2026. Ảnh và thông tin về các sứ mệnh đều lấy từ NASA.",
+  "intro.credit": "Ảnh và thông tin về các sứ mệnh được ghi nguồn gốc đầy đủ.",
   "intro.skip": "Bỏ qua ›",
 
   /* ---------- HUD ---------- */

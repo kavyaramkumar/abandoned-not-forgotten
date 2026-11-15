@@ -242,17 +242,6 @@
    "url": "https://www.nasa.gov/mission/apollo-14/"
   },
   {
-   "id": "family-photo",
-   "name": "Charlie Duke's family photo",
-   "kind": "Hidden treasure",
-   "place": "Descartes Highlands, Moon",
-   "year": 1972,
-   "status": "parked",
-   "wing": "Hidden treasures",
-   "treasure": true,
-   "url": "https://www.nasa.gov/mission/apollo-16/"
-  },
-  {
    "id": "goodwill-disc",
    "name": "Apollo 11 goodwill disc",
    "kind": "Hidden treasure",
@@ -4719,105 +4708,6 @@
    "text": "Orbit view of Apollo 14 golf balls: Apollo 14's lander Antares (arrow). Alan Shepard hit his golf balls somewhere near here! Photo by Lunar Reconnaissance Orbiter (LROC) (2009), credit NASA/GSFC/Arizona State University.",
    "source_url": "https://science.nasa.gov/photojournal/lrocs-first-look-at-the-apollo-landing-sites",
    "source_title": "NASA: orbit view of Apollo 14 golf balls"
-  },
-  {
-   "id": "n496",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "overview",
-   "text": "Charlie Duke's family photo is a hidden treasure from 1972. It is at Descartes Highlands, Moon. Status in the museum: parked.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n497",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "story",
-   "text": "In April 1972, Apollo 16 astronaut Charlie Duke carried a photo of his family all the way to the Moon.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n498",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "story",
-   "text": "He left it lying on the ground. Its message says this is the family of Astronaut Duke from Planet Earth, and that it landed on the Moon in April 1972. Nobody knows how it looks after so many years of strong sunlight.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n499",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "left_behind",
-   "text": "Still out there today: A family photo, lying in the dust at the Apollo 16 site.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n500",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "fact",
-   "text": "Astronaut Charlie Duke left the photo of his family.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n501",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "fact",
-   "text": "Apollo 16 launched on April 16, 1972, and landed on the Moon on April 21, 1972.",
-   "source_url": "https://www.nasa.gov/mission/apollo-16/",
-   "source_title": "NASA: Charlie Duke's family photo"
-  },
-  {
-   "id": "n502",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "nasa_catalog",
-   "text": "Charlie Duke's family photo rests at: Descartes highlands, Apollo 16 site, Moon (8.9730 S, 15.5002 E).",
-   "source_url": "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-   "source_title": "NASA NSSDCA catalog: Charlie Duke's family photo"
-  },
-  {
-   "id": "n503",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "nasa_catalog",
-   "text": "Charlie Duke's family photo status (NASA catalog): Left on the surface during the third moonwalk, April 1972.",
-   "source_url": "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-   "source_title": "NASA NSSDCA catalog: Charlie Duke's family photo"
-  },
-  {
-   "id": "n504",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "nasa_catalog",
-   "text": "Charlie Duke's family photo launched on 1972-04-16 and arrived on 1972-04-21.",
-   "source_url": "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-   "source_title": "NASA NSSDCA catalog: Charlie Duke's family photo"
-  },
-  {
-   "id": "n505",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "nasa_catalog",
-   "text": "Charlie Duke's family photo's NASA NSSDCA catalog ID is 1972-031C; its catalog page is https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C.",
-   "source_url": "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-   "source_title": "NASA NSSDCA catalog: Charlie Duke's family photo"
-  },
-  {
-   "id": "n506",
-   "machine_id": "family-photo",
-   "machine_name": "Charlie Duke's family photo",
-   "kind": "orbit_view",
-   "text": "Orbit view of Charlie Duke's family photo: Charlie Duke left his family photo near the lander (LM). Dark trails show where astronauts walked. Photo by Lunar Reconnaissance Orbiter (LROC) (2010), credit NASA/GSFC/Arizona State University.",
-   "source_url": "https://science.nasa.gov/photojournal/apollo-16-footsteps-under-high-sun",
-   "source_title": "NASA: orbit view of Charlie Duke's family photo"
   },
   {
    "id": "n507",

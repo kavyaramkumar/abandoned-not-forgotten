@@ -88,18 +88,9 @@ window.Models = (function () {
     packTop.rotation.z = Math.PI / 2;
     packTop.position.set(0, suit ? 1.02 : 0.97, suit ? -0.22 : -0.19);
     g.add(packTop);
-    // a badge on a lanyard, or a mission patch on the suit
-    let badge, strap;
-    if (suit) {
-      // the NASA insignia on the spacesuit, where astronauts wear it
-      badge = new T.Mesh(new T.CircleGeometry(0.065, 32), new T.MeshStandardMaterial({ map: nasaTexture(), roughness: 0.6, transparent: true }));
-      badge.position.set(0.08, 0.86, 0.168);
-      strap = new T.Mesh(new T.TorusGeometry(0.18, 0.028, 8, S), accent);
-      strap.rotation.x = Math.PI / 2;
-      strap.scale.y = 0.8;
-      strap.position.y = 0.62;
-    } else {
-      badge = new T.Mesh(new T.BoxGeometry(0.1, 0.12, 0.012), std("#f4ecdc"));
+    // Museum staff wear a plain ID badge; the spacesuit is intentionally unbranded.
+    if (!suit) {
+      const badge = new T.Mesh(new T.BoxGeometry(0.1, 0.12, 0.012), std("#f4ecdc"));
       badge.position.set(0.02, 0.76, 0.17);
       // The cord runs from the collar, over the chest, down to the badge's clip.
       // Its points sit just outside the shirt (the torso's front is about
@@ -113,9 +104,9 @@ window.Models = (function () {
         new T.Vector3(0.12, 0.93, 0.15),
         new T.Vector3(0.075, 0.975, 0.045),
       ]);
-      strap = new T.Mesh(new T.TubeGeometry(cord, 40, 0.008, 6, false), std("#f2c14e"));
+      const strap = new T.Mesh(new T.TubeGeometry(cord, 40, 0.008, 6, false), std("#f2c14e"));
+      g.add(badge, strap);
     }
-    g.add(badge, strap);
 
     // ---- arms pivot at the shoulders ----
     const arms = [-0.235, 0.235].map((x) => {
@@ -276,7 +267,7 @@ window.Models = (function () {
     // ground shadow blob (cheap and always visible, even from above)
     g.add(blob(0.42));
     shadowAll(g);
-    g.userData = { legs, arms, head, body: [torso, pack, badge, strap] };
+    g.userData = { legs, arms, head, body: [torso, pack] };
     return g;
   }
 
@@ -476,17 +467,6 @@ window.Models = (function () {
 
   /* ---------------- SVG → texture ---------------- */
   let defs = "";
-  /* shared logo textures: the team patch, and the NASA insignia (suit and rocket only) */
-  let patchTex = null, nasaTex = null;
-  function patchTexture() {
-    if (!patchTex && window.Art && Art.patch) patchTex = svgTexture(Art.patch(), 256);
-    return patchTex;
-  }
-  function nasaTexture() {
-    if (!nasaTex && window.Art && Art.nasa) nasaTex = svgTexture(Art.nasa(), 256);
-    return nasaTex;
-  }
-
   function svgTexture(svg, height, onReady) {
     if (!defs) {
       const d = document.querySelector("svg defs");
@@ -776,5 +756,5 @@ window.Models = (function () {
     return pts;
   }
 
-  return { kid, animateKid, robot, animateRobot, svgTexture, board, woodTex, tileTex, globeTex, blob, std, shadowAll, techFloorTex, techWallTex, roomStars, patchTexture, nasaTexture };
+  return { kid, animateKid, robot, animateRobot, svgTexture, board, woodTex, tileTex, globeTex, blob, std, shadowAll, techFloorTex, techWallTex, roomStars };
 })();

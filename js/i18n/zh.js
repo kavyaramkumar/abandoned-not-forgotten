@@ -45,7 +45,7 @@ I18N.add("zh", {
   "intro.start": "开始新的冒险",
   "intro.startLearn": "开始参观",
   "intro.continue": "继续：{level}",
-  "intro.credit": "由 Reach for the Stars 团队为 NASA Space Apps 2026 制作。照片和任务资料均来自 NASA。",
+  "intro.credit": "照片和任务资料均标明原始来源。",
   "intro.skip": "跳过 ›",
 
   /* ---------- HUD ---------- */

@@ -744,30 +744,6 @@ window.MUSEUM = {
       "verified": true
     },
     {
-      "id": "family-photo",
-      "treasure": true,
-      "art": "photo",
-      "backdrop": "moon-earth",
-      "name": "Charlie Duke's family photo",
-      "kind": "Hidden treasure",
-      "place": "Descartes Highlands, Moon",
-      "year": 1972,
-      "status": "parked",
-      "story": [
-        "In April 1972, Apollo 16 astronaut Charlie Duke carried a photo of his family all the way to the Moon.",
-        "He left it lying on the ground. Its message says this is the family of Astronaut Duke from Planet Earth, and that it landed on the Moon in April 1972. Nobody knows how it looks after so many years of strong sunlight."
-      ],
-      "leftBehind": [
-        "A family photo, lying in the dust at the Apollo 16 site"
-      ],
-      "sources": [
-        "https://nssdc.gsfc.nasa.gov/nmc/spacecraft/display.action?id=1972-031C",
-        "https://www.nasa.gov/former-astronaut-charles-m-duke-jr/",
-        "https://www.nasa.gov/history/50-years-ago-apollo-16-on-the-moon-at-descartes/"
-      ],
-      "verified": true
-    },
-    {
       "id": "goodwill-disc",
       "treasure": true,
       "art": "disc",

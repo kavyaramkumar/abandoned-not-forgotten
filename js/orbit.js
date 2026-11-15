@@ -47,14 +47,6 @@ window.ORBIT = {
     credit: "NASA/GSFC/Arizona State University",
     source: "https://science.nasa.gov/photojournal/apollo-16-footsteps-under-high-sun"
   },
-  "family-photo": {
-    src: "assets/orbit/apollo-16.jpg", w: 570, h: 570,
-    caption: "Charlie Duke left his family photo near the lander (LM). Dark trails show where astronauts walked.",
-    camera: "Lunar Reconnaissance Orbiter (LROC)",
-    taken: "2010",
-    credit: "NASA/GSFC/Arizona State University",
-    source: "https://science.nasa.gov/photojournal/apollo-16-footsteps-under-high-sun"
-  },
   "golf-balls": {
     src: "assets/orbit/apollo-14.jpg", w: 936, h: 592,
     caption: "Apollo 14's lander Antares (arrow). Alan Shepard hit his golf balls somewhere near here!",

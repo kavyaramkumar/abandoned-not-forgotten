@@ -1,6 +1,6 @@
-# Reach for the Stars · NASA Space Apps Challenge 2026
+# Reach for the Stars Museum
 
-**Challenge:** [Abandoned but not Forgotten: Storytelling about NASA's Discarded Equipment on the Moon and Mars](https://www.spaceappschallenge.org/2026/challenges/nasas-discarded-equipment-storytelling/)
+**Project:** Abandoned but not Forgotten: storytelling about discarded equipment on the Moon, Mars, and in deep space.
 
 **Team:** Reach for the Stars
 
@@ -46,6 +46,8 @@ Each machine opens with a one-line hook ("I was built to last 90 days. I kept go
 
 Read to Me narration, high contrast, larger text, reduced motion, an easy-read font, and full keyboard play. The interface is available in 20 languages. An optional map in the bottom corner helps any player who feels lost, and a free Field Trip Pass login (Supabase) saves stars and progress across devices.
 
+Field Trip Pass accounts are designed for immediate email-and-password sign-up without an email verification step. In the Supabase dashboard, keep **Authentication → Sign In / Providers → Email → Confirm email** turned off. This is a server-side Auth setting; the browser cannot override it.
+
 ## Our concept: The Reach for the Stars Museum
 
 It's a field trip you play, and the museum has a secret: **its doors never lead to the same place twice.**
@@ -60,7 +62,7 @@ You see the room you're standing in, in 3D, and its doors. An optional **Map** b
 - **A hall** with a model (a rocket, an orrery, a radio dish) and a true space fact.
 - **A riddle lock:** "Which machine am I?" Pick the right machine to open the door.
 - **A one-way airlock** that seals behind you, so you have to find another way back.
-- **A dead end**, or a **secret room** behind an odd-looking wall. Secret rooms hold small treasures astronauts left behind (Alan Shepard's golf balls, Charlie Duke's family photo, the Apollo 11 goodwill disc) or an **explorer's note**: a route written by another student earlier that day.
+- **A dead end**, or a **secret room** behind an odd-looking wall. Secret rooms hold small treasures astronauts left behind (Alan Shepard's golf balls, the Apollo 11 goodwill disc) or an **explorer's note**: a route written by another student earlier that day.
 - **Mission Control**, sealed until you have every piece.
 
 ### Different every time
@@ -69,7 +71,7 @@ Each new adventure generates a fresh hidden network from a random seed (shown as
 
 - The connections between rooms change.
 - The door symbols and door positions change.
-- Which machines appear, and which ones hold the pieces, change. There are 20 machines plus 3 hidden treasures, and each game uses only some of them.
+- Which machines appear, and which ones hold the pieces, change. There are 20 machines plus 2 hidden treasures, and each game uses only some of them.
 - Where Mission Control is, where the riddle locks and airlocks are, and whether a secret room holds a note or a treasure, all change.
 
 The story always keeps the same shape: the arrival and the mystery, exploring and collecting pieces, then Mission Control and the ending. The Journal tracks every machine you've met across all your adventures, so replaying is how you find them all.
@@ -183,7 +185,7 @@ _To be added._
 
 ## Resources
 
-See the challenge's Resources tab on the Space Apps site.
+The project uses the mission and media sources listed in the in-game credits and asset credit files.
 
 ## Choices on the welcome screen
 
@@ -193,7 +195,7 @@ See the challenge's Resources tab on the Space Apps site.
 - **Your explorer:** 8 hairstyles, shown as pictures with no names, 8 hair colors, 8 skin tones, 8 shirt colors, 6 pants colors, and glasses or a cap. No "boy" or "girl" labels.
 - **Learning mode:** no puzzle. A fixed tour through every room with NEXT and BACK doors (Atrium, Moon machines, Mars machines, deep space machines, the secret treasures, then Mission Control). Built by `Maze.tour()` in `js/maze.js`.
 - **Game mode:** the door maze, with Easy, Medium, and Hard.
-- **Language:** 20 languages, English by default. Game text lives in `js/i18n/<code>.js`; `en.js` is the master list and anything missing falls back to English. The machines' own stories (in `js/data.js`) are still English only, and the placard says so when another language is picked. The translations were machine-written and should be checked by native speakers before launch.
+- **Language:** 20 languages, English by default. Game text lives in `js/i18n/<code>.js`; `en.js` is the master list and anything missing falls back to English. Complete hand-translated story cards exist only for Spanish, French, Hindi, and Chinese (`js/story-beats-*.js`, with chapter and hook translations in `js/story-i18n.js`). In every other language the machine stories stay in English, and the placard says so, unless the player's browser has a built-in translator (Chrome and Edge do), which then translates them on the device. The interface translations were machine-written and should be checked by native speakers before launch.
 
 Languages: English, Chinese (Simplified), Hindi, Spanish, Arabic, French, Bengali, Portuguese, Russian, Urdu, Indonesian, German, Japanese, Swahili, Marathi, Telugu, Turkish, Tamil, Vietnamese, Korean.
 
@@ -234,9 +236,16 @@ The gear button (welcome screen and top bar) opens a settings panel. Everything 
 
 ## Logos and branding
 
-- The **NASA insignia** appears only where it belongs on real hardware: the spacesuit and the rocket (in the welcome scene and the launch movie). NASA's insignia normally needs NASA's permission to use; to swap it for our team patch everywhere, set `SHOW_NASA = false` in `js/art.js`.
-- The **team patch** (Reach for the Stars) is the browser-tab icon.
-- The welcome screen credits NASA for the photos and mission facts.
+- The site does not use the NASA insignia, NASA logotype, or an agency-style mission patch.
+- Historical mission names and factual NASA references remain where needed for accuracy.
+- The welcome screen and Credits window attribute photographs, audio, and mission facts to their original sources.
+
+## Credits and SI disclosure
+
+- A small label, "SI-assisted illustrations and development", stays on screen on the welcome screen, in the museum, and during cutscenes (`#siBadge` in `index.html`). Any exported or hosted copy of the game must keep it visible.
+- The **Credits** window (welcome screen, and Menu in the museum; `js/credits.js`) states that SI assisted with code, translation, data organization, and illustrations; that Read to Me uses synthetic voices supplied by the player's device; and that NASA audio and photographs are original credited NASA media, not SI-generated.
+- The same window lists every photo, orbit picture, sound, and texture, plus Three.js, Google Fonts (Fraunces, Atkinson Hyperlegible, IBM Plex Mono, Lexend), Supabase, Anthropic Claude (only when the optional chat server is on), transformers.js with the all-MiniLM-L6-v2 model, and the browser's own translator and speech voices. The photo, orbit, and sound lists are built from `js/photos.js`, `js/orbit.js`, and `js/sounds.js`, so they stay in step with the game.
+- The Earth globe texture (`assets/textures/earth-hyperreal-v1.png`) has no recorded source and is not claimed to be NASA imagery. Confirm where it came from before submission.
 
 ## Quick facts for the offline chat
 
@@ -263,7 +272,7 @@ The gear button (welcome screen and top bar) opens a settings panel. Everything 
 
 ## Seen from orbit and real NASA sounds
 
-- **Seen from orbit:** 17 machines and treasures have a card tab with a then-and-now slider: the mission photo next to a NASA picture taken from orbit years later (Lunar Reconnaissance Orbiter for the Moon, Mars Reconnaissance Orbiter's HiRISE for Mars, NEAR's own camera for Eros), mostly labeled by NASA. Images in `assets/orbit/`, listed in `js/orbit.js`.
+- **Seen from orbit:** 16 machines and treasures have a card tab with a then-and-now slider: the mission photo next to a NASA picture taken from orbit years later (Lunar Reconnaissance Orbiter for the Moon, Mars Reconnaissance Orbiter's HiRISE for Mars, NEAR's own camera for Eros), mostly labeled by NASA. Images in `assets/orbit/`, listed in `js/orbit.js`.
 - **Listen:** real NASA audio for InSight (a marsquake made audible), Voyager 1 (sounds of interstellar space), Ingenuity (Perseverance's microphone recording of it flying), Apollo 11 ("one small step"), and Kepler (a star's light turned into sound). Files in `assets/sounds/`, listed in `js/sounds.js`.
 - Credits for every photo, orbital image, and sound are in `assets/photos/CREDITS.md`.
 

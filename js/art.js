@@ -300,17 +300,6 @@ window.Art = (function () {
       <circle cx="184" cy="124" r="8" fill="#fbfbf7" stroke="#3b3a36" stroke-width="2"/>
       <path d="M155 114h2M161 112h2M158 120h2M164 118h2M181 122h2M186 125h2" stroke="#b9b6aa" stroke-width="1.5"/>` },
 
-    photo: { vb: "0 0 170 150", svg: `
-      <g transform="rotate(-8 85 80)">
-        <rect x="25" y="20" width="120" height="110" fill="#fbf8f0" stroke="#3b3a36" stroke-width="2"/>
-        <rect x="35" y="30" width="100" height="74" fill="#c9d6dc"/>
-        <circle cx="62" cy="58" r="9" fill="#6b4a38"/><rect x="53" y="67" width="18" height="30" rx="6" fill="#3f7fd9"/>
-        <circle cx="90" cy="60" r="8" fill="#8a5b3e"/><rect x="82" y="68" width="16" height="28" rx="6" fill="#e0533b"/>
-        <circle cx="112" cy="70" r="6" fill="#6b4a38"/><rect x="106" y="76" width="12" height="20" rx="5" fill="#2f9a62"/>
-        <circle cx="122" cy="74" r="5" fill="#8a5b3e"/><rect x="117" y="79" width="10" height="17" rx="4" fill="#e8b53a"/>
-        <path d="M40 116h60M40 122h40" stroke="#b9b6aa" stroke-width="2"/>
-      </g>` },
-
     disc: { vb: "0 0 160 140", svg: `
       <ellipse cx="80" cy="76" rx="58" ry="52" fill="url(#silver)" stroke="#3b3a36" stroke-width="2"/>
       <ellipse cx="80" cy="76" rx="46" ry="40" fill="none" stroke="#8a8d93" stroke-width="1.5"/>
@@ -421,64 +410,6 @@ window.Art = (function () {
 </svg>`;
   }
 
-  /* ---------- Team mission patch (120 x 120) ----------
-   * Our own emblem for team Reach for the Stars: a gold star inside an orbit,
-   * over a sliver of Earth. (Not the NASA insignia, which needs NASA's permission.)
-   */
-  let patchN = 0;
-  function patch(opts) {
-    opts = opts || {};
-    const id = "rfs" + ++patchN;
-    const top = opts.top || "REACH FOR THE STARS";
-    const bottom = opts.bottom || "MUSEUM \u2605 2026";
-    const star = (cx, cy, r) => {
-      let d = "";
-      for (let i = 0; i < 10; i++) {
-        const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.42 : r;
-        d += (i ? "L" : "M") + (cx + Math.cos(a) * rr).toFixed(1) + " " + (cy + Math.sin(a) * rr).toFixed(1);
-      }
-      return d + "z";
-    };
-    return `
-<svg class="patch" viewBox="0 0 120 120" ${opts.size ? `width="${opts.size}" height="${opts.size}"` : ""} role="img" aria-label="Reach for the Stars mission patch">
-  <defs>
-    <radialGradient id="${id}g" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#2f3a8f"/><stop offset="1" stop-color="#0e1130"/></radialGradient>
-    <path id="${id}t" d="M18 60 A42 42 0 0 1 102 60"/>
-    <path id="${id}b" d="M14 60 A46 46 0 0 0 106 60"/>
-    <clipPath id="${id}c"><circle cx="60" cy="60" r="40"/></clipPath>
-  </defs>
-  <circle cx="60" cy="60" r="58" fill="#14183f" stroke="#e8b53a" stroke-width="4"/>
-  <circle cx="60" cy="60" r="40" fill="url(#${id}g)" stroke="#e8b53a" stroke-width="1.5"/>
-  <g clip-path="url(#${id}c)">
-    <circle cx="60" cy="128" r="46" fill="#3f7fd9"/>
-    <path d="M30 92 q10 -8 22 -4 q8 3 16 -2 q10 -5 22 2" fill="none" stroke="#4f9a52" stroke-width="5" stroke-linecap="round"/>
-    ${[[34, 36], [86, 40], [42, 70], [84, 72], [70, 30], [50, 28]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.2" fill="#fff"/>`).join("")}
-  </g>
-  <ellipse cx="60" cy="56" rx="34" ry="12" fill="none" stroke="#5ef2ff" stroke-width="2.5" transform="rotate(-18 60 56)"/>
-  <path d="${star(60, 55, 17)}" fill="#ffd34d" stroke="#fff3c4" stroke-width="1.2"/>
-  <circle cx="90" cy="45" r="3" fill="#5ef2ff"/>
-  <text font-family="IBM Plex Mono, monospace" font-weight="700" font-size="9.2" letter-spacing="1.2" fill="#ffffff"><textPath href="#${id}t" startOffset="50%" text-anchor="middle">${top}</textPath></text>
-  <text font-family="IBM Plex Mono, monospace" font-weight="700" font-size="8" letter-spacing="1.5" fill="#ffd34d"><textPath href="#${id}b" startOffset="50%" text-anchor="middle" dominant-baseline="hanging">${bottom}</textPath></text>
-</svg>`;
-  }
-
-  /* ---------- NASA insignia (120 x 120), simplified ----------
-   * Used only on the spacesuit and the rocket. NASA's insignia normally needs
-   * NASA's permission to use: set SHOW_NASA to false to swap in the team patch.
-   */
-  const SHOW_NASA = true;
-  function nasa() {
-    if (!SHOW_NASA) return patch();
-    return `
-<svg class="nasa-logo" viewBox="0 0 120 120" role="img" aria-label="NASA">
-  <circle cx="60" cy="60" r="57" fill="#0b3d91"/>
-  ${[[30, 30], [44, 18], [84, 22], [96, 44], [24, 58], [38, 88], [88, 84], [70, 100], [52, 40], [100, 64]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.3 : 2}" fill="#fff"/>`).join("")}
-  <ellipse cx="60" cy="62" rx="52" ry="17" fill="none" stroke="#fff" stroke-width="3" transform="rotate(-24 60 62)"/>
-  <path d="M10 96 C40 74 72 56 112 30 L104 44 C76 62 48 80 22 102 Z" fill="#fc3d21"/>
-  <text x="60" y="71" text-anchor="middle" font-family="Arial Black, Helvetica, Arial, sans-serif" font-weight="900" font-size="27" fill="#fff" letter-spacing="1">NASA</text>
-</svg>`;
-  }
-
   /* ---------- Field-trip rocket (140 x 300), for trips to the Moon and Mars ----------
    * The top window shows the player's own face; classmates fill the others.
    */
@@ -507,7 +438,6 @@ window.Art = (function () {
   ${win(76, faces[0], look.hairColor || "#2b1d14")}
   ${win(112, faces[1], "#1c1714")}
   ${win(148, faces[2], "#c98a3c")}
-  <g transform="translate(55 167) scale(.25)">${nasa().replace(/^\s*<svg[^>]*>|<\/svg>\s*$/g, "")}</g>
   <text transform="translate(92 182) rotate(-90)" font-family="IBM Plex Mono, monospace" font-weight="700" font-size="9" fill="#2a2b2f" letter-spacing="1">FIELD TRIP</text>
   <path d="M60 228 L56 244 L84 244 L80 228z" fill="#6b7790" stroke="#2a2b2f" stroke-width="3" stroke-linejoin="round"/>
   <path d="M30 236 L22 258 M110 236 L118 258" stroke="#2a2b2f" stroke-width="4" stroke-linecap="round"/>
@@ -515,5 +445,5 @@ window.Art = (function () {
 </svg>`;
   }
 
-  return { hardware, backdrop, kid, bus, rocket, patch, nasa, HAIR_STYLES };
+  return { hardware, backdrop, kid, bus, rocket, HAIR_STYLES };
 })();

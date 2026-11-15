@@ -45,7 +45,7 @@ I18N.add("tr", {
   "intro.start": "Yeni bir maceraya başla",
   "intro.startLearn": "Gezeyi başlat",
   "intro.continue": "Devam et: {level}",
-  "intro.credit": "Reach for the Stars ekibi tarafından NASA Space Apps 2026 için yapıldı. Fotoğraflar ve görev bilgileri NASA'dan geliyor.",
+  "intro.credit": "Fotoğraflar ve görev bilgileri özgün kaynaklarına atfedilir.",
   "intro.skip": "Geç ›",
 
   /* ---------- HUD ---------- */

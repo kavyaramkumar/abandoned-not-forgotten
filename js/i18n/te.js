@@ -45,7 +45,7 @@ I18N.add("te", {
   "intro.start": "కొత్త సాహసం మొదలుపెట్టు",
   "intro.startLearn": "టూర్ మొదలుపెట్టు",
   "intro.continue": "కొనసాగించు: {level}",
-  "intro.credit": "NASA Space Apps 2026 కోసం Reach for the Stars బృందం తయారు చేసింది. ఫోటోలు, మిషన్ల సమాచారం NASA నుండి వచ్చాయి.",
+  "intro.credit": "ఫోటోలు, మిషన్ సమాచారం వాటి అసలు మూలాలకు క్రెడిట్ చేయబడ్డాయి.",
   "intro.skip": "దాటవేయి ›",
 
   /* ---------- HUD ---------- */
