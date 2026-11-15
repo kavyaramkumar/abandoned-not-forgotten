@@ -30,7 +30,7 @@ window.ECHO_FACTS = {
   "goodwill-disc": { crew: true, text: "Armstrong and Aldrin also left a patch honoring the Apollo 1 crew, plus medals for two Soviet cosmonauts who died: Yuri Gagarin and Vladimir Komarov." },
 
   /* ---------- uncrewed: specific design choices ---------- */
-  "ranger-7": { crew: false, text: "No tape recorder. The cameras sent pictures live to Earth, because Ranger 7 would be destroyed seconds after the last one." },
+  "ranger-7": { crew: false, text: "Sometimes, the biggest breakthroughs come after lots of attempts! Meet Ranger 7! Before this little spacecraft came along, NASA had tried to photograph the Moon up close 13 times, and every mission had failed. But on July 31, 1964, Ranger 7 finally did it! It successfully sent back more than 4,300 pictures of the Moon before crashing into its surface. For the very first time, scientists could see the Moon in incredible detail! Ranger 7 helped bring us one step closer to landing humans on the Moon!"},
   "surveyor-3": { crew: false, text: "One TV camera looked up into a tilting mirror. Turning the mirror let Surveyor 3 see all around without moving the camera." },
   "viking-1": { crew: false, text: "A long arm with a scoop on the end. It reached out, dug up Martian soil, and dropped it into the lander's science experiments." },
   "viking-2": { crew: false, text: "Nuclear generators instead of solar panels. They made power from heat, so Martian dust and winter couldn't starve the lander." },
