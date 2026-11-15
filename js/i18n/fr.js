@@ -485,4 +485,8 @@ I18N.add("fr", {
   "wingName.moon": "Aile de la Lune",
   "wingName.mars": "Aile de Mars",
   "wingName.deep": "Aile de l'Espace lointain",
+  "fin.legacyTitle": "Les découvertes derrière ton signal",
+  "fin.legacyQuestion": "Qu'est-ce que ces explorateurs nous ont aidés à comprendre ?",
+  "fin.legacyNext": "Ce qui a suivi",
+  "fin.legacyEmpty": "Explore plus d'expositions pour découvrir leurs trouvailles.",
 });

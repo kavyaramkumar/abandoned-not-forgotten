@@ -1501,3 +1501,10 @@ dialog.sheet .wing-badge b { color: #ffffff !important; font: 800 18px var(--ser
 /* tooltips inside the menu would cover the other items */
 .hud-menu-panel [data-tip]:hover::after, .hud-menu-panel [data-tip]:focus-visible::after { display: none; }
 [dir="rtl"] .hud-menu-panel { right: auto; left: 0; }
+
+/* Phones: the Ask Echo button shrinks to its icon so it never covers the
+ * Map and turn buttons in the bottom-left corner. */
+@media (max-width: 560px) {
+  .chat-fab { padding: 12px; gap: 0; }
+  .chat-fab #chatFabLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

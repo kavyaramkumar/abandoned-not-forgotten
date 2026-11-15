@@ -485,4 +485,8 @@ I18N.add("zh", {
   "map.oneWay": "单向门",
   "map.secret": "秘密门",
   "tip.map": "迷路了？打开整个博物馆的地图。",
+  "fin.legacyTitle": "你的信号背后的发现",
+  "fin.legacyQuestion": "这些探索者帮助我们了解了什么？",
+  "fin.legacyNext": "后来发生了什么",
+  "fin.legacyEmpty": "多探索一些展品，揭开它们的发现。",
 });

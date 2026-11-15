@@ -485,4 +485,8 @@ I18N.add("es", {
   "wingName.moon": "Ala de la Luna",
   "wingName.mars": "Ala de Marte",
   "wingName.deep": "Ala del Espacio profundo",
+  "fin.legacyTitle": "Los descubrimientos detrás de tu señal",
+  "fin.legacyQuestion": "¿Qué nos ayudaron a entender estos exploradores?",
+  "fin.legacyNext": "Qué vino después",
+  "fin.legacyEmpty": "Explora más exhibiciones para descubrir sus hallazgos.",
 });

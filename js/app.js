@@ -46,7 +46,7 @@
     robotName: "Echo",
     kid: { skin: SKINS[3], shirt: SHIRTS[0], pants: PANTS[0], hair: "short", hairColor: HAIR_COLORS[0], extra: "none" },
     level: "medium",
-    mode: "game",   // "learn" | "game"
+    mode: "learn",  // "learn" | "game"; new players start in the museum
     place: "earth", // where the museum is: earth | moon | mars
     lang: "en",
     // accessibility: text size n | l | xl, and on/off switches
@@ -194,6 +194,10 @@ const speechRate = () => {
       sel.addEventListener("change", () => setLang(sel.value));
     });
     if (S.level === "learn") S.level = "medium";
+    // Every visit opens on the Museum by day, on Earth. A saved game is still
+    // one click away with Continue, exactly as it was left.
+    S.mode = "learn";
+    S.place = "earth";
     $("#playerName").value = S.player;
     $("#robotName").value = S.robotName;
     drawMaker();
