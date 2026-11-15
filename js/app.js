@@ -3534,18 +3534,15 @@ const speechRate = () => {
   }
   let pendingLine = null;
   // The answer options are written with the right one usually second, so
-  // shuffle the order they are shown in. Each quiz keeps one order for the
-  // whole visit (switching tabs doesn't reshuffle), and the right answer is
-  // never left in the slot it was written in, so it can't be guessed by habit.
+  // shuffle the order they are shown in: a fair shuffle, so the right answer
+  // is equally likely to land in any spot. Each quiz keeps one order for the
+  // whole visit (switching tabs doesn't reshuffle).
   const quizOrders = {};
   function quizOrder(e, n) {
     const key = e.id + ":" + n;
     if (quizOrders[key]) return quizOrders[key];
     const idx = [...Array(n).keys()];
-    for (let tries = 0; tries < 20; tries++) {
-      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-      if (n < 2 || idx.indexOf(e.quiz.answer) !== e.quiz.answer) break;
-    }
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
     return (quizOrders[key] = idx);
   }
   function renderQuiz() {
