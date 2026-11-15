@@ -115,7 +115,7 @@ In the game, the robot says it in one line at the end: *finding took exploring, 
 
 1. **The story:** the hook and five story cards, with "Want to know more?" (still there today, fact file, real NASA sounds) under the last card
 2. **Then and now:** the mission photo next to an orbital image of the same place today
-3. **Quick quiz**
+3. **Quick quiz:** the answer choices are shuffled on every visit, so the right one can be in any spot
 
 Every window has **Read to me** (text-to-speech) and **Ask Echo** (the offline guide, or the AI server if one is running).
 
@@ -139,6 +139,8 @@ python3 -m http.server 8123
 
 Then open http://localhost:8123. To reset your progress, type `resetMuseum()` in the browser console. To peek at today's hidden network while testing, type `Museum.debug()`.
 
+**After editing a JS or CSS file, raise its `?v=` number in `index.html`** (for example `js/app.js?v=107` → `?v=108`). Browsers cache these files, so without the bump players (and the live site) keep seeing the old version. If a change still doesn't show locally, hard-reload with Cmd + Shift + R.
+
 ### Optional: live AI placard
 
 ```bash
@@ -159,7 +161,7 @@ Then set `askEndpoint: "http://localhost:8787/ask"` in [`js/ai.js`](js/ai.js).
 | `js/maze.js` | The hidden door network: random generation per difficulty, the scanner hint, the brute-force shortest route, and the route checker |
 | `js/app.js` | The game: builds each 3D room and its doors, walking, door transitions, riddle locks, secret rooms, notes, Mission Control finale, placards, stars, Robot Bay |
 | `js/models.js` | 3D building blocks: the kid (boy or girl), the robot (with every hat and gear), wall signs, floor textures |
-| `js/art.js` | Hand-drawn SVG: spacecraft, dioramas, the intro kid, the bus |
+| `js/art.js` | Hand-drawn SVG: spacecraft, dioramas, the intro kid, the field-trip airplane (Earth intro), the rocket (Moon and Mars intro) |
 | `js/robot.js` | Draws the robot as SVG for the Robot Bay preview |
 | `js/vendor/three.min.js` | three.js r149 (MIT), included so the museum works offline |
 | `js/ai.js` | "Ask the exhibit" placard (offline answers + optional AI) |
@@ -185,7 +187,9 @@ See the challenge's Resources tab on the Space Apps site.
 
 ## Choices on the welcome screen
 
-- **Where the museum is:** Earth (the class arrives by school bus), the Moon (glass dome, black sky with Earth in it, low gravity so the explorer bounces) or Mars (dusty butterscotch sky, red ground, a little bounce). For the Moon and Mars, the class lands in a field-trip rocket, and the explorer wears a spacesuit and glass helmet inside, trimmed in their shirt color.
+- **Where the museum is:** Earth (a famous museum at the edge of a big city; the class flies in on a field-trip plane that glides down and lands on the museum's airstrip), the Moon (glass dome, black sky with Earth in it, low gravity so the explorer bounces) or Mars (dusty butterscotch sky, red ground, a little bounce). For the Moon and Mars, the class lands in a field-trip rocket, and the explorer wears a spacesuit and glass helmet inside, trimmed in their shirt color.
+- **Opens on Earth, by day:** the welcome screen always starts on Earth in the Museum by day, even after logging in. A saved Moon or Mars trip is still there under **Continue**, exactly where it was left.
+- **Names:** the "Your name" and "Your robot's name" boxes open empty, with light-grey hints **Explorer** and **Echo**. Leaving a box blank uses that name.
 - **Your explorer:** 8 hairstyles, shown as pictures with no names, 8 hair colors, 8 skin tones, 8 shirt colors, 6 pants colors, and glasses or a cap. No "boy" or "girl" labels.
 - **Learning mode:** no puzzle. A fixed tour through every room with NEXT and BACK doors (Atrium, Moon machines, Mars machines, deep space machines, the secret treasures, then Mission Control). Built by `Maze.tour()` in `js/maze.js`.
 - **Game mode:** the door maze, with Easy, Medium, and Hard.
@@ -197,10 +201,10 @@ Languages: English, Chinese (Simplified), Hindi, Spanish, Arabic, French, Bengal
 
 - **Look:** glossy high-tech floor panels with glowing seams and paneled walls with light strips, colored by wing (Moon blue, Mars orange, deep space purple). Stars twinkle near the ceiling of every room.
 - **Lobby:** a rotating model of the solar system (all 8 planets, Saturn's rings, the Moon circling Earth). Click it to learn about the three wings.
-- **Real NASA photos:** every machine's frame shows a public-domain NASA photo of that mission (`assets/photos/`, listed with credits in `assets/photos/CREDITS.md` and `js/photos.js`). The info card shows the photo with its caption and credit.
+- **Real NASA photos:** every machine's frame shows a public-domain NASA photo of that mission (`assets/photos/`, listed with credits in `assets/photos/CREDITS.md` and `js/photos.js`). The info card shows the photo with its caption and credit. The big wall photo is sized to fit between any doors on the same wall (secret doors included), so it never runs under a door frame, and it is cropped rather than stretched.
 - **How to play:** a page (top bar, and automatically the first time in each mode) with the mission, what the museum is about, the Moon, Mars, and Deep Space wings with their machines, and the rules.
 - **Chat:** an "Ask Echo" button in the bottom-right corner, a chat kiosk next to every machine and one in the lobby, and a "Chat with this machine" button on every info card. Offline it answers from `js/data.js`. With the AI server running, answers come from Claude searching **only NASA websites** (nasa.gov and its subdomains), and each answer lists the NASA pages it used.
-- **Moon and Mars trips** start with a short movie (`js/cutscene.js`): the class boards a rocket on Earth, launches, flies through space, and lands, then walks to the museum in spacesuits.
+- **Every trip starts with a short movie** (`js/cutscene.js`). **Moon and Mars:** the class boards a rocket on Earth, launches, flies through space, and lands, then walks to the museum in spacesuits. **Earth:** the class boards a plane at an airport, flies above the clouds, and lands at an airfield beside the museum, then walks up a path to the front steps. The museum sits at the edge of a town: a street, a parking lot, a terminal and control tower, trees, and a city skyline on both sides of the runway.
 
 ## AI chat server (answers from NASA websites only)
 
@@ -220,7 +224,7 @@ When the museum is opened from `localhost`, `js/ai.js` uses `http://localhost:87
 
 The gear button (welcome screen and top bar) opens a settings panel. Everything is saved on the device and works in all 20 languages.
 
-- **Text size:** Normal, Large, Extra large (menus, dialogs, and the robot's speech bubble scale up; messages stay on screen longer).
+- **Text size:** Normal, Large, Extra large (menus, dialogs, and the robot's speech bubble scale up; messages stay on screen longer). At every size each window still fits on the screen: it scrolls on its own, and its title bar (with the X) and its Done button stay in view.
 - **High contrast:** black and white panels, thicker outlines, bright yellow focus rings.
 - **Reduce motion:** no bouncing, no twinkling or pulsing, no CSS animation, and a shorter, calmer rocket movie. Turns on by itself if the device asks for reduced motion.
 - **Easy-read font:** Lexend, with extra space between letters, words, and lines.
