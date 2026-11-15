@@ -27,15 +27,34 @@ Since the 1960s, NASA has left hardware across the solar system: on the Moon, on
 - Focus on specific missions, or tell a broader NASA story?
 - Whose perspective(s) does the story highlight?
 
+## Project summary
+
+**Play it:** https://kavyaramkumar.github.io/abandoned-not-forgotten/
+
+Reach for the Stars Museum is a free 3D web game that tells the stories of 20 NASA machines left behind on the Moon, on Mars, and in deep space. By day it is a museum with three wings to walk through; after dark the doors start moving and it becomes a maze. Players meet each machine, hear what it was built for, what went wrong, and what it discovered, and see real NASA photos of where it rests today. It is made for kids ages 8 to 17, including kids who don't already love space. *Their missions ended. Their stories didn't.*
+
+### Two ways to play
+
+- **The Museum by day (Learning Mode).** The Atrium is the lobby, with one entrance for each wing: Moon, Mars, and Deep Space. Inside a wing, players walk room by room through its machines from oldest to newest, from Ranger 7 (1964) to Ingenuity (2021). Each wing opens with a short chapter narrated by Echo, the player's robot guide, and ends with a "Wing complete!" badge. After all three wings, Mission Control opens for the finale, "The Next Frontier."
+- **The Maze after dark (Game Mode).** During a museum sleepover, the clock strikes midnight and every door swaps places. Players collect the pieces of the broken Homecoming Signal, which are hidden with the machines, then bring them to Mission Control. Details below.
+
+### How every machine tells its story
+
+Each machine opens with a one-line hook ("I was built to last 90 days. I kept going for almost 15 years.") and five short story cards: **Why I was built, My mission, What went wrong, What we found, Why it still matters.** A "Then and now" view compares each mission photo with an orbital image of the same spot today, and a quick quiz follows. Fact files, what is still there, and real NASA recordings are one click away under "Want to know more?". Story content lives in [`js/story.js`](js/story.js); translations of chapters and hooks (Spanish, French, Hindi, Chinese) are in [`js/story-i18n.js`](js/story-i18n.js).
+
+### Accessibility and languages
+
+Read to Me narration, high contrast, larger text, reduced motion, an easy-read font, and full keyboard play. The interface is available in 20 languages. An optional map in the bottom corner helps any player who feels lost, and a free Field Trip Pass login (Supabase) saves stars and progress across devices.
+
 ## Our concept: The Reach for the Stars Museum
 
 It's a field trip you play, and the museum has a secret: **its doors never lead to the same place twice.**
 
 You pick your explorer (a boy or a girl, with skin and shirt colors) and a difficulty. As your class walks in, the lights flicker and every door in the building swaps places. The museum's **Homecoming Signal**, which it beams into space every year to remember the machines NASA left behind, has broken into pieces. Each piece is now hiding with one of those machines. Find the machines, hear their stories, and carry every piece to the sealed **Mission Control** room.
 
-### A maze you never see
+### A maze you mostly can't see
 
-There is no map. You only ever see the room you're standing in, in 3D, and its doors. Each door has a colored symbol (▲ ● ■ ★ ◆ ✚) and a "?" sign until you've been through it. Behind a door could be:
+You see the room you're standing in, in 3D, and its doors. An optional **Map** button in the corner shows the whole layout for players who need extra help (secret doors appear on it only after they're found). Each door has a colored symbol (▲ ● ■ ★ ◆ ✚) and a "?" sign until you've been through it. Behind a door could be:
 
 - **A machine's room:** a real piece of NASA hardware in a glass case, under a painting of where it is now. The machine tells its own story. Some are holding a signal piece.
 - **A hall** with a model (a rocket, an orrery, a radio dish) and a true space fact.
@@ -50,7 +69,7 @@ Each new adventure generates a fresh hidden network from a random seed (shown as
 
 - The connections between rooms change.
 - The door symbols and door positions change.
-- Which machines appear, and which ones hold the pieces, change. There are 14 machines plus 3 hidden treasures, and each game uses only some of them.
+- Which machines appear, and which ones hold the pieces, change. There are 20 machines plus 3 hidden treasures, and each game uses only some of them.
 - Where Mission Control is, where the riddle locks and airlocks are, and whether a secret room holds a note or a treasure, all change.
 
 The story always keeps the same shape: the arrival and the mystery, exploring and collecting pieces, then Mission Control and the ending. The Journal tracks every machine you've met across all your adventures, so replaying is how you find them all.
@@ -91,20 +110,20 @@ In the game, the robot says it in one line at the end: *finding took exploring, 
 - **A kid on a field trip is the main character**, and **the robot guide** asks the questions kids would ask.
 - **The bigger NASA story:** every placard has a "What came next" tab (for example, Ranger → Surveyor → Apollo → Artemis), and the ending, Voyager 1's *Pale Blue Dot* photo, ties every machine back to the planet that sent it.
 
-### Each placard
+### Each exhibit window
 
-1. **In its own words:** the machine's first-person story
-2. **Still there today:** what is physically left on the Moon, on Mars, or in space
-3. **What we learned:** the science it made possible
-4. **What came next:** how it led to later missions
-5. **Quick quiz**
-6. **Read to me** (text-to-speech) and **Ask the placard** (the AI chatbot)
+1. **The story:** the hook and five story cards, with "Want to know more?" (still there today, fact file, real NASA sounds) under the last card
+2. **Then and now:** the mission photo next to an orbital image of the same place today
+3. **Quick quiz**
+
+Every window has **Read to me** (text-to-speech) and **Ask Echo** (the offline guide, or the AI server if one is running).
 
 Stars come from stories, quizzes, questions, riddles, secret rooms, checked notes, finishing, and gold routes. They carry over between adventures and buy robot upgrades in the **Robot Bay**.
 
-### Status: skeleton draft
+### Status
 
 - Working: everything above. The 3D rooms, doors, transitions, riddle locks, airlocks, secret rooms, notes, scanner, Mission Control route check, the Pale Blue Dot ending, the journal, saved progress (you can continue an adventure), and an offline Q&A placard.
+- **Story cards in `js/story.js` are marked `verified: false` until a teammate checks them.**
 - **All exhibit facts are drafts.** Check every one against the official challenge resources and fill in `sources` / `verified` in [`js/data.js`](js/data.js).
 - The machines in the cases are simplified SVG drawings shown as flat cutouts. NASA's free 3D models could replace them later. Most NASA material is public domain, but check each credit line.
 - The AI placard runs in offline mode (canned answers) until the server below is set up.
