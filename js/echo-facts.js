@@ -14,6 +14,60 @@
  * Sources: NASA mission pages and the Apollo Lunar Surface Journal (check against
  * each exhibit's `sources` list in data.js before launch).
  */
+
+/*
+Opportunity:
+
+"Imagine driving your car into a giant sandbox... and getting stuck!
+
+That's exactly what happened to Opportunity on Mars! In 2005, its wheels sank into a soft patch of sand nicknamed Purgatory Dune. No matter how much its wheels spun, it couldn't get out!
+
+So, back on Earth, engineers got creative. They built a special sandbox that mimicked the Martian soil and tested different ways to help Opportunity escape. After weeks of careful planning, they figured out how to guide the rover out of the sand trap!
+
+But that wasn't its only challenge. In 2018, a massive dust storm covered the sky, blocking the sunlight that powered its solar panels. The storm lasted so long that Opportunity couldn't get enough energy to communicate or keep exploring.
+
+For more than 14 years, this little robot faced challenges that nobody could have completely predicted.
+
+And every time, an incredible team on Earth worked to help it keep going!"
+
+Spirit:
+
+"Did you know that exploring Mars takes more than just a really good robot? It takes a really clever team back on Earth!
+
+Meet Spirit! While exploring Mars, Spirit ran into a few unexpected problems. At one point, its memory system malfunctioned, and it stopped communicating with Earth! Engineers had to figure out how to repair its memory and send it new software before Spirit could get back to work.
+
+And they didn't stop there! In 2007, engineers sent Spirit and its twin, Opportunity, new software that allowed them to make some decisions on their own, like choosing which pictures to send back to Earth!
+
+That's right! These little robots were getting smarter while exploring another planet.
+
+It takes a pretty amazing team to keep a robot exploring millions of miles away from home!"
+
+Pioneer 10:
+
+"Imagine flying through space where no spacecraft has ever gone before!
+
+Meet Pioneer 10! Launched in 1972, it was the first spacecraft to travel beyond Mars. But its biggest challenge was still ahead: the asteroid belt!
+
+Scientists weren't sure if a spacecraft could safely cross this enormous region filled with rocky objects. And Pioneer 10 had a couple of close calls! It passed within about 5.5 million miles of one asteroid, and later flew past another called Nike, which was about 15 miles wide!
+
+But Pioneer 10 made it through! It became the first spacecraft to cross the asteroid belt and the first to visit Jupiter.
+
+It was a journey full of unknowns, and Pioneer 10 showed us just how far a little spacecraft could go!"
+
+Pioneer 11:
+
+"Think getting close to Jupiter was impressive? Well, Pioneer 11 had an even bigger adventure waiting!
+
+After visiting Jupiter, Pioneer 11 continued its journey toward Saturn. On September 1, 1979, it flew just 13,000 miles above the planet's cloud tops!
+
+It was the first spacecraft ever to get that close to Saturn. And it didn't just take a quick look! It discovered a new ring around the planet, called the F ring, and spotted two previously unknown moons!
+
+Imagine being the first visitor to a planet that humans had only ever seen from far away!
+
+Pioneer 11 helped us see Saturn in a whole new way. And it did something no spacecraft had ever done before: it brought us up close to the beautiful ringed planet!"
+*/
+
+
 window.ECHO_FACTS = {
   /* ---------- crewed: what the astronauts experienced ---------- */
   "apollo-11": { crew: true, text: "Alarms 1202 and 1201 flashed as Eagle came down. Neil Armstrong took over by hand and steered past a rocky crater to find a safe place to land." },
