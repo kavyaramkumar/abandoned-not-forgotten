@@ -100,8 +100,10 @@ function save() {
 
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
 
-    $("#playerName").value = S.player;
-    $("#robotName").value = S.robotName;
+    // the name boxes always open empty, showing the light-grey hints
+    // "Explorer" and "Echo"; leaving them blank uses those names
+    $("#playerName").value = "";
+    $("#robotName").value = "";
     drawMaker();
     drawPicks();
     drawIntroText();
@@ -198,8 +200,10 @@ const speechRate = () => {
     // one click away with Continue, exactly as it was left.
     S.mode = "learn";
     S.place = "earth";
-    $("#playerName").value = S.player;
-    $("#robotName").value = S.robotName;
+    // the name boxes always open empty, showing the light-grey hints
+    // "Explorer" and "Echo"; leaving them blank uses those names
+    $("#playerName").value = "";
+    $("#robotName").value = "";
     drawMaker();
     drawPicks();
     drawIntroText();
