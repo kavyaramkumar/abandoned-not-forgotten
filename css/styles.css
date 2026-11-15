@@ -1411,3 +1411,67 @@ dialog.sheet .beat-label { color: #005f76 !important; }
 /* Light dialogs (login, settings, cards): secondary buttons need dark text. */
 dialog.sheet .btn.ghost { color: #14242d; background: #ffffff; border-color: #526b77; }
 dialog.sheet .btn.ghost:hover { background: #e5f7fb; }
+
+/* Intro Earth (Moon and Mars scenes): a touch more realistic while staying
+ * in the illustrated style: deep ocean shading, a few soft continents,
+ * cloud wisps, a gentle day/night edge and a thin blue atmosphere. */
+.earth-in-sky {
+  background:
+    radial-gradient(ellipse 28% 18% at 30% 26%, rgba(255,255,255,.55), transparent 70%),
+    radial-gradient(ellipse 40% 10% at 58% 60%, rgba(255,255,255,.35), transparent 70%),
+    radial-gradient(ellipse 22% 30% at 36% 46%, #6f9a4c 0 55%, transparent 62%),
+    radial-gradient(ellipse 16% 12% at 52% 34%, #8b8f52 0 50%, transparent 60%),
+    radial-gradient(ellipse 14% 22% at 62% 70%, #5f8f47 0 50%, transparent 60%),
+    radial-gradient(circle at 34% 32%, #6fb6ff, #2464b8 48%, #123a78 78%, #0a2250);
+  box-shadow:
+    inset -26px -10px 30px rgba(2, 6, 22, .82),
+    inset 4px 3px 10px rgba(190, 230, 255, .35),
+    0 0 0 2px rgba(120, 190, 255, .28),
+    0 0 34px 6px rgba(90, 170, 255, .35);
+}
+.earth-in-sky::before { display: none; }
+
+/* Mode choice: a big sun or moon, a clear "LEARNING MODE" / "GAME MODE" tag,
+ * then the museum or maze name. Laid out in a grid so nothing overlaps. */
+.mode-pick button {
+  grid-template-columns: 44px 1fr; column-gap: 12px; row-gap: 2px; align-items: center;
+}
+.mode-pick button .mode-tag {
+  grid-row: 1 / span 3; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; font-style: normal; font-size: 24px; line-height: 1;
+}
+.mode-pick button .mode-tag.day { background: #ffe9a6; color: #8a5a00; box-shadow: inset 0 0 0 2px #e8b53a; }
+.mode-pick button .mode-tag.night { background: #172540; color: #ffe6a6; box-shadow: inset 0 0 0 2px #4b6aa3; }
+.mode-pick button .mode-kind {
+  font: 800 12px/1.2 var(--mono); font-style: normal; letter-spacing: .08em; text-transform: uppercase;
+  color: #005f76 !important;
+}
+.mode-pick button[data-mode="game"] .mode-kind { color: #33468a !important; }
+.mode-pick button b { font-size: 17px; line-height: 1.2; }
+.mode-pick button span { grid-column: 2; overflow-wrap: anywhere; }
+
+/* ---------- Museum map (optional help) ---------- */
+.cam-controls .map-btn { display: inline-flex; align-items: center; gap: 6px; padding-inline: 12px; }
+.cam-controls .map-btn svg { width: 18px; height: 18px; }
+.map-sheet { width: min(940px, 96vw); }
+.map-body { overflow: auto; max-height: min(64vh, 640px); padding: 10px 6px; background: #f4f8fa; }
+.map-body svg { display: block; margin: 0 auto; max-width: none; font-family: var(--sans); }
+.map-link { fill: none; stroke: #7d939e; stroke-width: 2.5; }
+.map-link.secret { stroke: #9a5be0; stroke-dasharray: 6 5; }
+.map-sym circle { fill: #ffffff; stroke: #c3d0d5; stroke-width: 1.5; }
+.map-sym text { font: 800 13px var(--sans); text-anchor: middle; }
+.map-node rect { fill: #ffffff; stroke: #b8c6cc; stroke-width: 2; stroke-dasharray: 5 4; }
+.map-node.seen rect { stroke: var(--nc); stroke-dasharray: none; }
+.map-node .map-strip { fill: var(--nc); stroke: none; }
+.map-node text { font: 700 14px var(--sans); fill: #14242d; }
+.map-node:not(.seen) text { fill: #5a6e78; }
+.map-node.here rect:first-child { stroke: #005f76; stroke-width: 4; stroke-dasharray: none; fill: #e6f7fb; }
+.map-node .map-here { font: 800 12px var(--mono); fill: #005f76; text-anchor: middle; letter-spacing: .04em; }
+.map-node .map-piece { font-size: 15px; fill: #c48a00; text-anchor: middle; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 600 12.5px var(--sans); color: #243944; }
+.map-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend .lg.here::before, .map-legend .lg.seen::before, .map-legend .lg.new::before { content: ""; width: 16px; height: 11px; border-radius: 3px; background: #fff; }
+.map-legend .lg.here::before { border: 3px solid #005f76; background: #e6f7fb; }
+.map-legend .lg.seen::before { border: 2px solid #5b8796; }
+.map-legend .lg.new::before { border: 2px dashed #b8c6cc; }
+.map-legend .lg.piece { color: #8a6100; }

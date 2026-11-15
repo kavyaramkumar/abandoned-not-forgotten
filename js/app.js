@@ -299,6 +299,10 @@ const speechRate = () => {
     enterMuseum(false);
   });
   $("#skipIntro").addEventListener("click", () => $("#intro").classList.add("skipped"));
+  // once the card has arrived on its own, Skip has nothing left to skip; hide it
+  // so it never sits on top of the card's buttons
+  $("#introCard").addEventListener("animationend", () => { $("#skipIntro").hidden = true; });
+  setTimeout(() => { $("#skipIntro").hidden = true; }, 9000);
 
   // which hall opens each wing on the learning tour
   const WING_HALL = { moon: 2, mars: 3, deep: 4 };
@@ -1385,67 +1389,33 @@ const speechRate = () => {
     img.src = WING_PHOTO[w.id] || "";
     return tex;
   }
-  function atriumWallTex(kind, label) {
-    return canvasTex(640, 480, (c, W, H) => {
-      const warm = kind === "warm";
-      const bg = c.createLinearGradient(0, 0, W, H);
-      bg.addColorStop(0, "#11171d"); bg.addColorStop(1, warm ? "#282018" : "#102632");
-      c.fillStyle = bg; c.fillRect(0, 0, W, H);
-      c.strokeStyle = "rgba(255,255,255,.12)"; c.lineWidth = 2;
-      for (let x = 32; x < W; x += 64) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
-      for (let y = 32; y < H; y += 64) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
-      let seed = warm ? 73 : 109;
-      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-      c.strokeStyle = warm ? "#f1b66d" : "#70d9ee"; c.lineWidth = 3;
-      const cx = W * 0.52, cy = H * 0.48;
-      for (let i = 0; i < 5; i++) { c.beginPath(); c.ellipse(cx, cy, 72 + i * 42, 28 + i * 18, -0.22, 0, Math.PI * 2); c.stroke(); }
-      const orb = c.createRadialGradient(cx - 32, cy - 36, 4, cx, cy, 74);
-      orb.addColorStop(0, warm ? "#ffe3a6" : "#c3f4ff"); orb.addColorStop(0.55, warm ? "#bd6a34" : "#327f9d"); orb.addColorStop(1, "#071019");
-      c.fillStyle = orb; c.beginPath(); c.arc(cx, cy, 74, 0, Math.PI * 2); c.fill();
-      c.fillStyle = "rgba(255,255,255,.72)";
-      for (let i = 0; i < 90; i++) { c.beginPath(); c.arc(rnd() * W, rnd() * H, rnd() * 1.8 + .4, 0, Math.PI * 2); c.fill(); }
-      c.fillStyle = "#f5f8fa"; c.textAlign = "left"; c.textBaseline = "alphabetic";
-      c.font = '800 34px "Atkinson Hyperlegible", system-ui, sans-serif'; c.fillText(label, 34, 54);
-      c.fillStyle = warm ? "#f1b66d" : "#70d9ee"; c.fillRect(34, 70, 150, 6);
-      c.font = '700 18px "IBM Plex Mono", monospace'; c.fillText(warm ? "PLANETARY STUDIES" : "ORBITAL SCIENCE", 34, H - 32);
-    });
-  }
 
   function buildAtriumArchitecture() {
     const current = room(R().cur);
     const occupied = new Set(current.doors.map((d) => d.slot));
     const shellMat = new T.MeshStandardMaterial({ color: "#20252a", metalness: 0.36, roughness: 0.42, side: T.DoubleSide });
-    [["W", ["W1", "W2"], "warm"], ["E", ["E1", "E2"], "cool"]].forEach(([sideName, slots, kind]) => {
-      const s = sideOf(sideName), free = slots.filter((slot) => !occupied.has(slot));
-      if (!free.length) return;
-      const centers = free.length === 2 ? [0] : [SLOT_POS[free[0]].along];
-      centers.forEach((along) => {
-        const width = free.length === 2 ? 6.0 : 2.35;
-        const shell = new T.Mesh(curvedPanelGeometry(width + 0.34, 2.65, 0.32, 44), shellMat);
-        onWall(s, shell, along, 2.15, 0.07);
-        const media = new T.Mesh(curvedPanelGeometry(width, 2.3, 0.37, 44), new T.MeshBasicMaterial({ map: atriumMediaTex(kind), toneMapped: false, side: T.DoubleSide }));
-        onWall(s, media, along, 2.15, 0.115);
-      });
-    });
-    // Fill every unused wall bay with a layered astronomical mural. These are
-    // integrated architectural panels, not additional signs competing for
-    // attention, and they make random room layouts feel intentionally designed.
+    // Every empty wall bay gets exactly ONE thing, so nothing overlaps: first
+    // the three wing signs (Moon, Mars, Deep Space; side walls first so they
+    // are in view), then a single media screen in any bay left over.
+    const bays = [];
+    [["W", "W1"], ["W", "W2"], ["E", "E1"], ["E", "E2"]].forEach(([side, slot]) => { if (!occupied.has(slot)) bays.push({ side, along: SLOT_POS[slot].along }); });
+    bays.push({ side: "S", along: -4.6 }, { side: "S", along: 4.6 });
     const wingOrder = wings.filter((w) => w.exhibits && w.exhibits.length);
-    let muralIndex = 0;
-    [["S", [-4.6, 4.6]], ["W", ["W1", "W2"]], ["E", ["E1", "E2"]]].forEach(([sideName, slots]) => {
-      const s = sideOf(sideName);
-      slots.forEach((slotNameOrAlong) => {
-        if (typeof slotNameOrAlong === "string" && occupied.has(slotNameOrAlong)) return;
-        const along = typeof slotNameOrAlong === "number" ? slotNameOrAlong : SLOT_POS[slotNameOrAlong].along;
-        const kind = muralIndex % 2 ? "warm" : "cool";
+    bays.forEach((bay, i) => {
+      const s = sideOf(bay.side);
+      if (i < wingOrder.length) {
+        const w = wingOrder[i];
         const shell = new T.Mesh(roundedPanelGeometry(2.34, 2.18, 0.16, 0.22), new T.MeshStandardMaterial({ color: "#d5dadd", metalness: 0.35, roughness: 0.4 }));
-        onWall(s, shell, along, 2.05, 0.08);
-        const w = wingOrder[muralIndex % wingOrder.length];
+        onWall(s, shell, bay.along, 2.05, 0.08);
         const art = new T.Mesh(new T.PlaneGeometry(2.12, 1.79), new T.MeshBasicMaterial({ map: wingSignTex(w), toneMapped: false }));
         // the beveled frame's front face sits ~0.2 m out, so the picture goes in front of it
-        onWall(s, art, along, 2.05, 0.215);
-        muralIndex++;
-      });
+        onWall(s, art, bay.along, 2.05, 0.215);
+      } else {
+        const shell = new T.Mesh(curvedPanelGeometry(2.6, 2.3, 0.12, 30), shellMat);
+        onWall(s, shell, bay.along, 2.1, 0.07);
+        const media = new T.Mesh(curvedPanelGeometry(2.3, 2.0, 0.14, 30), new T.MeshBasicMaterial({ map: atriumMediaTex(i % 2 ? "warm" : "cool"), toneMapped: false, side: T.DoubleSide }));
+        onWall(s, media, bay.along, 2.1, 0.1);
+      }
     });
     const floorMetal = new T.MeshStandardMaterial({ color: "#3d444a", metalness: 0.5, roughness: 0.38 });
     [1.7, 2.65, 3.6].forEach((rad, i) => {
@@ -2443,6 +2413,106 @@ const speechRate = () => {
   }
 
   let noteChecked = false;
+  /* ---------------- museum map: optional extra help ----------------
+   * Rooms are laid out top to bottom by how many doors they are from the
+   * Atrium. Each line is a door, with that door's symbol drawn at each end
+   * so you can match it to the doors inside the room. Secret doors show up
+   * only after they have been found. */
+  function openMap() {
+    const g = G(), run = R();
+    const shown = (r) => r.type !== "hidden" || run.visited.includes(r.id) ||
+      g.rooms.some((o) => o.doors.some((d) => d.to === r.id && d.hidden && run.revealed[`${o.id}:${d.i}`]));
+    const rooms = g.rooms.filter(shown);
+    const ids = new Set(rooms.map((r) => r.id));
+    // depth by breadth-first search, treating every visible door as two-way
+    const depth = { 0: 0 }, order = [0];
+    for (let q = 0; q < order.length; q++) {
+      const c = order[q];
+      g.rooms[c].doors.forEach((d) => { if (ids.has(d.to) && depth[d.to] == null) { depth[d.to] = depth[c] + 1; order.push(d.to); } });
+      g.rooms.forEach((o) => o.doors.forEach((d) => { if (d.to === c && ids.has(o.id) && depth[o.id] == null) { depth[o.id] = depth[c] + 1; order.push(o.id); } }));
+    }
+    const rows = [];
+    order.forEach((id) => { (rows[depth[id]] = rows[depth[id]] || []).push(id); });
+    const NW = 168, NH = 58, GX = 22, GY = 64, PAD = 24;
+    const widest = Math.max(...rows.map((r) => r.length));
+    const W = Math.max(widest * (NW + GX) - GX + PAD * 2, 380);
+    const pos = {};
+    rows.forEach((row, ri) => {
+      const rowW = row.length * (NW + GX) - GX, x0 = (W - rowW) / 2;
+      row.forEach((id, ci) => { pos[id] = { x: x0 + ci * (NW + GX), y: PAD + ri * (NH + GY) }; });
+    });
+    const H = PAD * 2 + rows.length * (NH + GY) - GY;
+    // one line per pair of rooms; remember each side's door symbol
+    const links = {};
+    g.rooms.forEach((r) => {
+      if (!ids.has(r.id)) return;
+      r.doors.forEach((d) => {
+        if (!ids.has(d.to)) return;
+        if (d.hidden && !run.revealed[`${r.id}:${d.i}`]) return;
+        const k = [r.id, d.to].sort((a, b) => a - b).join("-");
+        const L = links[k] = links[k] || { a: Math.min(r.id, d.to), b: Math.max(r.id, d.to), sym: {}, oneWay: d.oneWay, hidden: d.hidden };
+        L.sym[r.id] = d.sym;
+      });
+    });
+    // Spread each room's door points evenly along its top or bottom edge
+    // (sorted by where the other room is) so symbols never pile up.
+    const ports = {};
+    const side = (id, other) => (pos[other].y > pos[id].y || (pos[other].y === pos[id].y)) ? "bottom" : "top";
+    Object.values(links).forEach((L) => {
+      [[L.a, L.b], [L.b, L.a]].forEach(([id, other]) => {
+        const k = id + side(id, other);
+        (ports[k] = ports[k] || []).push({ L, other });
+      });
+    });
+    const portAt = {};
+    Object.entries(ports).forEach(([k, list]) => {
+      list.sort((u, v) => pos[u.other].x - pos[v.other].x);
+      list.forEach((pt, i) => {
+        const id = +k.replace(/\D+$/, ""), bottom = k.endsWith("bottom");
+        portAt[pt.L.a + "-" + pt.L.b + "@" + id] = { x: pos[id].x + ((i + 1) * NW) / (list.length + 1), y: pos[id].y + (bottom ? NH : 0), dir: bottom ? 1 : -1 };
+      });
+    });
+    const edge = (L) => {
+      const P0 = portAt[L.a + "-" + L.b + "@" + L.a], P1 = portAt[L.a + "-" + L.b + "@" + L.b];
+      const bend = Math.max(30, Math.abs(P1.y - P0.y) / 2);
+      const d = `M${P0.x} ${P0.y} C${P0.x} ${P0.y + P0.dir * bend} ${P1.x} ${P1.y + P1.dir * bend} ${P1.x} ${P1.y}`;
+      const symAt = (id, P) => L.sym[id] == null ? "" : `<g class="map-sym"><circle cx="${P.x}" cy="${P.y + P.dir * 13}" r="10"/><text x="${P.x}" y="${P.y + P.dir * 13 + 4.5}" fill="${SYM[L.sym[id]].color}">${SYM[L.sym[id]].ch}</text></g>`;
+      // arrow on one-way doors points into the room the door leads to
+      const oneWayTo = L.oneWay ? Object.keys(L.sym).length === 1 && (+Object.keys(L.sym)[0] === L.a ? L.b : L.a) : null;
+      const dd = oneWayTo === L.a ? `M${P1.x} ${P1.y} C${P1.x} ${P1.y + P1.dir * bend} ${P0.x} ${P0.y + P0.dir * bend} ${P0.x} ${P0.y}` : d;
+      return `<path class="map-link${L.hidden ? " secret" : ""}" d="${dd}"${L.oneWay ? ' marker-end="url(#mapArrow)"' : ""}/>` + symAt(L.a, P0) + symAt(L.b, P1);
+    };
+    const wrap = (txt) => {
+      const words = String(txt).split(" "), lines = [""];
+      words.forEach((w) => { const t2 = lines[lines.length - 1] ? lines[lines.length - 1] + " " + w : w; if (t2.length > 19 && lines[lines.length - 1]) lines.push(w); else lines[lines.length - 1] = t2; });
+      return lines.slice(0, 2).map((l, i, a) => (i === 1 && lines.length > 2 ? l.slice(0, 17) + "…" : l));
+    };
+    const node = (id) => {
+      const r = g.rooms[id], p = pos[id], here = id === run.cur, seen = run.visited.includes(id);
+      const wing = r.type === "exhibit" ? exById(r.exhibit).wing : null;
+      const color = r.type === "mc" ? "#e8b53a" : r.type === "atrium" ? "#5ef2ff" : wing ? wing.color : r.type === "hidden" ? "#9a5be0" : "#8fa3ae";
+      const piece = !isLearn() && r.piece && !run.collected.includes(id);
+      const lines = wrap(roomName(id));
+      return `<g class="map-node${here ? " here" : ""}${seen ? " seen" : ""}" style="--nc:${color}">
+        <rect x="${p.x}" y="${p.y}" width="${NW}" height="${NH}" rx="12"/>
+        <rect class="map-strip" x="${p.x}" y="${p.y}" width="8" height="${NH}" rx="4"/>
+        ${lines.map((l, i) => `<text x="${p.x + 18}" y="${p.y + (lines.length === 1 ? 34 : 25 + i * 18)}">${esc(l)}</text>`).join("")}
+        ${piece ? `<text class="map-piece" x="${p.x + NW - 16}" y="${p.y + 22}">◆</text>` : ""}
+        ${here ? `<text class="map-here" x="${p.x + NW / 2}" y="${p.y - 8}">${esc(t("map.here"))}</text>` : ""}
+      </g>`;
+    };
+    $("#mapBody").innerHTML = `<svg viewBox="0 0 ${W} ${H + 10}" width="${W}" role="img" aria-label="${esc(t("map.title"))}">
+      <defs><marker id="mapArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b7480"/></marker></defs>
+      ${Object.values(links).map(edge).join("")}${order.map(node).join("")}</svg>
+      <ul class="sr-only">${order.map((id) => `<li>${esc(roomName(id))}${id === run.cur ? " (" + esc(t("map.here")) + ")" : ""}: ${g.rooms[id].doors.filter((d) => ids.has(d.to) && (!d.hidden || run.revealed[`${id}:${d.i}`])).map((d) => `${SYM[d.sym].name} → ${esc(roomName(d.to))}`).join(", ")}</li>`).join("")}</ul>`;
+    $("#mapLegend").innerHTML = `<span class="lg here">${esc(t("map.here"))}</span><span class="lg seen">${esc(t("map.visited"))}</span><span class="lg new">${esc(t("map.unexplored"))}</span>${isLearn() ? "" : `<span class="lg piece">◆ ${esc(t("map.piece"))}</span>`}<span class="lg oneway">→ ${esc(t("map.oneWay"))}</span>`;
+    $("#mapDialog").showModal();
+    // scroll so "You are here" is in view
+    const hereEl = $("#mapBody .map-node.here");
+    if (hereEl) hereEl.scrollIntoView({ block: "center", inline: "center" });
+  }
+  $("#mapBtn").addEventListener("click", (e) => { e.stopPropagation(); if (R()) openMap(); });
+
   /* ---------------- story chapters, narrated by the robot guide ---------------- */
   const CH = () => (window.STORY && STORY.chapters) || {};
   function chapterHTML(key, opts) {

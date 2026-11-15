@@ -101,7 +101,9 @@ window.Maze = (function () {
     if (!L.deadEnds) {
       for (let x = 1; x < n; x++) {
         if (deg[x] !== 1) continue;
-        const opts = shuffle([...Array(n).keys()], r).filter((y) => y !== x && y !== 0 && !linked(x, y) && deg[y] < L.maxDoors);
+        const cand = shuffle([...Array(n).keys()], r).filter((y) => y !== x && y !== 0 && !linked(x, y));
+        // prefer rooms with a free wall slot; if none, allow one extra door rather than leave a dead end
+        const opts = cand.filter((y) => deg[y] < L.maxDoors).concat(cand.filter((y) => deg[y] === L.maxDoors));
         if (opts.length) link(x, opts[0], { extra: true });
       }
     }
@@ -114,9 +116,16 @@ window.Maze = (function () {
       added++;
     }
     // 3. One-way airlocks: only on extra links, so the two-way tree keeps every room reachable from every other.
-    shuffle(edges.filter((e) => e.extra), r).slice(0, L.oneWay).forEach((e) => {
-      e.oneWay = true;
+    // Doors you can see in room x: every link that starts there, plus two-way links that end there.
+    const exits = (x) => edges.filter((e) => !e.hidden && (e.a === x || (e.b === x && !e.oneWay))).length;
+    let made = 0;
+    shuffle(edges.filter((e) => e.extra), r).forEach((e) => {
+      if (made >= L.oneWay) return;
       if (r() < 0.5) [e.a, e.b] = [e.b, e.a]; // door is in room a, leads to b
+      e.oneWay = true;
+      // the room you arrive in must still have at least two ways out (Easy/Medium)
+      if (!L.deadEnds && exits(e.b) < 2) { [e.a, e.b] = [e.b, e.a]; if (exits(e.b) < 2) { e.oneWay = false; return; } }
+      made++;
     });
 
     // 4. Room roles. Mission Control hangs off the room farthest from the Atrium.
@@ -147,7 +156,10 @@ window.Maze = (function () {
     // 5. Hidden rooms behind secret panels: a treasure, or a note with a route from an earlier explorer.
     const treasures = shuffle(content.treasures, r);
     for (let h = 0; h < L.hidden; h++) {
-      const parents = [...Array(n).keys()].slice(1).filter((x) => deg[x] < L.maxDoors + 1);
+      const roomy = [...Array(n).keys()].slice(1).filter((x) => deg[x] < L.maxDoors + 1);
+      // on Easy/Medium a secret panel is a bonus, never the only other way out of a room
+      const twoExits = roomy.filter((x) => edges.filter((e) => !e.hidden && (e.a === x || (e.b === x && !e.oneWay))).length >= 2);
+      const parents = L.deadEnds || !twoExits.length ? roomy : twoExits;
       const p = parents[Math.floor(r() * parents.length)];
       const id = rooms.length;
       const kind = levelKey === "hard" ? (h === 0 ? "note" : "treasure") : r() < 0.5 ? "note" : "treasure";
