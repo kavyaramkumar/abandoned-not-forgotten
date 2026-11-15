@@ -1733,6 +1733,7 @@ const speechRate = () => {
   let noteChecked = false;
   function arrived(id, first, oneWay) {
     const r = room(id);
+    clearTimeout(factTimer);
     showBanner(id);
     if (r.type === "mc") return setTimeout(() => openFinale(), 900);
     let line = "";
@@ -1752,7 +1753,22 @@ const speechRate = () => {
       const h = Maze.hint(G(), id, { collected: R().collected });
       if (h && !h.here) line = t("echo.scannerLikes", { sym: `<b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b>` });
     }
-    if (line) say(line, 7000);
+    // Echo's fact for a brand-new machine or treasure room (astronaut story, or a design choice)
+    const fact = first ? roomFact(r) : "";
+    if (line && fact) {
+      say(line, 6000);
+      const stamp = sayStamp, wait = Math.round(6000 * readFactor()) + 400;
+      factTimer = setTimeout(() => { if (stamp === sayStamp && R() && R().cur === id) say(fact, 9500); }, wait);
+    } else if (fact) say(fact, 9500);
+    else if (line) say(line, 7000);
+  }
+  /* a bubble line from js/echo-facts.js for exhibit rooms and secret treasure rooms */
+  let factTimer;
+  function roomFact(r) {
+    const key = r.type === "exhibit" ? r.exhibit : r.type === "hidden" && r.find === "treasure" ? r.treasure : null;
+    const f = key && window.ECHO_FACTS && window.ECHO_FACTS[key];
+    if (!f) return "";
+    return `<b class="fact-tag">${f.crew ? "Astronaut story" : "Design choice"}:</b> ${esc(f.text)}`;
   }
 
   /* ---------------- explorer's note: checking a route by following it ---------------- */
@@ -1917,12 +1933,14 @@ const speechRate = () => {
     idleHintTimer = setTimeout(() => $("#hint").classList.remove("faded"), 25000);
   }
 
-  let sayTimer;
+  let sayTimer, sayStamp = 0;
+  const readFactor = () => (S.a11y.text !== "n" || S.a11y.speak ? 1.6 : 1); // more time to read or listen
   function say(html, ms = 5500) {
     const b = $("#say");
+    sayStamp++;
     b.innerHTML = `<span class="who">${esc(S.robotName)}</span>${html}`;
     if (S.a11y.speak) speak(html);
-    if (S.a11y.text !== "n" || S.a11y.speak) ms = Math.round(ms * 1.6); // more time to read or listen
+    ms = Math.round(ms * readFactor());
     b.classList.add("show");
     clearTimeout(sayTimer);
     sayTimer = setTimeout(() => b.classList.remove("show"), ms);

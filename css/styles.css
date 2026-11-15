@@ -319,6 +319,7 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .say::after { content: ""; position: absolute; left: var(--tail, 30px); bottom: -10px; width: 16px; height: 16px; background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); }
 .say.show { opacity: 1; transform: translateY(-100%); }
 .say .who { display: block; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--brick); }
+.say .fact-tag { color: var(--brick); }
 .prompt { position: absolute; left: 50%; bottom: 62px; z-index: 8; transform: translateX(-50%); pointer-events: auto; background: var(--brick); color: #fff; border: 2px solid var(--ink); border-radius: 30px; padding: 10px 22px; font-weight: 700; font-size: 17px; cursor: pointer; white-space: nowrap; animation: bob 1.2s ease-in-out infinite alternate; box-shadow: 4px 4px 0 var(--ink); max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
 .prompt kbd { font: 700 11px var(--mono); background: #0003; border: 1px solid #fff6; border-radius: 4px; padding: 1px 5px; margin-left: 8px; vertical-align: 2px; }
 @keyframes bob { from { margin-top: 0; } to { margin-top: -6px; } }
