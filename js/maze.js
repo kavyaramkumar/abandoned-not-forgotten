@@ -298,26 +298,37 @@ window.Maze = (function () {
   }
 
   /**
-   * Learning mode: one long, friendly tour. Atrium, then each wing (a hall, then
-   * its machines), then the secret treasures, then Mission Control.
-   * content = { wings: [{ hall, exhibits: [ids] }], treasures: [ids] }
+   * Learning mode: a standard museum. The Atrium is the lobby with one big
+   * entrance per wing. Each wing is a short gallery walked in order: an
+   * entrance hall, its machines oldest to newest, then any keepsakes, and an
+   * exit at the end back to the Atrium. Mission Control (the finale) opens
+   * off the Atrium once every wing is finished.
+   * content = { wings: [{ id, hall, exhibits: [ids], keepsakes: [ids] }] }
    */
   function tour(content) {
     const rooms = [{ id: 0, type: "atrium", doors: [] }];
     const push = (r) => { r.id = rooms.length; r.doors = []; rooms.push(r); return r.id; };
-    content.wings.forEach((w) => {
-      push({ type: "hall", hall: w.hall });
-      w.exhibits.forEach((e) => push({ type: "exhibit", exhibit: e, piece: false }));
+    // Atrium entrances, left to right in story order, plus Mission Control
+    const ENTRANCE = [{ slot: "N1", sym: 1 }, { slot: "N2", sym: 0 }, { slot: "E1", sym: 4 }, { slot: "E2", sym: 3 }];
+    content.wings.forEach((w, wi) => {
+      const chain = [push({ type: "hall", hall: w.hall, wing: w.id })];
+      w.exhibits.forEach((e) => chain.push(push({ type: "exhibit", exhibit: e, piece: false, wing: w.id })));
+      (w.keepsakes || []).forEach((t) => chain.push(push({ type: "hidden", find: "treasure", treasure: t, wing: w.id })));
+      const ent = ENTRANCE[wi % ENTRANCE.length];
+      rooms[0].doors.push({ to: chain[0], wing: w.id, wingDoor: true, sym: ent.sym, slot: ent.slot });
+      rooms[chain[0]].doors.push({ to: 0, back: true, home: true, wing: w.id, sym: 1, slot: "W1" });
+      for (let i = 0; i < chain.length - 1; i++) {
+        rooms[chain[i]].doors.push({ to: chain[i + 1], next: true, sym: 3, slot: "E1" });
+        rooms[chain[i + 1]].doors.push({ to: chain[i], back: true, sym: 1, slot: "W1" });
+      }
+      // the last room's exit leads straight back to the lobby
+      rooms[chain[chain.length - 1]].doors.push({ to: 0, home: true, exit: true, wing: w.id, sym: 5, slot: "E2" });
     });
-    content.treasures.forEach((t) => push({ type: "hidden", find: "treasure", treasure: t }));
     const mc = push({ type: "mc" });
-    for (let i = 0; i < rooms.length - 1; i++) {
-      const a = rooms[i], b = rooms[i + 1];
-      a.doors.push({ to: b.id, next: true, sym: 3, slot: "E1" });
-      b.doors.push({ to: a.id, back: true, sym: 1, slot: "W1" });
-    }
+    rooms[0].doors.push({ to: mc, learnFinale: true, sym: 2, slot: "W1" });
+    rooms[mc].doors.push({ to: 0, back: true, sym: 1, slot: "W1" });
     rooms.forEach((r) => r.doors.forEach((d, i) => (d.i = i)));
-    return { level: "learn", seed: 0, rooms, start: 0, mc, pieces: [], best: rooms.length - 1, orders: 1, par: null, tour: true };
+    return { level: "learn", seed: 0, rooms, start: 0, mc, pieces: [], best: rooms.length - 1, orders: 1, par: null, tour: true, museum: true };
   }
 
   return { LEVELS, SYMBOLS, generate, verify, hint, shortest, factorial, bfs, tour };

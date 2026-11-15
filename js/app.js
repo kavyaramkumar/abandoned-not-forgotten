@@ -121,12 +121,20 @@ const speechRate = () => {
   const room = (id) => G().rooms[id];
   const allCollected = () => G().pieces.every((p) => R().collected.includes(p));
   const isLearn = () => !!(S.run && S.run.level === "learn");
+  // learning museum: a wing is done once every room in it has been visited
+  const wingRooms = (wid) => G().rooms.filter((r) => r.wing === wid);
+  const wingDone = (wid) => { const rs = wingRooms(wid); return rs.length > 0 && rs.every((r) => R().visited.includes(r.id)); };
+  const museumWings = () => [...new Set(G().rooms.filter((r) => r.wing).map((r) => r.wing))];
+  // a wing's display name in the player's language (falls back to the content file)
+  const wingName = (w) => (I18N.has && I18N.has("wingName." + w.id) ? t("wingName." + w.id) : w.name);
+  const wingsDoneCount = () => museumWings().filter(wingDone).length;
   const PLACE = () => (S.run && S.run.place) || S.place;
   function roomName(id) {
     const r = room(id);
     if (r.type === "atrium") return t("room.atrium");
     if (r.type === "mc") return t("room.mc");
     if (r.type === "exhibit") return exById(r.exhibit).name;
+    if (r.type === "hall" && r.wing && isLearn()) { const w = wings.find((x) => x.id === r.wing); return w ? wingName(w) : t(`hall.${r.hall}.name`); }
     if (r.type === "hall") return t(`hall.${r.hall}.name`);
     if (r.type === "hidden" && r.find === "treasure" && isLearn()) return exById(r.treasure).name;
     return t("room.secret");
@@ -309,7 +317,13 @@ const speechRate = () => {
   function newRun(level) {
     const seed = 1000 + Math.floor(Math.random() * 9000);
     const graph = level === "learn"
-      ? Maze.tour({ wings: wings.map((w) => ({ hall: WING_HALL[w.id] != null ? WING_HALL[w.id] : 0, exhibits: w.exhibits.map((e) => e.id) })), treasures: treasures.map((x) => x.id) })
+      ? Maze.tour({ wings: wings.map((w) => ({
+        id: w.id, hall: WING_HALL[w.id] != null ? WING_HALL[w.id] : 0,
+        // machines in date order, so each wing reads like a timeline
+        exhibits: w.exhibits.slice().sort((a, b) => a.year - b.year).map((e) => e.id),
+        // the Apollo keepsakes close out the Moon Wing
+        keepsakes: w.id === "moon" ? treasures.map((x) => x.id) : [],
+      })) })
       : Maze.generate(level, seed, {
         exhibits: allEx.map((e) => e.id),
         treasures: treasures.map((x) => x.id),
@@ -735,7 +749,7 @@ const speechRate = () => {
   function regolithTex(kind) {
     const key = "regolith-" + kind;
     if (texCache[key]) return texCache[key];
-    const N = 1024, seed = kind === "moon" ? 3 : 9;
+    const N = 512, seed = kind === "moon" ? 3 : 9;
     const pal = kind === "moon"
       ? { lo: [52, 51, 50], hi: [128, 125, 121], dust: [148, 145, 140], peb: [40, 39, 38] }
       : { lo: [96, 42, 24], hi: [196, 104, 62], dust: [214, 150, 104], peb: [58, 34, 26] };
@@ -743,7 +757,7 @@ const speechRate = () => {
     color.width = color.height = bump.width = bump.height = N;
     const c = color.getContext("2d"), b = bump.getContext("2d");
     const img = c.createImageData(N, N), bim = b.createImageData(N, N);
-    const S = 1 / 64;
+    const S = 1 / 32;
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       // tileable: sample noise on a torus by blending wrapped coordinates
       const fx = x * S, fy = y * S, P = N * S;
@@ -771,7 +785,7 @@ const speechRate = () => {
     });
     if (kind === "moon") {
       for (let i = 0; i < 46; i++) {
-        const x = rnd() * N, y = rnd() * N, rad = 4 + Math.pow(rnd(), 3) * 38;
+        const x = rnd() * N, y = rnd() * N, rad = 2 + Math.pow(rnd(), 3) * 19;
         wrapDraw(x, y, rad * 1.4, (px, py) => {
           const g = c.createRadialGradient(px - rad * 0.25, py - rad * 0.25, rad * 0.1, px, py, rad);
           g.addColorStop(0, "rgba(40,40,40,.42)"); g.addColorStop(0.8, "rgba(60,60,60,.16)"); g.addColorStop(1, "rgba(0,0,0,0)");
@@ -783,8 +797,8 @@ const speechRate = () => {
         });
       }
     }
-    for (let i = 0; i < 2600; i++) {
-      const x = rnd() * N, y = rnd() * N, rad = 0.7 + Math.pow(rnd(), 4) * 9;
+    for (let i = 0; i < 1300; i++) {
+      const x = rnd() * N, y = rnd() * N, rad = 0.5 + Math.pow(rnd(), 4) * 4.5;
       const shade = 0.55 + rnd() * 0.6;
       wrapDraw(x, y, rad * 2, (px, py) => {
         c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(px + rad * 0.35, py + rad * 0.35, rad, rad * 0.8, 0, 0, Math.PI * 2); c.fill();
@@ -972,6 +986,7 @@ const speechRate = () => {
 
   /* ---------------- doors ---------------- */
   function doorState(roomId, d) {
+    if (d.learnFinale) return wingsDoneCount() >= museumWings().length ? "open-mc" : "wings";
     if (d.sealed) return allCollected() ? "open-mc" : "sealed";
     if (d.lock && !R().solved[d.lock.id]) return "locked";
     return d.oneWay ? "oneway" : "normal";
@@ -999,19 +1014,20 @@ const speechRate = () => {
     x.strokeStyle = sym.color; x.lineWidth = 14; x.strokeRect(14, 14, W - 28, H - 28);
     drawSymbol(x, d.sym, W / 2, H * 0.4, W * 0.5, sym.color);
     x.textAlign = "center"; x.textBaseline = "middle";
-    const label = d.next ? t("door.next") : d.back ? t("door.back") : { sealed: t("door.sealed"), locked: t("door.locked"), oneway: t("door.oneway"), "open-mc": t("door.open") }[state];
+    const label = d.wingDoor ? t(wingDone(d.wing) ? "door.done" : "door.enter") : d.exit ? t("door.home") : d.next ? t("door.next") : d.back ? t("door.back")
+      : { sealed: t("door.sealed"), wings: t("door.sealed"), locked: t("door.locked"), oneway: t("door.oneway"), "open-mc": t("door.open") }[state];
     if (label) {
-      x.fillStyle = state === "sealed" || state === "locked" ? "#f2c230" : "#f6f0e3";
+      x.fillStyle = state === "sealed" || state === "locked" || state === "wings" ? "#f2c230" : "#f6f0e3";
       fitText(x, label, W - 30, W * 0.11, 700, '"IBM Plex Mono", monospace');
       x.fillText(label, W / 2, H * 0.74);
-      if (state === "sealed") {
-        const txt = t("door.pieces", { n: R().collected.length, k: G().pieces.length });
+      if (state === "sealed" || state === "wings") {
+        const txt = state === "wings" ? t("door.wings", { n: wingsDoneCount(), k: museumWings().length }) : t("door.pieces", { n: R().collected.length, k: G().pieces.length });
         fitText(x, txt, W - 30, W * 0.085, 700, '"IBM Plex Mono", monospace');
         x.fillText(txt, W / 2, H * 0.84);
       }
-      if (state === "oneway" || d.next || d.back) {
+      if (state === "oneway" || d.next || d.back || d.exit || d.wingDoor) {
         x.font = `700 ${W * 0.16}px "IBM Plex Mono", monospace`;
-        x.fillText(d.back ? "←" : "→", W / 2, H * 0.86);
+        x.fillText(d.exit ? "↩" : d.back ? "←" : d.wingDoor && wingDone(d.wing) ? "✓" : "→", W / 2, H * 0.86);
       }
     }
   }
@@ -1073,7 +1089,7 @@ const speechRate = () => {
     lintel.rotation.y = rot;
     s.decor.add(lintel);
     const known = R().known[`${roomId}:${d.i}`];
-    const signText = d.sealed ? t("door.mc") : LV().learn ? roomName(d.to) : !known ? "?" : LV().signs === "names" ? roomName(d.to) : t("door.been");
+    const signText = d.sealed ? t("door.mc") : LV().learn ? (d.wingDoor && wingDone(d.wing) ? "✓ " : "") + roomName(d.to) : !known ? "?" : LV().signs === "names" ? roomName(d.to) : t("door.been");
     const sign = Models.board({ w: DOOR_W + 0.3, h: 0.78, ppm: 300, bg: "#f6f9fa", draw: (x, W, H) => {
       x.fillStyle = "#f6f9fa"; x.fillRect(0, 0, W, H);
       x.strokeStyle = sym.color; x.lineWidth = 12; x.strokeRect(8, 8, W - 16, H - 16);
@@ -1373,8 +1389,9 @@ const speechRate = () => {
       x.fillStyle = w.color; x.fillRect(0, ph - 8, W, 8);
       x.textAlign = "left"; x.textBaseline = "alphabetic";
       x.fillStyle = "#ffffff";
-      fitText(x, w.name.toUpperCase(), W - 72, 70, 800, '"Lexend", "Atkinson Hyperlegible", system-ui, sans-serif');
-      x.fillText(w.name.toUpperCase(), 36, ph + 82);
+      const nm = wingName(w).toUpperCase();
+      fitText(x, nm, W - 72, 70, 800, '"Lexend", "Atkinson Hyperlegible", system-ui, sans-serif');
+      x.fillText(nm, 36, ph + 82);
       x.fillStyle = "#d9e6ee";
       x.font = '600 30px "Atkinson Hyperlegible", system-ui, sans-serif';
       // wrap the wing's question onto two lines
@@ -2044,13 +2061,29 @@ const speechRate = () => {
 
   /* scanner arrow: Easy shows it all the time, Medium on request */
   let hintArrow = null, hintUntil = 0;
+  // Learning museum: inside an unfinished wing, keep going forward; in a
+  // finished wing, head for the exit; in the lobby, the next unfinished wing
+  // in story order, then Mission Control.
+  function museumHintDoor(id) {
+    const r = room(id);
+    if (r.type === "atrium") {
+      const next = r.doors.find((d) => d.wingDoor && !wingDone(d.wing)) || r.doors.find((d) => d.learnFinale);
+      return next ? next.i : null;
+    }
+    if (r.wing) {
+      const fwd = r.doors.find((d) => d.next) || r.doors.find((d) => d.exit);
+      return fwd ? fwd.i : null;
+    }
+    const home = r.doors.find((d) => d.to === 0);
+    return home ? home.i : null;
+  }
   function updateHint() {
     if (hintArrow) { roomGroup.remove(hintArrow); hintArrow = null; }
     if (!R() || R().done) return;
     const always = LV().scanner === "always";
     if (!always && performance.now() > hintUntil) return;
-    const h = Maze.hint(G(), R().cur, { collected: R().collected });
-    if (!h || h.here) return;
+    let h = G().museum ? { door: museumHintDoor(R().cur) } : Maze.hint(G(), R().cur, { collected: R().collected });
+    if (!h || h.here || h.door == null) return;
     const d = doorObjs.find((o) => o.door.i === h.door);
     if (!d) return;
     hintArrow = new T.Group();
@@ -2330,6 +2363,9 @@ const speechRate = () => {
    * GOING THROUGH A DOOR
    * ========================================================= */
   function useDoor(d) {
+    if (d.learnFinale && wingsDoneCount() < museumWings().length) {
+      return say(t("echo.wingsFirst", { n: wingsDoneCount(), k: museumWings().length }), 7000);
+    }
     if (d.sealed && !allCollected()) {
       R().sawMC = true; save();
       const left = G().pieces.length - R().collected.length;
@@ -2379,7 +2415,7 @@ const speechRate = () => {
     const first = !run.visited.includes(d.to);
     if (first) run.visited.push(d.to);
     // the door back (if there is one) is now known too, and secret doors are found from the inside
-    const back = room(d.to).doors.find((b) => b.to === from);
+    const back = room(d.to).doors.find((b) => b.to === from) || (d.home ? room(d.to).doors.find((b) => b.wingDoor && b.wing === d.wing) : null);
     if (back) {
       run.known[`${d.to}:${back.i}`] = true;
       if (back.hidden) run.revealed[`${d.to}:${back.i}`] = true;
@@ -2441,7 +2477,21 @@ const speechRate = () => {
       const rowW = row.length * (NW + GX) - GX, x0 = (W - rowW) / 2;
       row.forEach((id, ci) => { pos[id] = { x: x0 + ci * (NW + GX), y: PAD + ri * (NH + GY) }; });
     });
-    const H = PAD * 2 + rows.length * (NH + GY) - GY;
+    let H = PAD * 2 + rows.length * (NH + GY) - GY;
+    let Wm = W;
+    // Learning museum: draw it like a real museum map. Atrium (and Mission
+    // Control) on top, then one column per wing, rooms in visiting order.
+    if (g.museum) {
+      const cols = museumWings().map((wid) => g.rooms.filter((r) => r.wing === wid).map((r) => r.id));
+      const colW = NW + GX * 2;
+      Wm = Math.max(cols.length * colW + PAD * 2 - GX * 2, 380);
+      const longest = Math.max(...cols.map((c) => c.length));
+      cols.forEach((col, ci) => col.forEach((id, ri) => { pos[id] = { x: PAD + ci * colW, y: PAD + (ri + 1) * (NH + GY * 0.6) + 20 }; }));
+      pos[0] = { x: Wm / 2 - NW - GX / 2, y: PAD };
+      pos[g.mc] = { x: Wm / 2 + GX / 2, y: PAD };
+      H = PAD * 2 + (longest + 1) * (NH + GY * 0.6) + 20;
+      order.length = 0; order.push(0, g.mc, ...cols.flat());
+    }
     // one line per pair of rooms; remember each side's door symbol
     const links = {};
     g.rooms.forEach((r) => {
@@ -2450,6 +2500,8 @@ const speechRate = () => {
         if (!ids.has(d.to)) return;
         if (d.hidden && !run.revealed[`${r.id}:${d.i}`]) return;
         const k = [r.id, d.to].sort((a, b) => a - b).join("-");
+        // the museum's wing exits loop back to the lobby; the map shows them as a label instead of a long line
+        if (g.museum && d.exit) return;
         const L = links[k] = links[k] || { a: Math.min(r.id, d.to), b: Math.max(r.id, d.to), sym: {}, oneWay: d.oneWay, hidden: d.hidden };
         L.sym[r.id] = d.sym;
       });
@@ -2489,7 +2541,7 @@ const speechRate = () => {
     };
     const node = (id) => {
       const r = g.rooms[id], p = pos[id], here = id === run.cur, seen = run.visited.includes(id);
-      const wing = r.type === "exhibit" ? exById(r.exhibit).wing : null;
+      const wing = r.wing ? wings.find((w) => w.id === r.wing) : r.type === "exhibit" ? exById(r.exhibit).wing : null;
       const color = r.type === "mc" ? "#e8b53a" : r.type === "atrium" ? "#5ef2ff" : wing ? wing.color : r.type === "hidden" ? "#9a5be0" : "#8fa3ae";
       const piece = !isLearn() && r.piece && !run.collected.includes(id);
       const lines = wrap(roomName(id));
@@ -2499,9 +2551,10 @@ const speechRate = () => {
         ${lines.map((l, i) => `<text x="${p.x + 18}" y="${p.y + (lines.length === 1 ? 34 : 25 + i * 18)}">${esc(l)}</text>`).join("")}
         ${piece ? `<text class="map-piece" x="${p.x + NW - 16}" y="${p.y + 22}">◆</text>` : ""}
         ${here ? `<text class="map-here" x="${p.x + NW / 2}" y="${p.y - 8}">${esc(t("map.here"))}</text>` : ""}
+        ${g.museum && r.doors.some((d) => d.exit) ? `<text class="map-exit" x="${p.x + NW / 2}" y="${p.y + NH + 18}">↩ ${esc(t("pr.backAtrium"))}</text>` : ""}
       </g>`;
     };
-    $("#mapBody").innerHTML = `<svg viewBox="0 0 ${W} ${H + 10}" width="${W}" role="img" aria-label="${esc(t("map.title"))}">
+    $("#mapBody").innerHTML = `<svg viewBox="0 0 ${Wm} ${H + 10}" width="${Wm}" role="img" aria-label="${esc(t("map.title"))}">
       <defs><marker id="mapArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b7480"/></marker></defs>
       ${Object.values(links).map(edge).join("")}${order.map(node).join("")}</svg>
       <ul class="sr-only">${order.map((id) => `<li>${esc(roomName(id))}${id === run.cur ? " (" + esc(t("map.here")) + ")" : ""}: ${g.rooms[id].doors.filter((d) => ids.has(d.to) && (!d.hidden || run.revealed[`${id}:${d.i}`])).map((d) => `${SYM[d.sym].name} → ${esc(roomName(d.to))}`).join(", ")}</li>`).join("")}</ul>`;
@@ -2512,15 +2565,30 @@ const speechRate = () => {
     if (hereEl) hereEl.scrollIntoView({ block: "center", inline: "center" });
   }
   $("#mapBtn").addEventListener("click", (e) => { e.stopPropagation(); if (R()) openMap(); });
+  // the ☰ Menu closes after you pick something, or click anywhere else
+  $("#hudMenu").addEventListener("click", (e) => { if (e.target.closest(".hud-menu-panel button")) $("#hudMenu").open = false; });
+  document.addEventListener("click", (e) => { if ($("#hudMenu").open && !e.target.closest("#hudMenu")) $("#hudMenu").open = false; });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && $("#hudMenu").open) { $("#hudMenu").open = false; $("#hudMenu summary").focus(); } });
 
   /* ---------------- story chapters, narrated by the robot guide ---------------- */
   const CH = () => (window.STORY && STORY.chapters) || {};
+  // a chapter in the player's language when a translation exists (js/story-i18n.js), else English
+  const storyTr = () => (window.STORY_I18N && STORY_I18N[I18N.lang]) || null;
+  function CHT(key) {
+    const base = CH()[key];
+    if (!base) return null;
+    const tr = storyTr() && storyTr().chapters && storyTr().chapters[key];
+    return tr ? Object.assign({}, base, tr, { lang: I18N.lang }) : Object.assign({}, base, { lang: "en" });
+  }
+  function hookText(id, fallback) {
+    const tr = storyTr() && storyTr().hooks && storyTr().hooks[id];
+    return tr ? { text: tr, lang: I18N.lang } : { text: fallback, lang: "en" };
+  }
   function chapterHTML(key, opts) {
-    const c = CH()[key];
+    const c = CHT(key);
     if (!c) return "";
-    const robot = esc(S.robotName);
     return `${opts && opts.back ? `<p class="ch-back"><b>${esc(t("ch.lookBack"))}</b> ${esc(opts.back)}</p>` : ""}
-      <div class="ch-lines" lang="en" dir="ltr">${c.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>
+      <div class="ch-lines" lang="${c.lang}">${c.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>
       <p class="ch-guide">${esc(t("ch.guide", { robot: S.robotName }))}</p>`;
   }
   function chapterKicker(key) {
@@ -2530,26 +2598,50 @@ const speechRate = () => {
   // opens a chapter card the first time the explorer enters a wing; then runs `after`
   function maybeChapter(r, after) {
     const ex = r.type === "exhibit" && exById(r.exhibit);
-    const key = ex && ex.wing && ex.wing.id;
+    const key = r.wing || (ex && ex.wing && ex.wing.id);
     const run = R();
     run.chapters = run.chapters || [];
     if (!key || !CH()[key] || run.chapters.includes(key)) return false;
     const prev = run.chapters[run.chapters.length - 1];
     run.chapters.push(key);
     save();
-    const c = CH()[key];
+    const c = CHT(key);
     $("#chKicker").textContent = chapterKicker(key);
     $("#chTitle").textContent = c.title;
-    $("#chBody").innerHTML = chapterHTML(key, { back: isLearn() && prev && CH()[prev] && CH()[prev].outro });
+    // the museum shows each wing's closing line on its "Wing complete" card instead
+    $("#chBody").innerHTML = chapterHTML(key, { back: !G().museum && isLearn() && prev && CH()[prev] && CH()[prev].outro });
     $("#chapterDialog").dataset.wing = key;
     chapterAfter = after;
     setTimeout(() => $("#chapterDialog").showModal(), 650);
     return true;
   }
   let chapterAfter = null;
+  // Learning museum: the first time every room in a wing has been visited,
+  // celebrate it, award the wing's badge, and say what comes next.
+  function maybeWingComplete(wid) {
+    const run = R();
+    run.wingsComplete = run.wingsComplete || [];
+    if (!wingDone(wid) || run.wingsComplete.includes(wid)) return false;
+    run.wingsComplete.push(wid);
+    save();
+    award(2, "wing");
+    const w = wings.find((x) => x.id === wid), c = CHT(wid);
+    const left = museumWings().filter((x) => !wingDone(x));
+    const nextW = wings.find((x) => x.id === left[0]);
+    $("#chKicker").textContent = t("wingDone.kicker");
+    $("#chTitle").textContent = t("wingDone.title", { wing: wingName(w) });
+    $("#chBody").innerHTML = `
+      <p class="wing-badge" style="--wc:${w.color}"><span>${w.badge ? esc(w.badge.icon) : "★"}</span><b>${esc(t("wingDone.badge", { badge: w.badge ? w.badge.name : wingName(w) }))}</b></p>
+      <p class="wing-met">${esc(t("wingDone.met", { n: w.exhibits.length }))}</p>
+      ${c && c.outro ? `<div class="ch-lines" lang="${c.lang}"><p>${esc(c.outro)}</p></div>` : ""}
+      <p class="wing-next"><b>${esc(nextW ? t("wingDone.next", { wing: wingName(nextW) }) : t("wingDone.all"))}</b></p>`;
+    chapterAfter = () => { updateHint(); updateHUD(); };
+    setTimeout(() => $("#chapterDialog").showModal(), 650);
+    return true;
+  }
   // the last chapter opens both endings
   function finalChapter() {
-    const c = CH().future;
+    const c = CHT("future");
     return c ? `<section class="ch-final"><p class="catalog">${esc(chapterKicker("future"))}</p><h3>${esc(c.title)}</h3>${chapterHTML("future")}</section>` : "";
   }
   $("#chapterDialog").addEventListener("close", () => { const f = chapterAfter; chapterAfter = null; if (f) f(); });
@@ -2558,7 +2650,8 @@ const speechRate = () => {
     const r = room(id);
     clearTimeout(factTimer);
     showBanner(id);
-    if (first && r.type === "exhibit" && maybeChapter(r, () => arrived(id, first, oneWay))) return;
+    if (first && (r.type === "exhibit" || r.wing) && maybeChapter(r, () => arrived(id, first, oneWay))) return;
+    if (G().museum && r.wing && maybeWingComplete(r.wing)) return;
     if (r.type === "mc") return setTimeout(() => openFinale(), 900);
     let line = "";
     if (noteChecked) {
@@ -2571,7 +2664,7 @@ const speechRate = () => {
       else if (r.type === "exhibit") line += t(isLearn() ? "echo.learnExhibit" : "echo.noPiece");
       else if (r.type === "hall") line += esc(t(`hall.${r.hall}.fact`));
       else if (r.type === "hidden") line += r.find === "note" ? t("echo.secretNote") : t("echo.secretTreasure");
-      else if (r.type === "atrium") line += t("echo.atrium");
+      else if (r.type === "atrium") line += G().museum ? t("echo.museumLobby") : t("echo.atrium");
     } else if (r.type === "exhibit" && r.piece && !R().collected.includes(id)) line += t("echo.stillPiece");
     if (!line && LV().scanner === "always" && !isLearn()) {
       const h = Maze.hint(G(), id, { collected: R().collected });
@@ -2658,7 +2751,7 @@ const speechRate = () => {
     if (s.kind === "door") {
       const d = s.door, sym = SYM[d.sym];
       const st = doorState(R().cur, d);
-      txt = st === "sealed" ? t("pr.mcSealed") : st === "locked" ? t("pr.riddle") : d.next || d.back ? `${t(d.next ? "door.next" : "door.back")}: ${roomName(d.to)}` : t("pr.open");
+      txt = st === "sealed" || st === "wings" ? t("pr.mcSealed") : st === "locked" ? t("pr.riddle") : d.wingDoor ? t("pr.enterWing", { wing: roomName(d.to) }) : d.exit ? t("pr.backAtrium") : d.next || d.back ? `${t(d.next ? "door.next" : "door.back")}: ${roomName(d.to)}` : t("pr.open");
       txt = `<span style="color:${sym.color};filter:brightness(1.4)">${sym.ch}</span> ${esc(txt)}`;
     } else {
       const k = { secret: "pr.secret", bay: "pr.bay", console: "pr.console", fact: "pr.fact", note: "pr.note", launch: "pr.launch", orrery: "pr.orrery" }[s.kind];
@@ -2931,10 +3024,10 @@ const speechRate = () => {
     const trip = pl !== "earth" ? `<p class="story-place">${esc(t("story.trip." + pl))}</p>` : "";
     const place = `<p class="story-place">${esc(t("echo.place." + pl))}</p>`;
     if (isLearn()) {
-      const dream = CH().dream;
+      const dream = CHT("dream");
       $("#storyKicker").textContent = dream ? `${chapterKicker("dream")} · ${dream.title}` : t("story.learnKicker");
       $("#storyTitle").textContent = t("story.learnTitle");
-      $("#storyBody").innerHTML = trip + (dream ? `<div class="ch-lines" lang="en" dir="ltr">${dream.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>` : "") + ["story.learn1", "story.learn2", "story.learn3"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place;
+      $("#storyBody").innerHTML = trip + (dream ? `<div class="ch-lines" lang="${dream.lang}">${dream.lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>` : "") + ["story.learn1", "story.learn2", "story.learn3"].map((key) => `<p>${t(key, vars)}</p>`).join("") + place;
     } else {
       $("#storyKicker").textContent = t("story.kicker");
       $("#storyTitle").textContent = t("story.title");
@@ -3001,6 +3094,7 @@ const speechRate = () => {
   function currentWing() {
     const r = R() && room(R().cur);
     if (!r) return null;
+    if (r.wing) return wings.find((w) => w.id === r.wing) || null;
     if (r.type === "exhibit") return exById(r.exhibit).wing;
     if (r.type === "hall") { const id = Object.keys(WING_HALL).find((k) => WING_HALL[k] === r.hall); return wings.find((w) => w.id === id) || null; }
     return null;
@@ -3018,7 +3112,7 @@ const speechRate = () => {
     if (wg) {
       const seen = wg.exhibits.filter((e) => R().visits[e.id] && R().visits[e.id].story).length;
       wc.style.setProperty("--wc", wg.color);
-      wc.innerHTML = `<span class="wing-dot"></span><b>${esc(wg.name)}</b><span>${esc(t("hud.wingMet", { n: seen, m: wg.exhibits.length }))}</span>`;
+      wc.innerHTML = `<span class="wing-dot"></span><b>${esc(wingName(wg))}</b><span>${esc(t("hud.wingMet", { n: seen, m: wg.exhibits.length }))}</span>`;
     }
     $("#pieces").hidden = isLearn();
     $("#pieces").innerHTML = g.pieces.map((p) => `<i class="${R().collected.includes(p) ? "got" : ""}"></i>`).join("") + `<span class="sr-only">${t("echo.console", { n: R().collected.length, k: g.pieces.length }).replace(/<[^>]+>/g, "")}</span>`;
@@ -3263,7 +3357,8 @@ const speechRate = () => {
       const last = page === pages.length - 1;
       const dots = pages.map((p, i) => `<span class="beat-dot${i === page ? " on" : ""}${i < page ? " done" : ""}" aria-hidden="true"></span>`).join("");
       const extras = last ? MORE_SECTIONS.filter((x) => x.has(ex)) : [];
-      body.innerHTML = `${sb && page === 0 ? `<p class="story-hook" lang="en" dir="ltr">${linkify(sb.hook)}</p>` : ""}
+      const hk = sb && hookText(ex.id, sb.hook);
+      body.innerHTML = `${sb && page === 0 ? `<p class="story-hook" lang="${hk.lang}">${hk.lang === "en" ? linkify(hk.text) : esc(hk.text)}</p>` : ""}
         ${cur.k ? `<p class="beat-label"><span class="beat-num">${page + 1}</span>${esc(t("beat." + cur.k))}</p>` : ""}
         <blockquote class="voice${cur.k ? " beat " + cur.k : ""}" lang="en" dir="ltr">${linkify(cur.text)}</blockquote>
         <div class="beat-progress"><span class="beat-dots">${dots}</span><span class="voice-by">${esc(ex.treasure ? t("ex.moonStory") : t("ex.speaking", { name: ex.name }))} · ${esc(t("ex.part", { n: page + 1, m: pages.length }))}</span></div>
@@ -3835,6 +3930,11 @@ window.resetMuseum = async () => {
     }
   })();
   // for testing: Museum.debug() prints today's hidden network
+  // Build the Moon and Mars ground textures in spare time while the intro is
+  // on screen, so the first gallery doesn't freeze when you walk in.
+  const warm = () => { try { regolithTex("moon"); regolithTex("mars"); } catch (e) { /* built later on demand */ } };
+  if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 1500);
+
   window.Museum = {
     debug: () => S.run && S.run.graph,
     state: () => S,

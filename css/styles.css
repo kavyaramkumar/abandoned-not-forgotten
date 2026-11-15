@@ -1475,3 +1475,29 @@ dialog.sheet .btn.ghost:hover { background: #e5f7fb; }
 .map-legend .lg.seen::before { border: 2px solid #5b8796; }
 .map-legend .lg.new::before { border: 2px dashed #b8c6cc; }
 .map-legend .lg.piece { color: #8a6100; }
+
+/* Wing complete card */
+.wing-badge { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; background: #10212a; border: 2px solid var(--wc, #9fb7ff); }
+.wing-badge span { font-size: 32px; line-height: 1; }
+dialog.sheet .wing-badge b { color: #ffffff !important; font: 800 18px var(--serif); }
+.wing-met { margin: 0 0 10px; font-size: 18px; }
+.wing-next { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #e6f7fb; border-left: 4px solid #007f9c; }
+.map-node .map-exit { font: 700 12px var(--sans); fill: #005f76; text-anchor: middle; }
+
+/* ---------- Top bar: Scan, stars, settings and one ☰ Menu ---------- */
+.hud-menu { position: relative; }
+.hud-menu > summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+.hud-menu > summary::-webkit-details-marker { display: none; }
+.hud-menu[open] > summary { border-color: #71e4ff; }
+.hud-menu-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
+  display: grid; gap: 8px; min-width: 210px; padding: 10px;
+  background: #0d1722f5; border: 1px solid #4fdcf066; border-radius: 12px;
+  box-shadow: 0 18px 40px #000a; backdrop-filter: blur(14px);
+}
+.hud-menu-panel .btn.small { width: 100%; justify-content: flex-start; text-align: left; padding: 10px 12px; font-size: 13px; }
+.hud-menu-panel .hud-lang { display: flex; align-items: center; gap: 8px; padding: 4px 2px; }
+.hud-menu-panel .hud-lang .lang-select { flex: 1; }
+/* tooltips inside the menu would cover the other items */
+.hud-menu-panel [data-tip]:hover::after, .hud-menu-panel [data-tip]:focus-visible::after { display: none; }
+[dir="rtl"] .hud-menu-panel { right: auto; left: 0; }
