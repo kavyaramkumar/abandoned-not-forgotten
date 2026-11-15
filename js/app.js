@@ -2684,7 +2684,7 @@ const speechRate = () => {
 
   function arrived(id, first, oneWay) {
     const r = room(id);
-    clearTimeout(factTimer);
+    closeSayPages();
     showBanner(id);
     if (first && (r.type === "exhibit" || r.wing) && maybeChapter(r, () => arrived(id, first, oneWay))) return;
     if (G().museum && r.wing && maybeWingComplete(r.wing)) return;
@@ -2706,30 +2706,26 @@ const speechRate = () => {
       const h = Maze.hint(G(), id, { collected: R().collected });
       if (h && !h.here) line = t("echo.scannerLikes", { sym: `<b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b>` });
     }
-    // Echo's fact for a brand-new machine or treasure room (astronaut story, or a design choice)
+    // Echo's fact for a brand-new machine or treasure room: one or more speech bubbles that
+    // stay up until the player clicks one or presses Enter (see sayPaged)
     // (in another language it is shown only once translated, never as English mid-game)
     const factP = first ? roomFact(r) : null;
-    if (line) say(line, factP ? 6000 : 7000);
-    if (factP) {
-      const stamp = sayStamp, wait = line ? Math.round(6000 * readFactor()) + 400 : 0;
-      factP.then((fact) => {
-        if (!fact) return;
-        const go = () => { if (stamp === sayStamp && R() && R().cur === id) say(fact, 9500); };
-        if (wait) factTimer = setTimeout(go, wait); else go();
-      });
-    }
+    if (!factP) { if (line) say(line, 7000); return; }
+    if (line && I18N.lang !== "en") say(line, 7000);   // don't leave the player staring at nothing while it translates
+    factP.then((fact) => {
+      if (!fact || !R() || R().cur !== id) return;     // nothing to add, or the player already moved on
+      sayPaged((line ? [line] : []).concat(paginateSay(fact.text, fact.lang)));
+    });
   }
-  /* a bubble line from js/echo-facts.js for exhibit rooms and secret treasure rooms */
-  let factTimer;
+  /* the fact for an exhibit room or secret treasure room, from js/echo-facts.js */
   function roomFact(r) {
     const key = r.type === "exhibit" ? r.exhibit : r.type === "hidden" && r.find === "treasure" ? r.treasure : null;
     const f = key && window.ECHO_FACTS && window.ECHO_FACTS[key];
-    if (!f) return null;
-    const tag = `<b class="fact-tag">${esc(t(f.crew ? "fact.crewTag" : "fact.designTag"))}:</b> `;
-    if (I18N.lang === "en") return Promise.resolve(tag + esc(f.text));
-    if (!window.AutoTr || !AutoTr.supported()) return Promise.resolve("");
+    if (!f || !f.text) return null;
+    if (I18N.lang === "en") return Promise.resolve({ text: f.text, lang: "en" });
+    if (!window.AutoTr || !AutoTr.supported()) return Promise.resolve(null);
     const lang = I18N.lang;
-    return AutoTr.translate(f.text, lang).then((out) => (out && I18N.lang === lang ? tag + `<span lang="${lang}">${esc(out)}</span>` : ""));
+    return AutoTr.translate(f.text, lang).then((out) => (out && I18N.lang === lang ? { text: out, lang } : null));
   }
 
   /* ---------------- explorer's note: checking a route by following it ---------------- */
@@ -2876,6 +2872,8 @@ const speechRate = () => {
     if (document.querySelector("dialog[open]:not(.docked)") || $("#museum").hidden) return;
     // never steal keys from text boxes, menus, or anything inside the docked chat
     if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable], dialog.docked")) return;
+    // an open speech bubble gets Enter first: it moves to the next bubble, then closes
+    if (e.key === "Enter" && sayOpen()) { e.preventDefault(); if (!e.repeat) advanceSay(); return; }
     // a focused button handles its own Enter/Space
     if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest("button, a")) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
@@ -2900,13 +2898,104 @@ const speechRate = () => {
   function say(html, ms = 5500) {
     const b = $("#say");
     sayStamp++;
-    b.innerHTML = `<span class="who">${esc(S.robotName)}</span>${html}`;
+    const story = sayOpen();   // a story is open: show this message briefly, then bring the story back
+    if (story) sayPages.tmp = true; else sayPages = null;
+    b.innerHTML = sayWho() + html;
     if (S.a11y.speak) speak(html);
     ms = Math.round(ms * readFactor());
     b.classList.add("show");
+    b.classList.toggle("paged", story);
     clearTimeout(sayTimer);
-    sayTimer = setTimeout(() => b.classList.remove("show"), ms);
+    sayTimer = setTimeout(() => {
+      if (sayPages && sayPages.tmp) showSayPage(); else b.classList.remove("show");
+    }, ms);
   }
+
+  /* ---------------- paged speech bubbles ----------------
+     A long fact is cut into pieces that fit the bubble. The pieces are measured on screen,
+     so big text sizes and small phones simply make more of them. Each piece stays up until
+     the player clicks the bubble or presses Enter; after the last one it closes. */
+  let sayPages = null;   // { pages: [html], i, room, tmp }
+  const sayWho = () => `<span class="who">${esc(S.robotName)}</span>`;
+  const sayFoot = (i, n) => `<span class="say-next">▸ ${esc(t(i === n - 1 ? "echo.close" : "echo.next"))}${n > 1 ? ` · ${i + 1}/${n}` : ""}</span>`;
+  const sayOpen = () => !!(sayPages && R() && sayPages.room === R().cur);
+
+  function splitSentences(text) {
+    const out = [];
+    let cur = "";
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i], nx = text[i + 1];
+      cur += c;
+      if ("。！？।".includes(c) || (".!?".includes(c) && (nx === undefined || /\s/.test(nx)))) { out.push(cur.trim()); cur = ""; }
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out.filter(Boolean);
+  }
+  function paginateSay(text, lang) {
+    const box = $("#say"), probe = box.cloneNode(false);
+    probe.removeAttribute("id");
+    probe.removeAttribute("aria-live");
+    probe.className = "say show";
+    probe.style.cssText = "visibility:hidden;pointer-events:none;transition:none;transform:none;opacity:1;left:0;top:0";
+    box.parentNode.appendChild(probe);
+    const maxH = Math.max(120, Math.min(230, $("#stage").clientHeight * 0.36));
+    const wrap = (s) => (lang && lang !== "en" ? `<span lang="${lang}">${esc(s)}</span>` : esc(s));
+    let measurable = null;
+    const fits = (s) => {
+      probe.innerHTML = sayWho() + wrap(s) + sayFoot(8, 9);   // (the longest footer, so no piece ends up too tall)
+      if (measurable === null) measurable = probe.offsetHeight > 0;
+      return measurable ? probe.offsetHeight <= maxH : s.length <= 170;
+    };
+    const glue = /^(zh|ja)/.test(lang || "") ? "" : " ";
+    const join = (a, b) => (a ? a + glue : "") + b;
+    const pages = [];
+    let cur = "";
+    for (const s of splitSentences(text)) {
+      if (fits(join(cur, s))) { cur = join(cur, s); continue; }
+      if (cur) pages.push(cur);
+      cur = "";
+      if (fits(s)) { cur = s; continue; }
+      // one very long sentence: cut it between words (or characters when there are no spaces)
+      let piece = "";
+      for (const w of /\s/.test(s) ? s.split(/(\s+)/) : s.split("")) {
+        if (!piece || fits(piece + w)) piece += w;
+        else { pages.push(piece.trim()); piece = w.trimStart(); }
+      }
+      cur = piece.trim();
+    }
+    if (cur) pages.push(cur);
+    probe.remove();
+    return pages.map(wrap);
+  }
+  function sayPaged(pages) {
+    if (!pages.length) return;
+    sayStamp++;
+    sayPages = { pages, i: 0, room: R() && R().cur, tmp: false };
+    showSayPage();
+  }
+  function showSayPage() {
+    const sp = sayPages, b = $("#say");
+    if (!sp) return;
+    sp.tmp = false;
+    b.innerHTML = sayWho() + sp.pages[sp.i] + sayFoot(sp.i, sp.pages.length);
+    if (S.a11y.speak) speak(sp.pages[sp.i]);
+    b.classList.add("show", "paged");
+    clearTimeout(sayTimer);   // no timer: it waits for the player
+  }
+  function advanceSay() {
+    const sp = sayPages;
+    if (!sp) return;
+    if (sp.tmp) showSayPage();                      // a short message was on top: back to the story
+    else if (sp.i < sp.pages.length - 1) { sp.i++; showSayPage(); }
+    else closeSayPages();
+  }
+  function closeSayPages() {
+    if (!sayPages) return;
+    sayPages = null;
+    clearTimeout(sayTimer);
+    $("#say").classList.remove("show", "paged");
+  }
+  $("#say").addEventListener("click", (e) => { if (sayOpen()) { e.stopPropagation(); advanceSay(); } });
 
   /* read text aloud in the player's language, when the device has a voice for it */
   function speak(html) {
