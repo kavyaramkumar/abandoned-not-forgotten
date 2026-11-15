@@ -134,6 +134,8 @@ window.ExhibitGuide = (function () {
       const rest = q.filter((k) => !nameKeys.has(k));
       if (rest.length) q = rest;
     }
+    const base = new Set(q);
+    const need = Math.min(2, base.size);
     q = expand(q);
     // question words that point at a kind of answer
     if (/\bwhere\b/.test(ql)) q = q.concat(["rest", "locat", "head", "toward", "now", "land", "orbit"]);
@@ -143,18 +145,20 @@ window.ExhibitGuide = (function () {
       let sc = 0;
       q.forEach((k) => { if (d.keys.has(k)) sc += IDF[k] || 1; });
       if (!sc) return { d, sc };
+       let n = 0;
+      base.forEach((k) => { if (d.keys.has(k)) n++; });
       if (target && d.ex === target) sc *= named ? 2.2 : 1.8;
       else if (named) sc *= d.ex ? 0.5 : 0.4; // the question names a machine: other notes count less
       else if (target && !named) sc *= 0.6; // chatting with one machine: its own notes come first
       if (wantsWho && /built|made|led|managed|designed/i.test(d.text)) sc *= 1.3;
       if ((wantsWhen || wantsNum) && /\d/.test(d.text)) sc *= 1.25;
-      return { d, sc };
-    }).filter((x) => x.sc > 0).sort((a, b) => b.sc - a.sc);
+    return { d, sc, n, need };
+    }).filter((x) => x.sc > 0)
     return scored.slice(0, limit || 3);
   }
   function kbAnswer(question, preferId) {
     const hits = search(question, preferId, 6);
-    if (!hits.length || hits[0].sc < 2.2) return null;
+    if (!hits.length || hits[0].sc < 4 || hits[0].n < hits[0].need) return null;
     const best = hits[0].d;
     let text = best.text;
     // add a second note about the same thing when it's nearly as good
@@ -243,7 +247,7 @@ window.ExhibitGuide = (function () {
   }
   async function smartAnswer(question, preferId) {
     const hits = await smartHits(question, preferId, 6);
-    if (!hits || !hits.length || hits[0].sim < 0.3) return null;
+    if (!hits || !hits.length || hits[0].sim < 0.42) return null;
     const best = hits[0].d;
     let text = best.text;
     const same = (d) => (best.ex ? d.ex === best.ex : best.about && d.about === best.about);
@@ -271,7 +275,7 @@ window.ExhibitGuide = (function () {
     if (best && bestScore >= 4) return best.a;
     const kb = kbAnswer(question, exhibit.id);
     if (kb) return kb;
-    if (best) return best.a;
+
 
     if (/(now|today|doing|status|alive|working)/.test(q)) {
       const now = {

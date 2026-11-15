@@ -63,7 +63,7 @@ window.MUSEUM = {
         },
         {
           id: "surveyor-3",
-          riddle: "I landed on the Moon in 1967. Two years later, Apollo 12 astronauts walked over and took pieces of me home.",
+          riddle: "I landed on the Moon in 1967. Two years later, Apollo 12 (NASA's second crewed mission to land on the moon) astronauts walked over and took pieces of me home.",
           art: "surveyor",
           backdrop: "moon-earth",
           next: "Surveyor 3 and its robot sisters showed the Moon's ground was safe to land on, so astronauts could follow. About two years later, they did!",

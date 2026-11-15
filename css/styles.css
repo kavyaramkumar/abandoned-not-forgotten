@@ -319,6 +319,7 @@ ul.left li::before { content: ""; position: absolute; left: 12px; top: 16px; wid
 .say::after { content: ""; position: absolute; left: var(--tail, 30px); bottom: -10px; width: 16px; height: 16px; background: var(--paper); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); }
 .say.show { opacity: 1; transform: translateY(-100%); }
 .say .who { display: block; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--brick); }
+.say .fact-tag { color: var(--brick); }
 .prompt { position: absolute; left: 50%; bottom: 62px; z-index: 8; transform: translateX(-50%); pointer-events: auto; background: var(--brick); color: #fff; border: 2px solid var(--ink); border-radius: 30px; padding: 10px 22px; font-weight: 700; font-size: 17px; cursor: pointer; white-space: nowrap; animation: bob 1.2s ease-in-out infinite alternate; box-shadow: 4px 4px 0 var(--ink); max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
 .prompt kbd { font: 700 11px var(--mono); background: #0003; border: 1px solid #fff6; border-radius: 4px; padding: 1px 5px; margin-left: 8px; vertical-align: 2px; }
 @keyframes bob { from { margin-top: 0; } to { margin-top: -6px; } }
@@ -1385,3 +1386,28 @@ dialog.sheet .beat-label { color: #005f76 !important; }
 .wing-chip b { font: 800 14px var(--serif); letter-spacing: .01em; color: #ffffff; }
 .wing-chip span:last-child { color: #c9d8e2; }
 .wing-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--wc, #9fb7ff); box-shadow: 0 0 10px var(--wc, #9fb7ff); }
+/* ---------- Top Intro Login / Sign-up Bar ---------- */
+.top-auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+  padding: 8px 12px;
+  background: var(--paper-2);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+}
+.top-auth-label {
+  font: 700 13px var(--sans);
+  color: var(--ink);
+}
+.top-auth-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* Light dialogs (login, settings, cards): secondary buttons need dark text. */
+dialog.sheet .btn.ghost { color: #14242d; background: #ffffff; border-color: #526b77; }
+dialog.sheet .btn.ghost:hover { background: #e5f7fb; }

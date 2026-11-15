@@ -50,7 +50,7 @@
     place: "earth", // where the museum is: earth | moon | mars
     lang: "en",
     // accessibility: text size n | l | xl, and on/off switches
-    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false },
+    a11y: { text: "n", contrast: false, motion: !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches), font: false, speak: false, rate: 1 },
     stars: 0,
     owned: ["c-silver", "e-cyan", "h-none", "g-none"],
     look: { color: "#c9d3e6", eyes: "#5ef2ff", hat: "none", gear: "none" },
@@ -74,8 +74,47 @@
     } catch (e) {}
     return fresh();
   }
-  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+function save() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+      if (typeof saveCloudProgress === "function") saveCloudProgress(S);
+    } catch (e) {}
+  }
 
+  window.applyCloudState = function (cloudData) {
+    if (!cloudData) return;
+    S.player = cloudData.player ?? "";
+    S.robotName = cloudData.robot_name ?? "Echo";
+    if (cloudData.kid && Object.keys(cloudData.kid).length) S.kid = Object.assign(fresh().kid, cloudData.kid);
+    if (cloudData.level) S.level = cloudData.level;
+    if (cloudData.mode) S.mode = cloudData.mode;
+    if (cloudData.place) S.place = cloudData.place;
+    if (cloudData.lang) S.lang = cloudData.lang;
+    if (cloudData.a11y && Object.keys(cloudData.a11y).length) S.a11y = Object.assign(fresh().a11y, cloudData.a11y);
+    S.stars = cloudData.stars ?? 0;
+    S.owned = cloudData.owned ?? ["c-silver", "e-cyan", "h-none", "g-none"];
+    if (cloudData.look) S.look = cloudData.look;
+    S.met = cloudData.met ?? {};
+    S.best = cloudData.best ?? {};
+    if (cloudData.run !== undefined) S.run = cloudData.run;
+
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {}
+
+    $("#playerName").value = S.player;
+    $("#robotName").value = S.robotName;
+    drawMaker();
+    drawPicks();
+    drawIntroText();
+    applyA11y();
+    if (S.lang && S.lang !== I18N.lang) I18N.set(S.lang);
+    updateHUD();
+  };
+  
+const speechRate = () => {
+  const rate = Number(S.a11y.rate);
+  return [0.5, 1, 1.5, 2].includes(rate) ? rate : 1;
+};
+  
   const R = () => S.run;
   const G = () => S.run.graph;
   const LV = () => Maze.LEVELS[S.run.level];
@@ -2447,6 +2486,7 @@
 
   function arrived(id, first, oneWay) {
     const r = room(id);
+    clearTimeout(factTimer);
     showBanner(id);
     if (first && r.type === "exhibit" && maybeChapter(r, () => arrived(id, first, oneWay))) return;
     if (r.type === "mc") return setTimeout(() => openFinale(), 900);
@@ -2467,7 +2507,22 @@
       const h = Maze.hint(G(), id, { collected: R().collected });
       if (h && !h.here) line = t("echo.scannerLikes", { sym: `<b style="color:${SYM[room(id).doors[h.door].sym].color}">${SYM[room(id).doors[h.door].sym].ch}</b>` });
     }
-    if (line) say(line, 7000);
+    // Echo's fact for a brand-new machine or treasure room (astronaut story, or a design choice)
+    const fact = first ? roomFact(r) : "";
+    if (line && fact) {
+      say(line, 6000);
+      const stamp = sayStamp, wait = Math.round(6000 * readFactor()) + 400;
+      factTimer = setTimeout(() => { if (stamp === sayStamp && R() && R().cur === id) say(fact, 9500); }, wait);
+    } else if (fact) say(fact, 9500);
+    else if (line) say(line, 7000);
+  }
+  /* a bubble line from js/echo-facts.js for exhibit rooms and secret treasure rooms */
+  let factTimer;
+  function roomFact(r) {
+    const key = r.type === "exhibit" ? r.exhibit : r.type === "hidden" && r.find === "treasure" ? r.treasure : null;
+    const f = key && window.ECHO_FACTS && window.ECHO_FACTS[key];
+    if (!f) return "";
+    return `<b class="fact-tag">${f.crew ? "Astronaut story" : "Design choice"}:</b> ${esc(f.text)}`;
   }
 
   /* ---------------- explorer's note: checking a route by following it ---------------- */
@@ -2633,12 +2688,14 @@
     idleHintTimer = setTimeout(() => $("#hint").classList.remove("faded"), 25000);
   }
 
-  let sayTimer;
+  let sayTimer, sayStamp = 0;
+  const readFactor = () => (S.a11y.text !== "n" || S.a11y.speak ? 1.6 : 1); // more time to read or listen
   function say(html, ms = 5500) {
     const b = $("#say");
+    sayStamp++;
     b.innerHTML = `<span class="who">${esc(S.robotName)}</span>${html}`;
     if (S.a11y.speak) speak(html);
-    if (S.a11y.text !== "n" || S.a11y.speak) ms = Math.round(ms * 1.6); // more time to read or listen
+    ms = Math.round(ms * readFactor());
     b.classList.add("show");
     clearTimeout(sayTimer);
     sayTimer = setTimeout(() => b.classList.remove("show"), ms);
@@ -2654,7 +2711,7 @@
     const voice = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(I18N.lang));
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : I18N.lang;
-    u.rate = 0.95;
+    u.rate = speechRate();
     speechSynthesis.speak(u);
   }
 
@@ -2671,6 +2728,12 @@
     $("#a11yMotion").checked = a.motion;
     $("#a11yFont").checked = a.font;
     $("#a11ySpeak").checked = a.speak;
+    $("#a11yRate").querySelectorAll("[data-rate]").forEach((button) => {
+  button.setAttribute(
+    "aria-pressed",
+    String(Number(button.dataset.rate) === speechRate())
+  );
+});
     if (!a.speak && "speechSynthesis" in window) speechSynthesis.cancel();
   }
   document.querySelectorAll(".a11y-open").forEach((b) => b.addEventListener("click", () => { applyA11y(); $("#a11yDialog").showModal(); }));
@@ -2679,6 +2742,14 @@
     if (!b) return;
     S.a11y.text = b.dataset.size; save(); applyA11y();
   });
+  $("#a11yRate").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-rate]");
+  if (!button) return;
+  S.a11y.rate = Number(button.dataset.rate);
+  save();
+  Reader.stop();
+  applyA11y();
+});
   [["#a11yContrast", "contrast"], ["#a11yMotion", "motion"], ["#a11yFont", "font"], ["#a11ySpeak", "speak"]].forEach(([sel, key]) =>
     $(sel).addEventListener("change", (e) => {
       S.a11y[key] = e.target.checked; save(); applyA11y();
@@ -3328,7 +3399,7 @@
         const v = voiceFor(p.lang.slice(0, 2));
         if (v) u.voice = v;
         u.lang = v ? v.lang : p.lang;
-        u.rate = 0.95;
+        u.rate = speechRate();
         if (i === parts.length - 1) u.onend = () => { if (active === btn) stop(); };
         speechSynthesis.speak(u);
       });
@@ -3409,9 +3480,9 @@
     }
     const kb = ExhibitGuide.kbAnswer(q, null);
     if (kb && !(q === t("chat.sugMoon") || q === t("chat.sugMars") || q === t("chat.sugDeep"))) return { text: kb };
-    if (q === t("chat.sugMoon") || /moon|lun|apollo/.test(ql)) return { text: wingAnswer("moon") };
-    if (q === t("chat.sugMars") || /mars|marte|rover/.test(ql)) return { text: wingAnswer("mars") };
-    if (q === t("chat.sugDeep") || /deep|voyager|pioneer|pluto|jupiter|space/.test(ql)) return { text: wingAnswer("deep") };
+    if (q === t("chat.sugMoon") || /\b(moon|lunar|apollo)\b/.test(ql)) return { text: wingAnswer("moon") };
+    if (q === t("chat.sugMars") ||/\b(mars|marte|rover)\b/.test(ql)) return { text: wingAnswer("mars") };
+    if (q === t("chat.sugDeep") || /\b(deep|voyager|pioneer|pluto|jupiter|space)\b/.test(ql)) return { text: wingAnswer("deep") };
     return { text: t("chat.dontKnow") };
   }
   const MUSEUM_GUIDE = () => ({
@@ -3655,7 +3726,44 @@
   buildIntro();
   applyA11y();
   I18N.set(S.lang || "en");
-  window.resetMuseum = () => { localStorage.removeItem(SAVE_KEY); location.reload(); };
+window.resetMuseum = async () => {
+    localStorage.removeItem(SAVE_KEY);
+    if (typeof supabaseClient !== "undefined" && supabaseClient) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        const clean = fresh();
+        await supabaseClient
+          .from("player_progress")
+          .update({
+            player: clean.player,
+            robot_name: clean.robotName,
+            kid: clean.kid,
+            level: clean.level,
+            mode: clean.mode,
+            place: clean.place,
+            lang: clean.lang,
+            a11y: clean.a11y,
+            stars: clean.stars,
+            owned: clean.owned,
+            look: clean.look,
+            met: clean.met,
+            best: clean.best,
+            run: clean.run,
+          })
+          .eq("user_id", user.id);
+      }
+    }
+    location.reload();
+  };
+
+  (async function initCloudSession() {
+    if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      const cloudData = await loadCloudProgress(session.user.id);
+      window.applyCloudState(cloudData);
+    }
+  })();
   // for testing: Museum.debug() prints today's hidden network
   window.Museum = {
     debug: () => S.run && S.run.graph,
