@@ -31,7 +31,7 @@ Since the 1960s, NASA has left hardware across the solar system: on the Moon, on
 
 **Play it:** https://kavyaramkumar.github.io/abandoned-not-forgotten/
 
-**30-second project demo:** https://github.com/kavyaramkumar/abandoned-not-forgotten/blob/main/demo/Reach-for-the-Stars-Museum-Project-Demo.mp4
+**30-second project demo:** https://kavyaramkumar.github.io/abandoned-not-forgotten/demo/
 
 Reach for the Stars Museum is a free 3D web game that tells the stories of 20 NASA machines left behind on the Moon, on Mars, and in deep space. By day it is a museum with three wings to walk through; after dark the doors start moving and it becomes a maze. Players meet each machine, hear what it was built for, what went wrong, and what it discovered, and see real NASA photos of where it rests today. It is made for kids ages 8 to 17, including kids who don't already love space. *Their missions ended. Their stories didn't.*
 
